@@ -55,6 +55,30 @@ const testes = {
     await pg.click('[data-a=aplicar-lote]');
     ok(await pg.evaluate(() => Dados.e.propostas.find(p => p.id === 'pp1').itens[0].unitario > 1.5), 'preços aplicados na proposta');
     await foto('precificacao-lote');
+  },
+  async academy(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    await pg.goto(url + '#/academy'); await pg.waitForSelector('.academy');
+    await pg.click('[data-a=novo]'); await pg.fill('.modal [name=titulo]', 'Licitação do zero'); await pg.fill('.modal [name=subtitulo]', 'Do edital ao pagamento'); await pg.fill('.modal [name=descricao]', 'Curso **prático** da Seven.'); await submit();
+    await pg.waitForSelector('.ac-banner'); await pg.check('#ac-ger').catch(() => {});
+    await pg.goto(url + '#/academy'); await pg.check('#ac-ger'); await pg.click('.ac-card:has-text("Licitação do zero")');
+    await pg.click('[data-a=modulo]'); await pg.fill('.modal [name=t]', 'Módulo 1 — Fundamentos'); await submit();
+    await pg.click('[data-a=aula]'); await pg.fill('.modal [name=titulo]', 'O que é licitação'); await pg.selectOption('#ac-tipo', 'texto'); await pg.fill('.modal [name=conteudo]', '# Licitação\nÉ o processo de **compra pública**.'); await submit();
+    await pg.click('[data-a=aula]'); await pg.fill('.modal [name=titulo]', 'Aula em vídeo'); await pg.selectOption('#ac-tipo', 'link'); await pg.fill('.modal [name=url]', 'https://youtu.be/dQw4w9WgXcQ'); await pg.fill('.modal [name=duracao]', '12');
+    const fc = pg.waitForEvent('filechooser'); await pg.click('#ac-mats'); await (await fc).setFiles(t.arquivo('checklist.txt', 'Checklist de habilitação')); await submit();
+    await pg.waitForSelector('.ac-aulas li >> nth=1'); await pg.waitForTimeout(300); ok(await pg.locator('.ac-aulas li').count() === 2, 'curso com módulo e aulas');
+    await pg.click('text=▶ Começar'); await pg.waitForSelector('.ac-texto'); ok(/compra pública/.test(await pg.locator('.ac-texto').innerText()), 'aula de texto em Markdown');
+    await pg.fill('#ac-com textarea', 'Ótima aula!'); await pg.click('#ac-com button'); ok(await pg.locator('.kj-atividade li').count() === 1, 'comentário na aula');
+    await pg.click('[data-aba=notas]'); await pg.fill('#ac-notas', 'Revisar Lei 14.133'); await pg.waitForTimeout(500);
+    await pg.click('[data-a=feita]'); await pg.waitForSelector('.ac-player iframe');
+    ok((await pg.getAttribute('.ac-player iframe', 'src')).startsWith('https://www.youtube.com/embed/dQw4w9WgXcQ'), 'vídeo do YouTube incorporado e avançou para a próxima aula');
+    ok(await pg.locator('a[data-material]').count() === 1, 'material complementar');
+    await pg.click('[data-a=feita]');
+    await pg.goto(url + '#/academy'); ok(/Continue de onde parou/.test(await pg.locator('.ac-hero').innerText()), 'continuar assistindo');
+    await pg.click('.ac-card:has-text("Licitação do zero")'); ok(/100%/.test(await pg.locator('.ac-prog').innerText()), 'progresso 100%');
+    ok(await pg.locator('[data-a=certificado]').count() === 1, 'certificado liberado ao concluir');
+    ok(await pg.evaluate(() => Dados.e.academy.notas && Object.values(Dados.e.academy.notas)[0] === 'Revisar Lei 14.133'), 'anotações salvas');
+    await foto('academy-curso'); await pg.goto(url + '#/academy'); await foto('academy-vitrine');
   }
 };
 
