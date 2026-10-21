@@ -530,6 +530,58 @@ const testes = {
     await pg.setViewportSize({ width: 390, height: 844 }); await pg.goto(url + '#/loja'); await pg.waitForSelector('.lj-hero');
     ok(await pg.evaluate(() => document.documentElement.scrollWidth <= 392), 'sem rolagem horizontal no celular'); await foto('loja-celular');
     await pg.setViewportSize({ width: 1440, height: 900 });
+  },
+  async jogos(t) {
+    const { pg, url, ok, foto } = t;
+    await pg.goto(url + '#/jogos'); await pg.waitForSelector('.jg-dia');
+    ok(await pg.locator('.jg-card').count() === 7 && await pg.locator('.jg-dia-c').count() === 4, '7 jogos e treino do dia com 4');
+    ok(await pg.locator('.jg-ciencia a[href^="https://"]').count() >= 8, 'seção da ciência com fontes');
+    await foto('jogos-inicio');
+    // quiz: responde certo usando o gabarito
+    await pg.goto(url + '#/jogos/quiz'); await pg.waitForSelector('.jg-op');
+    for (let i = 0; i < 10; i++) {
+      const certa = await pg.evaluate(() => { const p = document.querySelector('.jg-quiz h3').textContent; const q = Jogos.QUESTOES.find(x => x.p === p); return q.o[q.c]; });
+      await pg.locator('.jg-op', { hasText: certa }).first().click(); await pg.waitForSelector('.jg-op.certa');
+      if (i === 0) await foto('jogos-quiz');
+      await pg.click('[data-j=prox]');
+    }
+    await pg.waitForSelector('.jg-fim'); ok(/10 de 10/.test(await pg.locator('.jg-fim h3').innerText()), 'quiz completo com 10 acertos');
+    ok(await pg.evaluate(() => Object.keys(Dados.e.jogos.quiz).length === 10 && Object.values(Dados.e.jogos.quiz).every(s => s.caixa === 1)), 'repetição espaçada registrada');
+    // memória: resolve com o baralho
+    await pg.goto(url + '#/jogos/memoria'); await pg.click('[data-p="6"]'); await pg.waitForSelector('.jg-carta');
+    const pares = await pg.evaluate(() => { const fr = [...document.querySelectorAll('.jg-carta')].map(b => b.querySelector('.jg-frente').textContent); const p = {}; Jogos.PARES.forEach(([a, b]) => { p[a] = b; }); const out = []; fr.forEach((t, i) => { if (p[t] !== undefined) out.push([i, fr.indexOf(p[t])]); }); return out; });
+    ok(pares.length === 6, 'baralho com 6 pares');
+    for (const [a, b] of pares) { await pg.click(`.jg-carta[data-id="${a}"]`); await pg.click(`.jg-carta[data-id="${b}"]`); }
+    await pg.waitForSelector('.jg-fim'); ok(/6 jogadas/.test(await pg.locator('.jg-fim h3').innerText()), 'memória resolvida em 6 jogadas');
+    // xadrez: jogada humana e resposta do computador
+    await pg.goto(url + '#/jogos/xadrez'); await pg.waitForSelector('.jg-tab');
+    ok(await pg.locator('.jg-cx').count() === 64, 'tabuleiro 8x8');
+    await pg.click('.jg-cx[aria-label^="e2"]'); ok(await pg.locator('.jg-cx.alvo').count() === 2, 'mostra destinos do peão');
+    await pg.click('.jg-cx[aria-label="e4"]'); await pg.waitForFunction(() => Dados.e.jogos.xadrez.lances.length === 2, null, { timeout: 15000 });
+    ok(await pg.evaluate(() => Dados.e.jogos.xadrez.lances[0] === 'e4'), 'lance e4 e resposta do computador');
+    await foto('jogos-xadrez');
+    await pg.click('[data-x=voltar]'); ok(await pg.evaluate(() => Dados.e.jogos.xadrez.lances.length === 0), 'voltar lance');
+    // matrizes
+    await pg.goto(url + '#/jogos/matrizes'); await pg.waitForSelector('.jg-mt-ops button');
+    ok(await pg.locator('.jg-mt-g > div').count() === 9 && await pg.locator('.jg-mt-ops button').count() === 6, 'matriz 3x3 com 6 opções');
+    await foto('jogos-matrizes');
+    // lances
+    await pg.goto(url + '#/jogos/lances'); await pg.click('[data-j=comecar]'); await pg.waitForSelector('#jg-ln-q');
+    for (let i = 0; i < 3; i++) { const r = await pg.evaluate(() => { const p = document.querySelector('#jg-ln-q').textContent; for (let s = 0; s < 1; s++); return p; }); await pg.fill('#jg-ln-r', '0'); await pg.press('#jg-ln-r', 'Enter'); await pg.waitForTimeout(2100); }
+    ok(/acerto/.test(await pg.locator('#jg-ln-p').innerText()), 'sprint de lances responde');
+    // schulte
+    await pg.goto(url + '#/jogos/schulte'); await pg.waitForSelector('.jg-sc-g button');
+    for (let v = 1; v <= 25; v++) await pg.click(`.jg-sc-g [data-v="${v}"]`);
+    await pg.waitForSelector('.jg-fim'); ok(true, 'tabela de 1 a 25 completa');
+    // n-back curto: começa e mostra estímulo
+    await pg.goto(url + '#/jogos/nback'); await pg.click('[data-j=comecar]'); await pg.waitForSelector('.jg-nb-c.on', { timeout: 3000 });
+    ok(/^[A-Z]$/.test(await pg.locator('.jg-nb-c.on').innerText()), 'n-back mostra posição e letra'); await pg.keyboard.press('a');
+    await foto('jogos-nback');
+    await pg.goto(url + '#/jogos'); await pg.waitForSelector('.jg-seq');
+    ok(/1/.test(await pg.locator('.jg-seq b').innerText()) && await pg.locator('.jg-dia-c.feito').count() >= 1, 'sequência de dias e treino marcado');
+    await pg.setViewportSize({ width: 390, height: 844 }); await pg.goto(url + '#/jogos/xadrez'); await pg.waitForSelector('.jg-tab');
+    ok(await pg.evaluate(() => document.documentElement.scrollWidth <= 392), 'xadrez cabe no celular'); await foto('jogos-xadrez-celular');
+    await pg.setViewportSize({ width: 1440, height: 900 });
   }
 };
 
