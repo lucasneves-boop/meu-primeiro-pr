@@ -25,7 +25,7 @@
     preencherEmpresas();
     const el = $('#conteudo');
     el.onclick = el.onchange = el.oninput = el.onkeydown = el.ondblclick = el.onfocusout = null;
-    if (r.tela === 'mercado' && r.sub === 'pagometro') $$('.menu a').forEach(function (a) { a.classList.toggle('ativo', a.dataset.rota === 'pagometro'); });
+    if (r.tela === 'mercado' && (r.sub === 'capag')) $$('.menu a').forEach(function (a) { a.classList.toggle('ativo', a.dataset.rota === 'capag'); });
     try { tela.render(el, r.sub, r.param); }
     catch (e) { console.error(e); el.innerHTML = '<div class="vazio"><h3>Erro ao abrir a tela</h3><p>' + esc(e.message) + '</p></div>'; }
     document.body.classList.remove('menu-aberto');

@@ -73,6 +73,35 @@
     return 'sem nota';
   }
 
+  // Planilha da CAPAG (Tesouro Transparente): acha o cabeçalho e as colunas pelo nome, seja qual for a ordem.
+  function normalizarNotaCapag(v) {
+    const t = String(v || '').toUpperCase().replace(/\s/g, '');
+    const m = t.match(/^([A-E])(\+)?$/) || t.match(/^([A-E])(\+)?[^A-Z]/);
+    if (m) return m[1] + (m[2] || '');
+    if (/N\.?D|NAO|SEM|^-$/.test(t)) return 'n.d.';
+    return '';
+  }
+  function chaveCapag(municipio, uf) { return normalizar(municipio) + '-' + String(uf || '').toUpperCase(); }
+  function lerPlanilhaCapag(linhas) {
+    const achar = function (cab, res) { for (const re of res) { const i = cab.findIndex(function (c) { return re.test(c); }); if (i >= 0) return i; } return -1; };
+    let h = -1, col = null;
+    for (let i = 0; i < Math.min(linhas.length, 30) && h < 0; i++) {
+      const cab = linhas[i].map(normalizar);
+      const nota = achar(cab, [/^capag$/, /^classificacao capag/, /capag/, /classificacao/, /^nota$/]);
+      const nome = achar(cab, [/^municipio$/, /^nome do municipio/, /municipio/, /^ente$/, /nome/]);
+      if (nota >= 0 && nome >= 0) { h = i; col = { nota: nota, nome: nome, uf: achar(cab, [/^uf$/, /sigla uf/, /^estado$/, /\buf\b/]), ibge: achar(cab, [/ibge/, /^cod/, /codigo/]), ano: achar(cab, [/^ano/, /exercicio/, /referencia/]) }; }
+    }
+    if (h < 0) return [];
+    const out = [];
+    linhas.slice(h + 1).forEach(function (l) {
+      const nota = normalizarNotaCapag(l[col.nota]); const nome = String(l[col.nome] || '').trim();
+      if (!nome || !nota) return;
+      const ibge = col.ibge >= 0 ? String(l[col.ibge] || '').replace(/\D/g, '') : '';
+      out.push({ municipio: nome, uf: col.uf >= 0 ? String(l[col.uf] || '').trim().toUpperCase().slice(0, 2) : '', ibge: ibge.length >= 6 ? ibge : '', nota: nota, ano: col.ano >= 0 ? String(l[col.ano] || '').trim() : '' });
+    });
+    return out;
+  }
+
   // ---------- números ----------
   function arredondarBaixo(v, casas) { const f = Math.pow(10, casas); return Math.floor(v * f + 1e-9) / f; }
   function arredondarCima(v, casas) { const f = Math.pow(10, casas); return Math.ceil(v * f - 1e-9) / f; }
@@ -375,6 +404,6 @@
     estatisticas: estatisticas, ranking: ranking, concentracao: concentracao, paraCSV: paraCSV, lerCSV: lerCSV,
     precoSugerido: precoSugerido, reducaoEfetiva: reducaoEfetiva, decidirLance: decidirLance,
     convocadosEtapaFechada: convocadosEtapaFechada, criarSimulacao: criarSimulacao, passoSimulacao: passoSimulacao,
-    posicaoAtual: posicaoAtual, destacar: destacar
+    posicaoAtual: posicaoAtual, destacar: destacar, lerPlanilhaCapag: lerPlanilhaCapag, normalizarNotaCapag: normalizarNotaCapag, chaveCapag: chaveCapag
   };
 });

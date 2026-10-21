@@ -81,3 +81,22 @@ test('ranking e concentração', () => {
 test('preço sugerido por custo, impostos e margem', () => {
   assert.equal(N.arredondar(N.precoSugerido(80, 10, 10, 0), 2), 100);
 });
+
+test('planilha da CAPAG: acha cabeçalho e colunas em qualquer ordem', () => {
+  const linhas = [
+    ['Capacidade de Pagamento dos Municípios'], [],
+    ['Código IBGE', 'UF', 'Nome do Município', 'Ano de referência', 'CAPAG'],
+    ['5205109', 'GO', 'Catalão', '2026', 'A'],
+    ['5300108', 'DF', 'Brasília', '2026', 'B+'],
+    ['5208707', 'GO', 'Goiânia', '2026', 'n.d.'],
+    ['', '', '', '', '']
+  ];
+  const r = N.lerPlanilhaCapag(linhas);
+  assert.equal(r.length, 3);
+  assert.deepEqual(r[0], { municipio: 'Catalão', uf: 'GO', ibge: '5205109', nota: 'A', ano: '2026' });
+  assert.equal(r[1].nota, 'B+');
+  assert.equal(r[2].nota, 'n.d.');
+  assert.equal(N.leituraCapag(r[1].nota), 'boa');
+  assert.equal(N.chaveCapag('Catalão', 'go'), 'catalao-GO');
+  assert.deepEqual(N.lerPlanilhaCapag([['x', 'y'], ['1', '2']]), []);
+});

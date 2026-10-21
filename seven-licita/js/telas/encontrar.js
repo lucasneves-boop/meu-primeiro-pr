@@ -115,7 +115,8 @@
   }
 
   function capagTag(x) {
-    const c = (e().config.capag || {})[(x.municipio || '') + '-' + (x.uf || '')];
+    const tab = e().config.capag || {};
+    const c = (x.ibge && tab[x.ibge]) || tab[Nucleo.chaveCapag(x.municipio, x.uf)] || tab[(x.municipio || '') + '-' + (x.uf || '')];
     if (!c || x.esfera !== 'M') return '';
     return '<span class="tag capag-' + Nucleo.leituraCapag(c.nota).replace(/\W/g, '') + '" title="Capacidade de pagamento (Tesouro Nacional)">CAPAG ' + esc(c.nota) + '</span>';
   }

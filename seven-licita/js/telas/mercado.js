@@ -1,4 +1,4 @@
-/* Análise de Mercado (PNCP), Concorrentes e Pagômetro. */
+/* Análise de Mercado (PNCP), Concorrentes e CAPAG. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -105,9 +105,43 @@
     el.onclick = function (ev) { const b = ev.target.closest('[data-seguir]'); if (!b) return; const l = e().config.concorrentes = e().config.concorrentes || []; const i = l.indexOf(b.dataset.seguir); if (i >= 0) l.splice(i, 1); else l.push(b.dataset.seguir); Dados.salvar(); App.redesenhar(); };
   }
 
-  // Pagômetro: quanto cada órgão demora para pagar, com base nos pagamentos que a Seven registrou nos cartões,
-  // mais a nota CAPAG do município (informada à mão a partir do Tesouro Nacional).
-  function telaPagometro(el) {
+  const LINK_CAPAG = 'https://www.tesourotransparente.gov.br/temas/estados-e-municipios/capacidade-de-pagamento-capag';
+  const XLSX_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  let filtroCapag = { texto: '', uf: '', nota: '' };
+
+  function carregarXLSX() {
+    if (self.XLSX) return Promise.resolve(self.XLSX);
+    return new Promise(function (ok, erro) { const s = document.createElement('script'); s.src = XLSX_CDN; s.onload = function () { ok(self.XLSX); }; s.onerror = function () { erro(new Error('Não consegui carregar o leitor de Excel. Salve a planilha como CSV e importe de novo.')); }; document.head.appendChild(s); });
+  }
+
+  async function importarCapag() {
+    const f = await UI.escolherArquivo('.csv,.xlsx,.xls,text/csv'); if (!f) return;
+    let linhas;
+    try {
+      if (/\.xlsx?$/i.test(f.name)) {
+        const X = await carregarXLSX();
+        const wb = X.read(await f.arrayBuffer(), { type: 'array' });
+        linhas = [];
+        wb.SheetNames.forEach(function (n) { const l = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' }); if (Nucleo.lerPlanilhaCapag(l).length > Nucleo.lerPlanilhaCapag(linhas).length) linhas = l; });
+      } else linhas = Nucleo.lerCSV(await UI.lerArquivoTexto(f));
+    } catch (err) { aviso(err.message, 'erro'); return; }
+    const regs = Nucleo.lerPlanilhaCapag(linhas);
+    if (!regs.length) { aviso('Não achei as colunas de município e CAPAG na planilha. Confira se é a planilha de CAPAG dos municípios do Tesouro.', 'erro'); return; }
+    const capag = e().config.capag = {};
+    regs.forEach(function (r) { const v = { municipio: r.municipio, uf: r.uf, ibge: r.ibge, nota: r.nota, ano: r.ano, fonte: f.name }; capag[r.ibge || Nucleo.chaveCapag(r.municipio, r.uf)] = v; if (r.ibge && r.uf) capag[Nucleo.chaveCapag(r.municipio, r.uf)] = v; });
+    e().config.capagImportadaEm = new Date().toISOString(); e().config.capagArquivo = f.name;
+    Dados.salvar(); aviso(regs.length + ' municípios importados da planilha da CAPAG.'); App.redesenhar();
+  }
+
+  // Lista única (a importação guarda a mesma nota por IBGE e por nome, para casar com os avisos).
+  function registrosCapag() {
+    const c = e().config.capag || {}; const vistos = new Set(); const out = [];
+    Object.keys(c).forEach(function (k) { const v = c[k]; if (vistos.has(v)) return; vistos.add(v); out.push(Object.assign({ chave: k, municipio: v.municipio || k.replace(/-[A-Z]{2}$/, ''), uf: v.uf || (k.match(/-([A-Z]{2})$/) || [])[1] || '' }, v)); });
+    return out.sort(function (a, b) { return (a.uf + a.municipio).localeCompare(b.uf + b.municipio, 'pt-BR'); });
+  }
+
+  // Histórico próprio da Seven: quanto cada órgão demora para pagar, com as notas e pagamentos da Execução dos cartões.
+  function historicoPagamentos() {
     const orgaos = {};
     Telas.quadros.todosCartoes().forEach(function (x) {
       const c = x.cartao; const ex = c.execucao; if (!ex) return;
@@ -127,19 +161,41 @@
         }
       });
     });
-    const lista = Object.keys(orgaos).map(function (k) { const r = orgaos[k]; r.media = Nucleo.estatisticas(r.atrasoDias).media; return r; }).sort(function (a, b) { return (b.media || 0) - (a.media || 0); });
-    const capag = e().config.capag || {};
-    el.innerHTML = '<p class="mudo">Prazo real de pagamento de cada órgão, calculado com as notas fiscais e pagamentos registrados na <b>Execução</b> dos cartões do Quadro. Dias positivos = pagou depois do vencimento.</p>' +
-      (lista.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Órgão</th><th class="n">NFs</th><th class="n">Pagas</th><th class="n">Atraso médio (dias)</th><th class="n">Em aberto</th><th class="n">Vencido</th><th>Leitura</th></tr></thead><tbody>' +
-        lista.map(function (r) { const lei = r.vencido > 0 ? 'cobrar' : r.media == null ? 'sem histórico' : r.media <= 0 ? 'paga em dia' : r.media <= 15 ? 'atraso leve' : 'atraso alto'; return '<tr><td>' + esc(r.orgao) + '</td><td class="n">' + r.notas + '</td><td class="n">' + r.pagas + '</td><td class="n">' + (r.media == null ? '—' : num(r.media, 0)) + '</td><td class="n">' + moeda(r.aberto) + '</td><td class="n ' + (r.vencido ? 'alerta' : '') + '">' + moeda(r.vencido) + '</td><td><span class="tag ' + (lei === 'paga em dia' ? 'verde' : lei === 'sem histórico' ? 'claro' : 'vermelho') + '">' + lei + '</span></td></tr>'; }).join('') + '</tbody></table></div>'
-        : UI.vazio('Sem histórico de pagamentos', 'Registre notas fiscais e pagamentos em <b>Execução</b> nos cartões do Quadro (etapas Entrega e Pagamento).', '<a class="btn" href="#/quadros">Abrir Quadros</a>')) +
-      '<section class="cartao"><header><h3>CAPAG dos municípios</h3><button class="btn mini" data-a="capag">+ Registrar nota</button></header><p class="mini mudo">Nota de capacidade de pagamento do Tesouro Nacional, consultada no site do Tesouro e registrada aqui. A e B: melhores; C: intermediária; D e E: maior risco. Não garante prazo de pagamento. A nota aparece nos avisos do município.</p>' +
-      (Object.keys(capag).length ? '<table class="tabela compacta"><tbody>' + Object.keys(capag).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td><span class="tag capag-' + Nucleo.leituraCapag(capag[k].nota).replace(/\W/g, '') + '">CAPAG ' + esc(capag[k].nota) + '</span></td><td class="mini">' + esc(capag[k].ano || '') + '</td><td><button class="icone" data-del="' + esc(k) + '" aria-label="Remover">×</button></td></tr>'; }).join('') + '</tbody></table>' : '<p class="mudo">Nenhuma nota registrada.</p>') + '</section>';
+    return Object.keys(orgaos).map(function (k) { const r = orgaos[k]; r.media = Nucleo.estatisticas(r.atrasoDias).media; return r; }).sort(function (a, b) { return (b.media || 0) - (a.media || 0); });
+  }
+
+  function telaCapag(el) {
+    const todos = registrosCapag(); const f = filtroCapag;
+    const lista = todos.filter(function (r) { return (!f.uf || r.uf === f.uf) && (!f.nota || r.nota.replace('+', '') === f.nota) && (!f.texto || Nucleo.normalizar(r.municipio).indexOf(Nucleo.normalizar(f.texto)) >= 0); });
+    const cont = {}; todos.forEach(function (r) { const k = r.nota.replace('+', ''); cont[k] = (cont[k] || 0) + 1; });
+    const ufs = todos.map(function (r) { return r.uf; }).filter(function (x, i, l) { return x && l.indexOf(x) === i; }).sort();
+    const hist = historicoPagamentos();
+    el.innerHTML = '<section class="cartao"><header><h3>CAPAG: capacidade de pagamento dos municípios</h3><div class="grupo-botoes"><a class="btn fantasma" href="' + LINK_CAPAG + '" target="_blank" rel="noopener">Tesouro Transparente ↗</a><button class="btn primario" data-a="importar">Importar planilha da CAPAG</button><button class="btn" data-a="capag">+ Nota manual</button></div></header>' +
+      '<p class="mini">Nota do Tesouro Nacional sobre a situação fiscal do município. <b>A e B</b>: melhores; <b>C</b>: intermediária; <b>D</b>: maior risco; <b>n.d.</b>: sem nota. Não garante prazo de pagamento; é apoio à decisão. A nota aparece no cartão de cada aviso do município.</p>' +
+      '<p class="mini mudo">Como atualizar: abra a página da CAPAG no Tesouro Transparente, baixe a planilha dos municípios (Excel ou CSV) e clique em <b>Importar planilha da CAPAG</b>. A importação substitui as notas anteriores.' + (e().config.capagImportadaEm ? ' Última importação: ' + data(e().config.capagImportadaEm) + ' (' + esc(e().config.capagArquivo || '') + ').' : '') + '</p>' +
+      (todos.length ? '<div class="pilulas">' + ['A', 'B', 'C', 'D', 'n.d.'].map(function (n) { return '<button class="pilula ' + (f.nota === n ? 'ativa' : '') + '" data-nota="' + n + '">CAPAG ' + n + ' <b>' + (cont[n] || 0) + '</b></button>'; }).join('') + '</div>' +
+        '<form class="filtros" id="fcapag"><input type="search" name="texto" placeholder="Buscar município…" value="' + esc(f.texto) + '"><select name="uf"><option value="">Todas as UFs</option>' + opcoes(ufs, f.uf) + '</select></form>' +
+        '<div class="tabela-rolagem"><table class="tabela compacta"><thead><tr><th>Município</th><th>UF</th><th>IBGE</th><th>CAPAG</th><th>Leitura</th><th>Referência</th><th></th></tr></thead><tbody>' +
+        lista.slice(0, 300).map(function (r) { const l = Nucleo.leituraCapag(r.nota); return '<tr><td>' + esc(r.municipio) + '</td><td>' + esc(r.uf) + '</td><td>' + esc(r.ibge || '') + '</td><td><span class="tag capag-' + l.replace(/\W/g, '') + '">' + esc(r.nota) + '</span></td><td>' + esc(l) + '</td><td class="mini">' + esc(r.ano || '') + '</td><td><button class="icone" data-del="' + esc(r.chave) + '" aria-label="Remover">×</button></td></tr>'; }).join('') +
+        '</tbody></table></div>' + (lista.length > 300 ? '<p class="mini mudo">Mostrando 300 de ' + lista.length + '. Use a busca ou a UF.</p>' : '')
+        : UI.vazio('Nenhuma nota CAPAG ainda', 'Baixe a planilha no Tesouro Transparente e importe aqui, ou registre a nota de um município à mão.')) + '</section>' +
+      '<section class="cartao"><h3>Histórico de pagamento dos órgãos (dados da Seven)</h3><p class="mini mudo">Atraso real de cada órgão, calculado com as notas fiscais e pagamentos registrados na <b>Execução</b> dos cartões do Quadro. Dias positivos = pagou depois do vencimento.</p>' +
+      (hist.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Órgão</th><th class="n">NFs</th><th class="n">Pagas</th><th class="n">Atraso médio (dias)</th><th class="n">Em aberto</th><th class="n">Vencido</th><th>Leitura</th></tr></thead><tbody>' +
+        hist.map(function (r) { const lei = r.vencido > 0 ? 'cobrar' : r.media == null ? 'sem histórico' : r.media <= 0 ? 'paga em dia' : r.media <= 15 ? 'atraso leve' : 'atraso alto'; return '<tr><td>' + esc(r.orgao) + '</td><td class="n">' + r.notas + '</td><td class="n">' + r.pagas + '</td><td class="n">' + (r.media == null ? '—' : num(r.media, 0)) + '</td><td class="n">' + moeda(r.aberto) + '</td><td class="n ' + (r.vencido ? 'alerta' : '') + '">' + moeda(r.vencido) + '</td><td><span class="tag ' + (lei === 'paga em dia' ? 'verde' : lei === 'sem histórico' ? 'claro' : 'vermelho') + '">' + lei + '</span></td></tr>'; }).join('') + '</tbody></table></div>'
+        : '<p class="mudo">Registre notas fiscais e pagamentos em <b>Execução</b> nos cartões do <a href="#/quadros">Quadro</a> para ver o histórico.</p>') + '</section>';
+    const fc = el.querySelector('#fcapag');
+    if (fc) { fc.onsubmit = function (ev) { ev.preventDefault(); }; fc.oninput = function () { const fd = new FormData(fc); filtroCapag.texto = fd.get('texto'); filtroCapag.uf = fd.get('uf'); clearTimeout(fc._t); fc._t = setTimeout(function () { App.redesenhar(); const i = document.querySelector('#fcapag [name=texto]'); if (i && filtroCapag.texto) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 250); }; }
     el.onclick = async function (ev) {
-      const d = ev.target.closest('[data-del]'); if (d) { delete e().config.capag[d.dataset.del]; Dados.salvar(); App.redesenhar(); return; }
+      const pn = ev.target.closest('[data-nota]'); if (pn) { filtroCapag.nota = filtroCapag.nota === pn.dataset.nota ? '' : pn.dataset.nota; App.redesenhar(); return; }
+      const d = ev.target.closest('[data-del]');
+      if (d) { const c = e().config.capag; const v = c[d.dataset.del]; Object.keys(c).forEach(function (k) { if (c[k] === v || (v && c[k].municipio === v.municipio && c[k].uf === v.uf)) delete c[k]; }); Dados.salvar(); App.redesenhar(); return; }
+      if (ev.target.closest('[data-a=importar]')) { await importarCapag(); return; }
       if (!ev.target.closest('[data-a=capag]')) return;
-      const f = await modal({ titulo: 'Nota CAPAG', corpo: '<div class="linha">' + campo('Município', '<input name="m" required placeholder="ex.: Catalão">') + campo('UF', '<select name="uf">' + opcoes(PNCP.UFS, 'GO') + '</select>') + campo('Nota', '<select name="n">' + opcoes(['A', 'B', 'C', 'D', 'E', 'n.d.']) + '</select>') + campo('Ano de referência', '<input name="a" inputmode="numeric">') + '</div>' });
-      if (!f) return; e().config.capag = e().config.capag || {}; e().config.capag[f.get('m').trim() + '-' + f.get('uf')] = { nota: f.get('n'), ano: f.get('a') }; Dados.salvar(); App.redesenhar();
+      const fm = await modal({ titulo: 'Nota CAPAG', corpo: '<div class="linha">' + campo('Município', '<input name="m" required placeholder="ex.: Catalão">') + campo('UF', '<select name="uf">' + opcoes(PNCP.UFS, 'GO') + '</select>') + campo('Nota', '<select name="n">' + opcoes(['A', 'B', 'C', 'D', 'n.d.']) + '</select>') + campo('Ano de referência', '<input name="a" inputmode="numeric">') + '</div>' });
+      if (!fm) return;
+      e().config.capag = e().config.capag || {};
+      e().config.capag[Nucleo.chaveCapag(fm.get('m').trim(), fm.get('uf'))] = { municipio: fm.get('m').trim(), uf: fm.get('uf'), nota: fm.get('n'), ano: fm.get('a'), fonte: 'manual' };
+      Dados.salvar(); App.redesenhar();
     };
   }
 
@@ -147,8 +203,8 @@
     titulo: 'Análise de Mercado',
     render: function (el, sub) {
       sub = sub || 'analise';
-      el.innerHTML = abas([{ id: 'analise', t: 'Análise de Mercado' }, { id: 'concorrentes', t: 'Concorrentes' }, { id: 'pagometro', t: 'Pagômetro' }], sub, 'mercado') + '<div id="aba"></div>';
-      ({ analise: telaAnalise, concorrentes: telaConcorrentes, pagometro: telaPagometro }[sub] || telaAnalise)(el.querySelector('#aba'));
+      el.innerHTML = abas([{ id: 'analise', t: 'Análise de Mercado' }, { id: 'concorrentes', t: 'Concorrentes' }, { id: 'capag', t: 'CAPAG' }], sub, 'mercado') + '<div id="aba"></div>';
+      ({ analise: telaAnalise, concorrentes: telaConcorrentes, capag: telaCapag }[sub] || telaAnalise)(el.querySelector('#aba'));
       el.onclick = null;
     }
   };

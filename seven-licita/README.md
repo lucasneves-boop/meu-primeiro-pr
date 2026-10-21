@@ -2,7 +2,7 @@
 
 Software da Seven para operar o departamento de licitações dos clientes, do edital ao pagamento.
 Espelha a rotina da Effecti (Encontrar → Cadastrar → Disputar → Monitorar + Análise de Mercado),
-completa com o que o Siga Pregão tem e a Effecti não (funil de negócios, peças jurídicas, pagômetro,
+completa com o que o Siga Pregão tem e a Effecti não (funil de negócios, peças jurídicas, CAPAG com histórico de pagamento,
 painel do dia, concorrentes) e traz um módulo de quadros no estilo Trello. Nome, marca e código são próprios.
 
 ## Como abrir
@@ -26,7 +26,7 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Peças Jurídicas | Modelos de esclarecimento, impugnação, recurso, contrarrazões, reequilíbrio e cobrança de pagamento, preenchidos com os dados do cliente e da licitação; editar, copiar, baixar .doc, imprimir | Siga |
 | Análise de Mercado | Por termo, período, estados, modalidades e esferas: valor homologado e estimado, sazonalidade, estados, órgãos, fornecedores vencedores com concentração Top 3/Top 5, preço por item homologado (mín., médio, mediana, máx., amostras), desconto médio sobre a referência; CSV, PDF e análises salvas | Effecti |
 | Concorrentes | Histórico dos fornecedores vencedores nas análises salvas | Siga |
-| Pagômetro | Atraso médio real de pagamento por órgão, calculado com as notas e pagamentos registrados na Execução dos cartões, mais a nota CAPAG do município | Siga |
+| CAPAG | Nota de capacidade de pagamento dos municípios (Tesouro Nacional), importada da planilha do Tesouro Transparente (Excel ou CSV) ou registrada à mão, com filtros por nota e UF; a nota aparece nos avisos. Inclui o atraso real de pagamento de cada órgão, calculado com as notas e pagamentos da Execução dos cartões | Effecti + Siga |
 | Clientes (CNPJs) | Vários clientes na mesma conta; o cliente ativo filtra propostas, documentos, disputas e monitoramento | Effecti + Siga |
 
 ## O que ficou de fora, e por quê
@@ -36,7 +36,8 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
   Por isso o Disputar tem um simulador, e não um robô de lances.
 - **Leitura do edital por IA (Aimê / "Ler edital").** Precisa de uma chave de API de IA e de um servidor. Pode ser
   o próximo passo.
-- **CAPAG automática.** O Tesouro não oferece consulta aberta que o navegador consiga usar; a nota é registrada à mão.
+- **CAPAG sem importação.** O site do Tesouro não permite consulta direta pelo app; baixe a planilha em
+  https://www.tesourotransparente.gov.br/temas/estados-e-municipios/capacidade-de-pagamento-capag e importe em CAPAG.
 - **Portais fora do PNCP** (SISLOG-GO, por exemplo) só aparecem se o órgão publicar no PNCP, como a lei exige.
 - **Dados compartilhados entre a equipe em tempo real.** Hoje cada navegador tem os seus dados (backup/importação
   para levar de um a outro). Um servidor com login resolve isso numa próxima etapa.
