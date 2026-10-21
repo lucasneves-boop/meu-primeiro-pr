@@ -24,7 +24,7 @@
     document.title = tela.titulo + ' · Seven Licita';
     preencherEmpresas();
     const el = $('#conteudo');
-    el.onclick = el.onchange = el.oninput = el.onkeydown = el.ondblclick = el.onfocusout = null;
+    el.onclick = el.onchange = el.oninput = el.onkeydown = el.ondblclick = el.onfocusout = el.onsubmit = null;
     if (r.tela === 'mercado' && (r.sub === 'capag')) $$('.menu a').forEach(function (a) { a.classList.toggle('ativo', a.dataset.rota === 'capag'); });
     try { tela.render(el, r.sub, r.param); }
     catch (e) { console.error(e); el.innerHTML = '<div class="vazio"><h3>Erro ao abrir a tela</h3><p>' + esc(e.message) + '</p></div>'; }
