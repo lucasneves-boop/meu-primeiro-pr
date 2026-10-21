@@ -165,6 +165,78 @@ const testes = {
     ok((await pg.locator('#kd-local').textContent()).indexOf(ultimo[0]) === 0, 'continuar de onde parou'); await pg.keyboard.press('Escape');
     await foto('leitor-biblioteca');
   },
+  async cotacoes(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]'); const fs = require('fs');
+    await pg.goto(url + '#/fornecedores'); await pg.waitForSelector('.vazio');
+    const novoForn = async (d) => { await pg.click('[data-a=novo]'); for (const k of Object.keys(d)) await pg.fill('.modal [name=' + k + ']', d[k]); await submit(); await pg.waitForSelector('.fo-cab'); await pg.goto(url + '#/fornecedores'); };
+    await novoForn({ razao: 'Papelaria Central Ltda', fantasia: 'Papelaria Central', contato: 'Ana Souza', whatsapp: '(64) 99999-1111', email: 'ana@papelaria.exemplo', categorias: 'papelaria, material de expediente, papel', cidade: 'Catalão' });
+    await novoForn({ razao: 'InfoTech Suprimentos', contato: 'Bruno', email: 'bruno@infotech.exemplo', categorias: 'informática, toner, cartucho' });
+    await novoForn({ razao: 'Distribuidora Goiás', contato: 'Carla', whatsapp: '62988887777', categorias: 'papelaria, escritório, caneta' });
+    ok(await pg.locator('.fo-tabela tbody tr').count() === 3, 'três fornecedores cadastrados');
+    await pg.click('tr:has-text("Papelaria Central")'); await pg.click('[data-aba=portfolio]'); await pg.click('[data-a=add-port]');
+    await pg.fill('.modal [name=descricao]', 'Caneta esferográfica azul'); await pg.fill('.modal [name=marca]', 'BIC'); await pg.fill('.modal [name=preco]', '1,29'); await submit();
+    ok(await pg.locator('td:has-text("Caneta esferográfica azul")').count() === 1, 'produto no portfólio');
+    await pg.click('[data-aba=historico]'); await pg.fill('#fo-reg [name=texto]', 'Negociou frete CIF acima de R$ 1.500'); await pg.click('#fo-reg button');
+    ok(await pg.locator('.fo-linha li:has-text("frete CIF")').count() === 1, 'contato registrado no histórico');
+    // cotação a partir do edital
+    const EDITAL = ['PREFEITURA MUNICIPAL DE CATALÃO - GO', 'PREGÃO ELETRÔNICO Nº 90021/2026', 'A sessão pública será realizada no dia 05/11/2026, às 09:00 horas, no portal Compras.gov.br.', '', '1. DO OBJETO', '1.1. O objeto da presente licitação é a aquisição de material de expediente para as secretarias.', '', 'Local de entrega: Almoxarifado Central, Rua 10, Centro, Catalão-GO.', 'O prazo de entrega será de 15 (quinze) dias úteis.', '', 'ANEXO I - TERMO DE REFERÊNCIA', 'ITEM DESCRIÇÃO UNID QTD VALOR UNIT VALOR TOTAL', '1 Papel A4 75 g/m², branco, caixa com 10 resmas CX 200 245,90 49.180,00', '2 Caneta esferográfica azul, ponta média UN 1.500 1,35 2.025,00', '3 Toner compatível HP CF258A CARTUCHO 30 189,00 5.670,00'].join('\n');
+    await pg.goto(url + '#/cotacoes'); await pg.click('.vazio [data-a=nova]');
+    await pg.setInputFiles('.modal [name=arquivos]', t.arquivo('edital-90021.txt', EDITAL)); await submit();
+    await pg.waitForSelector('.co-itens'); ok(await pg.locator('.co-itens tbody tr').count() === 3, 'três itens lidos do edital');
+    ok(/Material de expediente/i.test(await pg.locator('.co-cab h2').innerText()) && /Sessão 05\/11\/2026/.test(await pg.locator('.co-cab p').innerText()), 'título e sessão a partir do edital');
+    await pg.fill('.co-itens tbody tr:nth-child(2) [data-c=quantidade]', '1.000'); await pg.locator('.co-itens tbody tr:nth-child(2) [data-c=quantidade]').blur(); await pg.waitForTimeout(150);
+    ok(await pg.evaluate(() => Dados.e.cotacoes[0].itens[1].quantidade) === 1000, 'editar quantidade na tabela');
+    await pg.click('[data-aba=fornecedores]'); await pg.waitForSelector('.co-sug-i');
+    ok(await pg.locator('.co-sug-i').count() === 3, 'três fornecedores sugeridos pelo portfólio/categorias');
+    await pg.click('[data-f=todos-sug]'); ok(await pg.locator('.co-forn tbody tr').count() === 3, 'incluir todos os sugeridos');
+    // enviar por WhatsApp (sem abrir de verdade)
+    await pg.evaluate(() => { window.open = (u) => { window.__aberto = u; return null; }; });
+    await pg.click('tr:has-text("Papelaria Central") [data-x=enviar]'); await pg.waitForSelector('.modal [name=tw]');
+    const msg = await pg.inputValue('.modal [name=tw]'); ok(/^Olá, Ana!/.test(msg) && /\*2\.\* Caneta esferográfica azul, ponta média — \*1000 UN\*/.test(msg) && /entrega em CATALÃO-GO/i.test(msg) && !/PREFEITURA/.test(msg), 'mensagem de WhatsApp sem expor o órgão');
+    ok(/Lucas Neves \| Seven$/.test(msg), 'assinatura padrão');
+    await pg.click('.modal [data-ir]'); ok((await pg.evaluate(() => window.__aberto)).startsWith('https://wa.me/5564999991111?text=Ol%C3%A1%2C%20Ana'), 'abre o WhatsApp com o texto');
+    ok(await pg.locator('tr:has-text("Papelaria Central") .tag:has-text("Enviada")').count() === 1, 'status Enviada');
+    await pg.click('tr:has-text("Distribuidora") [data-x=enviar]'); await pg.click('.modal [data-ir]');
+    // planilha baixada, preenchida pelo fornecedor e importada
+    const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('tr:has-text("Papelaria Central") [data-x=planilha]')]);
+    ok(/COT-\d{4}-001-papelaria-central\.xlsx$/.test(dl.suggestedFilename()), 'planilha do fornecedor em Excel (' + dl.suggestedFilename() + ')');
+    const b64 = fs.readFileSync(await dl.path()).toString('base64');
+    const preenchida = await pg.evaluate((b) => { const wb = XLSX.read(b, { type: 'base64' }); const ws = wb.Sheets['Cotação']; const L = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }); const h = L.findIndex(r => r[0] === 'Cód.'); const set = (r, c, v) => { ws[XLSX.utils.encode_cell({ r, c })] = { t: typeof v === 'number' ? 'n' : 's', v }; }; set(h + 1, 8, 238.5); set(h + 1, 6, 'Chamex'); set(h + 2, 8, '1,19'); set(h + 2, 6, 'BIC'); set(h + 3, 11, 'Não atendemos toner'); set(6, 1, '30 dias'); return XLSX.write(wb, { type: 'base64', bookType: 'xlsx' }); }, b64);
+    const fc = pg.waitForEvent('filechooser'); await pg.click('.co-cab [data-a=importar]'); await (await fc).setFiles(t.arquivo('resposta-papelaria.xlsx', Buffer.from(preenchida, 'base64')));
+    await pg.waitForSelector('.co-mapa'); ok(await pg.evaluate(() => { const x = Dados.e.cotacoes[0].fornecedores.find(f => f.nome === 'Papelaria Central'); return x.status === 'respondida' && x.resposta.validade === '30 dias' && x.resposta.itens[Dados.e.cotacoes[0].itens[2].id].naoAtende; }), 'planilha importada, fornecedor reconhecido e "não atende" lido');
+    // resposta digitada para a Distribuidora
+    await pg.click('[data-aba=respostas]'); await pg.click('[data-rf]:has-text("Distribuidora")');
+    const linhas = pg.locator('.co-resp-t tbody tr'); await linhas.nth(0).locator('input').first().fill('240'); await linhas.nth(1).locator('input').first().fill('1,05'); await linhas.nth(1).locator('input').nth(1).fill('Faber'); await pg.click('#co-resp .btn.primario');
+    await pg.click('[data-aba=mapa]'); await pg.waitForSelector('.co-mapa');
+    ok(await pg.locator('.co-mapa td.co-melhor').count() === 2, 'menor preço destacado por item');
+    ok(/R\$\s?47\.700,00/.test(await pg.locator('.co-mapa tbody tr:nth-child(1) td.co-melhor').innerText()) === false && /238,50/.test(await pg.locator('.co-mapa tbody tr:nth-child(1) td.co-melhor').innerText()), 'papel: melhor preço da Papelaria');
+    ok(/1,05/.test(await pg.locator('.co-mapa tbody tr:nth-child(2) td.co-melhor').innerText()), 'caneta: melhor preço da Distribuidora');
+    ok(/R\$\s?48\.750,00/.test(await pg.locator('.kpis div:first-child b').innerText()), 'melhor combinação = 200×238,50 + 1000×1,05');
+    await foto('cotacoes-mapa');
+    const [dlm] = await Promise.all([pg.waitForEvent('download'), pg.click('[data-m=xlsx]')]); ok(/^mapa-COT/.test(dlm.suggestedFilename()), 'exportar mapa');
+    // follow-up
+    await pg.evaluate(() => { const c = Dados.e.cotacoes[0]; c.fornecedores.find(f => f.nome === 'InfoTech Suprimentos').status = 'enviada'; c.fornecedores.find(f => f.nome === 'InfoTech Suprimentos').enviadaEm = new Date(Date.now() - 30 * 36e5).toISOString(); c.prazoResposta = '2099-12-31'; Dados.salvar(); });
+    await pg.goto(url + '#/cotacoes'); await pg.waitForSelector('.co-pend'); ok(await pg.locator('.co-pend li:has-text("InfoTech")').count() === 1, 'follow-up pendente na lista');
+    await pg.click('.co-pend [data-fu]'); await pg.waitForSelector('.modal [name=te]'); ok(/Retomo a cotação COT-/.test(await pg.inputValue('.modal [name=te]')), 'mensagem de follow-up por e-mail (sem WhatsApp cadastrado)');
+    await pg.fill('.modal [name=nota]', 'Prometeu responder amanhã'); await pg.click('.modal [data-so-registrar]');
+    ok(await pg.locator('.co-pend').count() === 0, 'follow-up registrado sai da fila');
+    await foto('cotacoes-lista');
+    // ficha do fornecedor com indicadores e histórico automático
+    await pg.goto(url + '#/fornecedores'); await pg.click('tr:has-text("Papelaria Central")'); await pg.waitForSelector('.fo-cab');
+    const kp = await pg.locator('.kpis').innerText(); ok(/enviadas\s*1\b/i.test(kp) && /resposta\s*100%/i.test(kp), 'indicadores: 1 cotação, 100% de resposta (' + kp.replace(/\s+/g, ' ') + ')');
+    await pg.click('[data-aba=portfolio]'); ok(await pg.locator('td:has-text("Papel A4")').count() === 1, 'preço respondido entra no portfólio');
+    await pg.click('[data-aba=historico]'); ok(await pg.locator('.fo-linha li:has-text("enviada por whatsapp")').count() === 1 && await pg.locator('.fo-linha li:has-text("Respondeu a cotação")').count() === 1, 'histórico automático do fornecedor');
+    await foto('fornecedor-ficha');
+    // edital em PDF com tabela (gerado pelo próprio Chromium)
+    const pp = await pg.context().newPage();
+    await pp.setContent('<h3>MUNICÍPIO DE GOIANDIRA</h3><p>DISPENSA ELETRÔNICA Nº 15/2026</p><p>Data da sessão: 10/11/2026 às 14:00</p><p>OBJETO: Aquisição de gêneros de limpeza.</p><table border=1 cellpadding=4><tr><th>Item</th><th>Descrição</th><th>Unid.</th><th>Qtd.</th><th>Valor unit.</th></tr><tr><td>1</td><td>Detergente líquido neutro 500 ml</td><td>FR</td><td>240</td><td>2,35</td></tr><tr><td>2</td><td>Água sanitária 2 litros</td><td>UN</td><td>180</td><td>5,90</td></tr><tr><td>3</td><td>Saco de lixo 100 litros, pacote com 10</td><td>PCT</td><td>90</td><td>12,40</td></tr></table>');
+    const pdf = await pp.pdf({ format: 'A4' }); await pp.close();
+    await pg.goto(url + '#/cotacoes'); await pg.click('.barra-acoes [data-a=nova]'); await pg.setInputFiles('.modal [name=arquivos]', t.arquivo('dispensa-15.pdf', pdf)); await submit();
+    await pg.waitForSelector('.co-itens', { timeout: 60000 });
+    const its = await pg.evaluate(() => Dados.e.cotacoes[0].itens.map(i => [i.n, i.descricao, i.unidade, i.quantidade, i.valorRef]));
+    ok(its.length === 3 && its[2][2] === 'PCT' && its[2][3] === 90 && its[0][4] === 2.35, 'itens lidos de edital em PDF (' + JSON.stringify(its) + ')');
+    ok(await pg.evaluate(() => Dados.e.cotacoes[0].licitacao.numero === '15/2026' && Dados.e.cotacoes[0].licitacao.dataSessao === '2026-11-10T14:00'), 'número e sessão lidos do PDF');
+  },
   async musicas(t) {
     const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
     const wav = (seg) => { const sr = 8000, n = sr * seg; const b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; };
