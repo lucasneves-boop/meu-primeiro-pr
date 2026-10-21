@@ -4,7 +4,7 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, data, dataHora, campo, opcoes, modal, confirmar, aviso } = UI;
 
-  const CORES = ['verde', 'amarelo', 'laranja', 'vermelho', 'roxo', 'azul', 'ciano', 'lima', 'rosa', 'cinza'];
+  const CORES = ['vermelho', 'amarelo', 'verde', 'azul', 'rosa', 'dourado', 'preto', 'laranja', 'roxo', 'ciano', 'lima', 'cinza'];
   const LISTAS_PADRAO = ['Oportunidade', 'Análise do edital', 'Proposta', 'Disputa', 'Habilitação / Recurso', 'Contrato', 'Empenho', 'Entrega', 'Pagamento', 'Concluído'];
   // Checklist sugerido por etapa (aplicado pela automação padrão ao mover o cartão).
   const CHECK_ETAPA = {
@@ -30,7 +30,9 @@
       listas: (modelo === 'licitacoes' ? LISTAS_PADRAO : ['A fazer', 'Fazendo', 'Feito']).map(function (n) { return { id: Dados.id('ls'), nome: n, arquivada: false }; }),
       cartoes: [],
       etiquetas: modelo === 'licitacoes'
-        ? [{ id: Dados.id('et'), nome: 'Pregão', cor: 'azul' }, { id: Dados.id('et'), nome: 'Dispensa', cor: 'ciano' }, { id: Dados.id('et'), nome: 'Urgente', cor: 'vermelho' }, { id: Dados.id('et'), nome: 'ME/EPP', cor: 'amarelo' }, { id: Dados.id('et'), nome: 'SRP', cor: 'roxo' }, { id: Dados.id('et'), nome: 'Ganha', cor: 'verde' }, { id: Dados.id('et'), nome: 'Perdida', cor: 'cinza' }]
+        // As cinco primeiras seguem o método Smart Colors da Seven.
+        ? [{ id: Dados.id('et'), nome: 'Risco crítico', cor: 'vermelho' }, { id: Dados.id('et'), nome: 'Documentação', cor: 'amarelo' }, { id: Dados.id('et'), nome: 'Viabilidade financeira', cor: 'verde' }, { id: Dados.id('et'), nome: 'Operação e logística', cor: 'azul' }, { id: Dados.id('et'), nome: 'Vantagem competitiva', cor: 'rosa' },
+          { id: Dados.id('et'), nome: 'Pregão', cor: 'preto' }, { id: Dados.id('et'), nome: 'Dispensa', cor: 'cinza' }, { id: Dados.id('et'), nome: 'ME/EPP', cor: 'dourado' }, { id: Dados.id('et'), nome: 'SRP', cor: 'roxo' }, { id: Dados.id('et'), nome: 'Ganha', cor: 'lima' }, { id: Dados.id('et'), nome: 'Perdida', cor: 'laranja' }]
         : CORES.slice(0, 6).map(function (c) { return { id: Dados.id('et'), nome: '', cor: c }; }),
       campos: modelo === 'licitacoes'
         ? [{ id: 'valor', nome: 'Valor estimado', tipo: 'moeda' }, { id: 'orgao', nome: 'Órgão', tipo: 'texto' }, { id: 'numero', nome: 'Nº do processo', tipo: 'texto' }, { id: 'portal', nome: 'Portal', tipo: 'lista', opcoes: ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Compras Públicas', 'SISLOG-GO', 'Licitações-e', 'Outro'] }]
@@ -450,7 +452,7 @@
       titulo: (a.modalidade || '') + ' ' + (a.numero || '') + ' · ' + (a.municipio || '') + '-' + (a.uf || '') + ' · ' + String(a.objeto || '').slice(0, 90),
       descricao: a.objeto + '\n\nÓrgão: ' + a.orgao + '\nEdital: ' + a.edital, avisoId: a.id, empresaId: Dados.e.empresaAtiva,
       prazo: a.encerramento ? String(a.encerramento).slice(0, 16) : '', lembrete: '1440',
-      etiquetas: [].concat(/preg/i.test(a.modalidade) ? et('Pregão') : [], /dispensa/i.test(a.modalidade) ? et('Dispensa') : [], a.srp ? et('SRP') : [], a.meEpp ? et('ME/EPP') : []),
+      etiquetas: [].concat(/preg/i.test(a.modalidade) ? et('Pregão') : [], /dispensa/i.test(a.modalidade) ? et('Dispensa') : [], a.srp ? et('SRP') : [], a.meEpp ? et('ME/EPP').concat(et('Vantagem competitiva')) : []),
       membros: [e().config.responsavel || MEMBROS_PADRAO[0]].filter(function (m) { return e().membros.indexOf(m) >= 0; }),
       valores: { valor: a.valorEstimado, orgao: a.orgao, numero: a.numero, portal: /compras\.gov|comprasnet|serpro/i.test(a.linkOrigem + a.sistema) ? 'Compras.gov.br' : /bll/i.test(a.sistema) ? 'BLL' : /bnc/i.test(a.sistema) ? 'BNC' : '' }
     });

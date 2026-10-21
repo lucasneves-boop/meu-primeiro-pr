@@ -3,7 +3,7 @@
   'use strict';
   self.Telas = self.Telas || {};
   const { esc, dataHora, campo, opcoes, modal, confirmar, aviso, abas, emQuanto } = UI;
-  const CORES = { vermelho: 'Vermelho', laranja: 'Laranja', amarelo: 'Amarelo', azul: 'Azul', roxo: 'Roxo' };
+  const CORES = { vermelho: 'Vermelho · risco crítico', amarelo: 'Amarelo · documentação', verde: 'Verde · financeiro', azul: 'Azul · operação', rosa: 'Rosa · vantagem', laranja: 'Laranja', roxo: 'Roxo' };
   const TIPOS_PRAZO = ['Envio de proposta atualizada', 'Envio de documentos de habilitação', 'Diligência', 'Intenção de recurso', 'Razões de recurso', 'Contrarrazões', 'Assinatura de ata/contrato', 'Outro'];
   let filtroCat = '';
 

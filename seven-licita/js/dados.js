@@ -9,8 +9,11 @@
       empresas: [], empresaAtiva: null, catalogos: [], perfis: [], avisos: {}, orgaosFavoritos: [],
       propostas: [], documentos: [], produtos: [], disputas: [], monitor: [], analises: [],
       palavrasChave: [
-        { termo: 'recurso', cor: 'vermelho' }, { termo: 'documento', cor: 'laranja' },
-        { termo: 'diligência', cor: 'laranja' }, { termo: 'proposta atualizada', cor: 'azul' }, { termo: 'convoca', cor: 'roxo' }
+        // Cores do método Smart Colors: vermelho risco, amarelo documentação, verde financeiro, azul operação, rosa vantagem.
+        { termo: 'recurso', cor: 'vermelho' }, { termo: 'desclassific', cor: 'vermelho' }, { termo: 'inabilit', cor: 'vermelho' },
+        { termo: 'documento', cor: 'amarelo' }, { termo: 'diligência', cor: 'amarelo' }, { termo: 'habilitação', cor: 'amarelo' },
+        { termo: 'proposta atualizada', cor: 'verde' }, { termo: 'valor', cor: 'verde' }, { termo: 'entrega', cor: 'azul' },
+        { termo: 'amostra', cor: 'azul' }, { termo: 'empate', cor: 'rosa' }, { termo: 'convoca', cor: 'vermelho' }
       ],
       config: { responsavel: 'Lucas Neves', capag: {} }
     };
