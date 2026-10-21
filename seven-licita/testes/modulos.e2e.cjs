@@ -124,6 +124,30 @@ const testes = {
     await pg.fill('#cl-busca', 'roman'); await pg.waitForTimeout(400); ok(await pg.locator('.cl-menu a').count() === 1, 'busca de calculadoras');
     await pg.goto(url + '#/calculadora/romanos'); await pg.click('[data-fav]'); ok(await pg.locator('.cl-menu h4:has-text("Favoritas")').count() === 1, 'favoritar');
     await pg.goto(url + '#/calculadora'); await foto('calculadora');
+  },
+  async musicas(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    const wav = (seg) => { const sr = 8000, n = sr * seg; const b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; };
+    await pg.goto(url + '#/musicas'); await pg.waitForSelector('.musicas');
+    const fc = pg.waitForEvent('filechooser'); await pg.click('[data-enviar-lado]');
+    await (await fc).setFiles([t.arquivo('Seven Band - Foco Total.wav', wav(2)), t.arquivo('Trilha - Proposta Enviada.wav', wav(3))]);
+    await pg.waitForFunction(() => Dados.e.musicas.faixas.length === 2);
+    await pg.goto(url + '#/musicas/biblioteca'); await pg.waitForSelector('.mu-tabela');
+    ok(await pg.locator('.mu-tabela tbody tr').count() === 2, 'biblioteca com as músicas enviadas');
+    ok(await pg.locator('.mu-tit:has-text("Foco Total") small:has-text("Seven Band")').count() === 1, 'artista e título lidos do nome do arquivo');
+    await pg.click('[data-play-tudo]'); await pg.waitForSelector('#player .pl-play');
+    ok(await pg.locator('#player b').first().innerText() !== '', 'player fixo aparece tocando');
+    const antes = await pg.evaluate(() => Player.atual().id); await pg.click('#player [data-p=prox]'); await pg.waitForTimeout(300);
+    ok(await pg.evaluate((a) => Player.atual().id !== a, antes), 'próxima faixa');
+    await pg.click('#player [data-p=curtir]'); ok(await pg.evaluate(() => Dados.e.musicas.faixas.some(f => f.curtida)), 'curtir');
+    await pg.click('#player [data-p=fila]'); ok(await pg.locator('.pl-fila').count() === 1, 'fila de reprodução'); await pg.click('#player [data-p=fila]');
+    await pg.click('[data-nova-pl]'); await pg.fill('.modal [name=n]', 'Foco no edital'); await submit(); await pg.waitForSelector('.mu-cab');
+    await pg.click('[data-add]'); await pg.check('.modal [name=f] >> nth=0'); await pg.check('.modal [name=f] >> nth=1'); await submit();
+    ok(await pg.locator('.mu-tabela tbody tr').count() === 2, 'playlist criada com músicas');
+    await pg.goto(url + '#/encontrar'); ok(await pg.locator('#player .pl-play').count() === 1, 'música continua no player em outra tela');
+    await pg.goto(url + '#/musicas/externos'); await pg.fill('#mu-ext [name=u]', 'https://open.spotify.com/intl-pt/playlist/37i9dQZF1DX8NTLI2TtZa6'); await pg.click('#mu-ext button');
+    ok((await pg.getAttribute('.mu-ext iframe', 'src')).startsWith('https://open.spotify.com/embed/playlist/'), 'playlist do Spotify incorporada');
+    await pg.goto(url + '#/musicas'); await foto('musicas-inicio'); await pg.goto(url + '#/musicas/biblioteca'); await foto('musicas-biblioteca');
   }
 };
 

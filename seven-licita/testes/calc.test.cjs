@@ -85,3 +85,13 @@ test('conversões de unidade e temperatura', () => {
   perto(C.converter('area', 1, 'alqueire', 'ha'), 2.42);
   perto(C.converter('dados', 1, 'GB', 'MB'), 1024);
 });
+
+test('tags ID3v2.3 do MP3 e nome de arquivo', () => {
+  const P = require('../js/player.js');
+  const frame = (id, txt) => { const body = Buffer.concat([Buffer.from([3]), Buffer.from(txt, 'utf8')]); const h = Buffer.alloc(10); h.write(id, 0); h.writeUInt32BE(body.length, 4); return Buffer.concat([h, body]); };
+  const frames = Buffer.concat([frame('TIT2', 'Concentração'), frame('TPE1', 'Seven Band'), frame('TALB', 'Licitações')]);
+  const s = frames.length; const head = Buffer.from([0x49, 0x44, 0x33, 3, 0, 0, (s >> 21) & 0x7f, (s >> 14) & 0x7f, (s >> 7) & 0x7f, s & 0x7f]);
+  const buf = Buffer.concat([head, frames]); const r = P.lerID3(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length));
+  assert.deepEqual([r.titulo, r.artista, r.album], ['Concentração', 'Seven Band', 'Licitações']);
+  assert.deepEqual(P.doNome('Artista Bom - Música Boa.mp3'), { artista: 'Artista Bom', titulo: 'Música Boa' });
+});
