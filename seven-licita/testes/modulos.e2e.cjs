@@ -582,6 +582,55 @@ const testes = {
     await pg.setViewportSize({ width: 390, height: 844 }); await pg.goto(url + '#/jogos/xadrez'); await pg.waitForSelector('.jg-tab');
     ok(await pg.evaluate(() => document.documentElement.scrollWidth <= 392), 'xadrez cabe no celular'); await foto('jogos-xadrez-celular');
     await pg.setViewportSize({ width: 1440, height: 900 });
+  },
+  async anotacoes(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    await pg.goto(url + '#/anotacoes'); await pg.waitForSelector('.an');
+    await pg.click('.an-lado [data-a=nova-pasta]'); await pg.fill('.modal [name=nome]', 'Clientes'); await submit();
+    ok(await pg.evaluate(() => Dados.e.anotacoes.pastas[0].nome === 'Clientes'), 'pasta criada');
+    await pg.click('.an-lado [data-pasta]'); await pg.click('.an-nova'); await pg.waitForSelector('#an-texto');
+    await pg.fill('#an-tit', 'Reunião Papelaria Exemplo');
+    await pg.click('#an-texto'); await pg.keyboard.type('Pontos da conversa #catalao');
+    await pg.keyboard.press('Enter'); await pg.click('[data-cmd=check]'); await pg.keyboard.type('Enviar proposta');
+    await pg.click('[data-cmd=bold]'); await pg.keyboard.type(' urgente');
+    await pg.waitForTimeout(600);
+    ok(await pg.evaluate(() => { const n = Dados.e.anotacoes.notas[0]; return n.titulo === 'Reunião Papelaria Exemplo' && /Pontos da conversa/.test(n.html) && /data-check="0"/.test(n.html) && /<b>|<strong>/.test(n.html) && n.pasta === Dados.e.anotacoes.pastas[0].id; }), 'texto rico, checklist e pasta salvos automaticamente');
+    await pg.click('#an-texto li[data-check]', { position: { x: 8, y: 14 } }); await pg.waitForTimeout(600);
+    ok(await pg.evaluate(() => /data-check="1"/.test(Dados.e.anotacoes.notas[0].html)), 'marcar item do checklist');
+    // escrita à mão
+    await pg.click('[data-e=modo-caneta]'); const box = await pg.locator('#an-tela').boundingBox();
+    await pg.mouse.move(box.x + 100, box.y + 300); await pg.mouse.down(); for (let i = 0; i < 20; i++) await pg.mouse.move(box.x + 100 + i * 10, box.y + 300 + Math.sin(i / 3) * 30); await pg.mouse.up();
+    await pg.click('[data-ferr=marca]'); await pg.mouse.move(box.x + 100, box.y + 400); await pg.mouse.down(); await pg.mouse.move(box.x + 300, box.y + 400, { steps: 8 }); await pg.mouse.up();
+    await pg.waitForTimeout(600);
+    ok(await pg.evaluate(() => { const tr = Dados.e.anotacoes.notas[0].tracos; return tr.length === 2 && tr[0].ferr === 'caneta' && tr[1].ferr === 'marca' && tr[0].pts.length < 21; }), 'traços de caneta e marca-texto salvos (simplificados)');
+    await pg.click('[data-e=t-desfazer]'); await pg.waitForTimeout(500); ok(await pg.evaluate(() => Dados.e.anotacoes.notas[0].tracos.length === 1), 'desfazer traço');
+    await pg.click('[data-e=t-refazer]'); await pg.click('[data-ferr=borracha]');
+    await pg.mouse.move(box.x + 200, box.y + 400); await pg.mouse.down(); await pg.mouse.move(box.x + 205, box.y + 402); await pg.mouse.up(); await pg.waitForTimeout(500);
+    ok(await pg.evaluate(() => Dados.e.anotacoes.notas[0].tracos.length === 1), 'borracha apaga o traço');
+    await foto('anotacoes-editor');
+    // lista
+    await pg.goto(url + '#/anotacoes'); await pg.waitForSelector('.an-card');
+    ok(/Reunião Papelaria/.test(await pg.locator('.an-card footer b').innerText()) && /☑ 1\/1/.test(await pg.locator('.an-card footer small').innerText()), 'cartão com título e progresso do checklist');
+    ok(await pg.locator('.an-tags a:has-text("#catalao")').count() === 1, 'tag na lateral');
+    await pg.fill('#an-q', 'papelaria'); ok(await pg.locator('.an-card').count() === 1, 'busca'); await pg.fill('#an-q', 'xyz'); ok(await pg.locator('.an-card').count() === 0, 'busca sem resultado'); await pg.fill('#an-q', '');
+    // bloquear
+    await pg.click('.an-card'); await pg.waitForSelector('#an-texto'); await pg.click('[data-e=bloquear]');
+    await pg.fill('.modal [name=s1]', 'seven2026'); await pg.fill('.modal [name=s2]', 'outra'); await submit(); ok(await pg.locator('.modal').count() === 1, 'senhas diferentes recusadas');
+    await pg.fill('.modal [name=s2]', 'seven2026'); await submit(); await pg.waitForTimeout(300);
+    ok(await pg.evaluate(() => { const n = Dados.e.anotacoes.notas[0]; return n.cifrado && !n.html && !n.tracos.length && !JSON.stringify(Dados.e.anotacoes).includes('Pontos da conversa'); }), 'conteúdo cifrado, sem texto aberto no armazenamento');
+    await pg.goto(url + '#/anotacoes'); await pg.click('.an-card'); await pg.waitForSelector('#an-desb');
+    await pg.fill('#an-desb [name=s]', 'errada'); await pg.click('#an-desb button'); await pg.waitForSelector('#an-erro:not([hidden])'); ok(/Senha incorreta/.test(await pg.locator('#an-erro').innerText()), 'senha errada');
+    await pg.fill('#an-desb [name=s]', 'seven2026'); await pg.click('#an-desb button'); await pg.waitForSelector('#an-texto');
+    ok(/Pontos da conversa/.test(await pg.locator('#an-texto').innerText()), 'desbloqueia com a senha');
+    await pg.click('#an-texto'); await pg.keyboard.press('End'); await pg.keyboard.type(' (editado)'); await pg.waitForTimeout(800);
+    await pg.goto(url + '#/anotacoes'); await pg.click('.an-card'); await pg.fill('#an-desb [name=s]', 'seven2026'); await pg.click('#an-desb button'); await pg.waitForSelector('#an-texto');
+    ok(/\(editado\)/.test(await pg.locator('#an-texto').innerText()), 'edição em nota bloqueada é salva cifrada');
+    // lixeira
+    await pg.goto(url + '#/anotacoes'); await pg.click('.an-fab'); await pg.waitForSelector('#an-texto'); await pg.click('#an-texto'); await pg.keyboard.type('Rascunho descartável'); await pg.waitForTimeout(600);
+    await pg.goto(url + '#/anotacoes'); const c2 = pg.locator('.an-card:has-text("Rascunho")'); await c2.hover(); await c2.locator('[data-a=menu]').click(); await pg.check('.modal [value=apagar]'); await submit();
+    await pg.goto(url + '#/anotacoes/lixeira'); ok(await pg.locator('.an-card').count() === 1 && /Exclui em 30/.test(await pg.locator('.an-card small').innerText()), 'lixeira com prazo de 30 dias');
+    await pg.click('.an-card'); await pg.check('.modal [value=restaurar]'); await submit(); ok(await pg.locator('.an-card').count() === 0, 'restaurar da lixeira');
+    await pg.goto(url + '#/anotacoes'); await pg.waitForSelector('.an-card'); await foto('anotacoes-lista');
   }
 };
 
