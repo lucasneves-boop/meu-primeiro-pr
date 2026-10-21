@@ -125,6 +125,46 @@ const testes = {
     await pg.goto(url + '#/calculadora/romanos'); await pg.click('[data-fav]'); ok(await pg.locator('.cl-menu h4:has-text("Favoritas")').count() === 1, 'favoritar');
     await pg.goto(url + '#/calculadora'); await foto('calculadora');
   },
+  async leitor(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    const paragrafos = Array.from({ length: 60 }, (_, i) => 'Parágrafo ' + (i + 1) + '. O licitante deverá apresentar a proposta de preços ajustada ao lance vencedor no prazo fixado pelo pregoeiro, sob pena de desclassificação, conforme a Lei 14.133.').join('\n\n');
+    const md = '# Guia do Pregão\n\n## Habilitação\n\n' + paragrafos + '\n\n## Recursos\n\nA intenção de recurso deve ser registrada em até dez minutos. Palavra-chave: impugnação.';
+    await pg.goto(url + '#/leitor'); await pg.waitForSelector('.kd-bib');
+    const fc = pg.waitForEvent('filechooser'); await pg.click('.vazio [data-a=adicionar]'); await (await fc).setFiles([t.arquivo('Guia_do_Pregao.md', md)]);
+    await pg.waitForSelector('.kd-item'); ok(await pg.locator('.kd-item:has-text("Guia do Pregao")').count() === 1, 'documento na biblioteca com capa gerada');
+    await pg.click('.kd-item'); await pg.waitForSelector('#kd-txt h1');
+    await pg.waitForFunction(() => /Página 1 de \d+/.test(document.querySelector('#kd-local').textContent));
+    const total = await pg.evaluate(() => Number(document.querySelector('#kd-local').textContent.match(/de (\d+)/)[1])); ok(total > 2, 'paginado em ' + total + ' páginas');
+    await pg.keyboard.press('ArrowRight'); await pg.waitForTimeout(250);
+    ok(/Página 2 de/.test(await pg.locator('#kd-local').textContent()), 'virar página com a seta');
+    await pg.mouse.click(1440 - 20, 450); await pg.waitForTimeout(250); ok(/Página 3 de/.test(await pg.locator('#kd-local').textContent()), 'virar página tocando na borda direita');
+    await pg.click('.kd-zona.ant'); await pg.waitForTimeout(250);
+    await pg.mouse.move(700, 450); await pg.evaluate(() => document.querySelector('.kd-leitor').classList.add('chrome'));
+    await pg.click('[data-k=aa]'); await pg.click('[data-k=tema][data-v=sepia]');
+    ok(await pg.evaluate(() => getComputedStyle(document.querySelector('.kd-leitor')).backgroundColor) === 'rgb(244, 236, 216)', 'tema sépia');
+    await pg.click('[data-k=fonte][data-v=Atkinson]'); ok(await pg.evaluate(() => /Atkinson/.test(document.querySelector('#kd-txt').style.fontFamily)), 'trocar fonte');
+    await pg.click('[data-k=fechar-painel]');
+    // selecionar um trecho visível e destacar
+    await pg.evaluate(() => { const txt = document.querySelector('#kd-txt'); const box = txt.parentNode.getBoundingClientRect(); const w = document.createTreeWalker(txt, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.left >= box.left && b.right <= box.right && n.length > 40) { r.setStart(n, 0); r.setEnd(n, 25); const s = getSelection(); s.removeAllRanges(); s.addRange(r); break; } } document.querySelector('#kd-pagina').dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await pg.waitForSelector('#kd-pop:not([hidden])'); await pg.click('#kd-pop [data-k=cor][data-v=azul]');
+    ok(await pg.locator('mark.kd-hl.azul').count() >= 1, 'destaque azul pintado no texto');
+    await pg.click('mark.kd-hl.azul >> nth=0'); await pg.click('#kd-pop [data-k=nota]'); await pg.fill('.modal [name=n]', 'Conferir prazo no edital'); await submit();
+    await pg.evaluate(() => document.querySelector('.kd-leitor').classList.add('chrome')); await pg.click('[data-k=marcar]');
+    await pg.click('[data-k=caderno]'); ok(await pg.locator('.kd-notas li.azul:has-text("Conferir prazo")').count() === 1, 'caderno com destaque e nota');
+    ok(await pg.locator('.kd-notas li:has-text("🔖")').count() === 1, 'marcador na página');
+    await pg.click('[data-k=sumario]'); await pg.waitForSelector('.kd-sum'); ok(await pg.locator('.kd-sum li').count() === 3, 'sumário a partir dos títulos');
+    await pg.click('.kd-sum a:has-text("Recursos")'); await pg.waitForTimeout(300);
+    const ultimo = /Página (\d+) de (\d+)/.exec(await pg.locator('#kd-local').textContent()); ok(ultimo[1] === ultimo[2], 'ir para capítulo pelo sumário (' + ultimo[0] + ')');
+    await pg.keyboard.press('Control+f'); await pg.fill('#kd-q', 'impugnacao'); await pg.keyboard.press('Enter');
+    await pg.waitForSelector('#kd-res li'); ok(await pg.locator('#kd-res li').count() === 1, 'buscar ignorando acentos');
+    await pg.click('[data-k=fechar-painel]'); await pg.click('[data-k=prox]').catch(() => {});
+    await foto('leitor-pagina');
+    await pg.keyboard.press('Escape'); await pg.waitForSelector('.kd-bib'); ok(await pg.locator('#kd-leitor').count() === 0, 'Esc volta à biblioteca');
+    ok(await pg.evaluate(() => Dados.e.leitor.livros[0].progresso > 0.9 && Dados.e.leitor.livros[0].destaques.length === 1), 'progresso e destaques guardados');
+    await pg.click('.kd-continuar'); await pg.waitForSelector('#kd-local'); await pg.waitForTimeout(300);
+    ok((await pg.locator('#kd-local').textContent()).indexOf(ultimo[0]) === 0, 'continuar de onde parou'); await pg.keyboard.press('Escape');
+    await foto('leitor-biblioteca');
+  },
   async musicas(t) {
     const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
     const wav = (seg) => { const sr = 8000, n = sr * seg; const b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; };
