@@ -301,6 +301,12 @@
 
   Telas.financas = {
     titulo: 'Minhas Finanças',
+    // Usado por outros módulos (ex.: Notas Fiscais) para lançar contas a receber/pagar no perfil ativo.
+    lancar: function (itens) {
+      const f = base(), p = perfil(); const conta = f.contas.find(function (c) { return c.perfil === p.id; });
+      itens.forEach(function (x) { const cat = f.categorias.find(function (c) { return c.perfil === p.id && c.tipo === x.tipo && Cotacoes.normalizar(c.nome).indexOf(Cotacoes.normalizar(x.categoria || '')) === 0; }); f.lancamentos.push({ id: Dados.id('lc'), perfil: p.id, tipo: x.tipo, descricao: x.descricao, valor: x.valor, data: x.data, conta: conta ? conta.id : '', categoria: cat ? cat.id : '', pago: false, origem: x.origem || '' }); });
+      salvar(); return p.nome;
+    },
     render: async function (el, sub) {
       const f = base(); const p = perfil(); sub = sub || 'geral';
       const cab = '<div class="f-cab"><label class="f-perfil">Perfil <select id="f-perfil">' + opcoes(f.perfis.map(function (x) { return { v: x.id, t: (x.pin ? '🔒 ' : '') + x.nome }; }), p.id) + '</select></label><button class="btn mini fantasma" data-a="perfis">Gerenciar perfis</button></div>' +

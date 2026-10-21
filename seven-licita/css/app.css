@@ -909,3 +909,29 @@ body.com-player .ag-pomo-mini { bottom: 96px; }
 .pl-escolha label { display: flex; align-items: center; gap: 6px; }
 @media (max-width: 1100px) { .pl.com-painel { grid-template-columns: 220px minmax(0, 1fr); } .pl-painel { position: fixed; right: 0; top: 0; bottom: 0; width: min(400px, 100vw); z-index: 45; box-shadow: -10px 0 30px rgba(0,0,0,.25); } }
 @media (max-width: 800px) { .pl, .pl.com-painel { grid-template-columns: 1fr; grid-template-rows: 44px auto minmax(0, 1fr); margin: -16px -16px -40px; height: calc(100vh - 56px); } .pl-lado { max-height: 34vh; } .pl-acoes { right: 6px; } }
+
+/* ---------- Notas Fiscais (estilo Bling) ---------- */
+.nf-st-rascunho { background: var(--superficie-2); color: var(--mudo); } .nf-st-pronta { background: var(--ouro-claro); color: #7a5300; } .nf-st-autorizada { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); } .nf-st-cancelada, .nf-st-denegada, .nf-st-rejeitada { background: var(--perigo-claro); color: var(--perigo); }
+.nf-ed { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.nf-lado { position: sticky; top: 76px; display: flex; flex-direction: column; } .nf-lado .cartao h3 { margin-top: 0; }
+.nf-checks { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; } .nf-checks .campo { margin: 0; }
+.nf-itens td { vertical-align: top; } .nf-itens input, .nf-itens textarea { font: inherit; font-size: 13px; } .nf-itens textarea { min-width: 220px; width: 100%; resize: vertical; }
+.nf-l { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-size: 13px; } .nf-l b { font-variant-numeric: tabular-nums; } .nf-l.alerta b { color: var(--alerta); }
+.nf-total { border-top: 1px solid var(--borda); margin-top: 4px; padding-top: 6px; font-size: 15px; } .nf-totais h4 { margin: 12px 0 2px; font-size: 12px; color: var(--mudo); text-transform: uppercase; }
+.nf-val { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; } .nf-val li { padding: 4px 8px; border-radius: 6px; } .nf-val .erro { background: var(--perigo-claro); color: var(--perigo); } .nf-val .alerta { background: var(--ouro-claro); color: #7a5300; }
+.nf-acoes { display: flex; flex-direction: column; gap: 6px; } .nf-inf { font-size: 13px; background: var(--superficie-2); padding: 8px 10px; border-radius: 8px; min-height: 20px; }
+.nf-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.danfe { position: relative; background: #fff; color: #000; max-width: 210mm; margin: 0 auto 16px; padding: 8mm; font-family: Arial, Helvetica, sans-serif; font-size: 9px; box-shadow: var(--sombra); overflow: hidden; }
+.danfe h5 { margin: 5px 0 1px; font-size: 8px; font-weight: 700; }
+.dn-row { display: flex; } .dn-cx { flex: 1; border: 1px solid #000; margin: -1px 0 0 -1px; padding: 2px 4px; min-height: 22px; display: flex; flex-direction: column; min-width: 0; } .dn-cx.g { flex: 3; }
+.dn-cx small { font-size: 6.5px; text-transform: uppercase; } .dn-cx b { font-size: 9.5px; font-weight: 600; overflow-wrap: anywhere; }
+.dn-canhoto { border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 6px; } .dn-canhoto > div:first-child { border: 1px solid #000; padding: 3px; font-size: 7.5px; }
+.dn-topo .dn-cx { min-height: 92px; } .dn-emit { justify-content: center; } .dn-nome { font-size: 13px !important; } .dn-emit span { font-size: 9px; }
+.dn-tit { flex: 1.2 !important; align-items: center; justify-content: center; text-align: center; gap: 2px; } .dn-tit > b:first-child { font-size: 16px; }
+.dn-chave { align-items: center; justify-content: center; text-align: center; gap: 2px; } .dn-chave svg { max-width: 100%; height: 42px; } .dn-mono { font-family: "Courier New", monospace; font-size: 10px !important; letter-spacing: .5px; }
+.dn-total { font-size: 12px; } .dn-dups { flex-wrap: wrap; } .dn-dups .dn-cx { flex: 0 0 25%; }
+.dn-itens { width: 100%; border-collapse: collapse; font-size: 8px; } .dn-itens th, .dn-itens td { border: 1px solid #000; padding: 2px 3px; text-align: left; vertical-align: top; } .dn-itens th { font-size: 6.5px; } .dn-itens .n { text-align: right; white-space: nowrap; }
+.dn-inf { min-height: 70px; } .dn-inf b { font-weight: 400; font-size: 8.5px; } .dn-cce { font-size: 8px; margin: 2px 0; }
+.dn-marca { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 64px; font-weight: 900; color: rgba(200, 0, 0, .13); transform: rotate(-28deg); pointer-events: none; text-align: center; line-height: 1; } .dn-marca small { font-size: 24px; }
+@media (max-width: 1000px) { .nf-ed { grid-template-columns: 1fr; } .nf-lado { position: static; } .danfe { padding: 3mm; overflow-x: auto; } }
+@media print { .no-print, .menu, .lateral, .topo, #avisos-flutuantes, .player { display: none !important; } .danfe { box-shadow: none; margin: 0; max-width: none; padding: 0; } body, main, #conteudo { background: #fff !important; padding: 0 !important; margin: 0 !important; } }

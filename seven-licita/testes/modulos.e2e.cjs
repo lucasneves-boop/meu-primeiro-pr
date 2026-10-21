@@ -309,6 +309,54 @@ const testes = {
     const ics = require('fs').readFileSync(await dl.path(), 'utf8'); ok(/BEGIN:VCALENDAR/.test(ics) && /SUMMARY:Sessão pública BLL/.test(ics) && /RRULE:FREQ=DAILY/.test(ics), 'exportar .ics');
     await pg.keyboard.press('Escape');
   },
+  async notas(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]'); const fs = require('fs');
+    await pg.goto(url); await pg.evaluate(() => { Dados.e.empresas.push({ id: 'empnf', razao: 'Papelaria Exemplo LTDA', fantasia: 'Papelaria Exemplo', cnpj: '11222333000181', porte: 'ME', uf: 'GO', municipio: 'Catalão' }); Dados.e.empresaAtiva = 'empnf'; Dados.salvar(); });
+    await pg.goto(url + '#/notas/config'); await pg.fill('#nf-cfg [name=ie]', '101234567'); await pg.fill('#nf-cfg [name=logradouro]', 'Rua 10'); await pg.fill('#nf-cfg [name=proximoNumero]', '57'); await pg.click('#nf-cfg .btn.primario');
+    ok(await pg.evaluate(() => Dados.e.empresas.find(e => e.id === 'empnf').fiscal.proximoNumero === 57), 'configurações fiscais do emitente');
+    await pg.goto(url + '#/notas/saida'); await pg.click('.vazio [data-a=nfe]'); await pg.waitForSelector('.nf-ed');
+    await pg.fill('[data-k="destinatario.documento"]', '11.444.777/0001-61'); await pg.fill('[data-k="destinatario.nome"]', 'Prefeitura Municipal de Catalão'); await pg.fill('[data-k="destinatario.municipio"]', 'Catalão');
+    await pg.click('[data-nf=item]'); await pg.fill('[data-k="itens.0.descricao"]', 'Papel A4 75 g/m², caixa com 10 resmas'); await pg.fill('[data-k="itens.0.ncm"]', '48025610'); await pg.fill('[data-k="itens.0.quantidade"]', '200'); await pg.fill('[data-k="itens.0.valorUnitario"]', '238,50');
+    ok(await pg.inputValue('[data-k="itens.0.cfop"]') === '5102', 'CFOP sugerido para venda dentro do estado');
+    ok(/R\$\s?47\.700,00/.test(await pg.locator('#nf-totais').innerText()), 'total calculado ao digitar');
+    ok(/nota de empenho/.test(await pg.locator('#nf-valid').innerText()), 'alerta: venda a órgão público sem empenho');
+    await pg.fill('[data-k="contrato.empenho"]', '2026NE000123'); await pg.fill('[data-k="contrato.licitacao"]', 'Pregão eletrônico 90021/2026');
+    ok(/Nota de empenho nº 2026NE000123 · Pregão eletrônico 90021\/2026/.test(await pg.locator('#nf-inf').innerText()) && /Simples Nacional/.test(await pg.locator('#nf-inf').innerText()), 'informações complementares automáticas');
+    await pg.check('[data-k=retencaoFederal]'); await pg.waitForSelector('#nf-totais:has-text("dispensa de retenção")'); ok(true, 'Simples: dispensa de retenção federal');
+    await pg.selectOption('[data-k="destinatario.uf"]', 'DF'); await pg.waitForSelector('#nf-valid:has-text("CFOP 5102 é de operação interna")'); ok(true, 'validação pega CFOP interno em venda interestadual');
+    await pg.click('[data-nf=cfop]'); ok(await pg.inputValue('[data-k="itens.0.cfop"]') === '6108', 'CFOP 6108: interestadual para não contribuinte');
+    await pg.fill('#nf-np', '2'); await pg.click('[data-nf=parcelas]'); ok(await pg.locator('[data-k^="duplicatas."][type=date]').count() === 2, 'duas duplicatas geradas');
+    await pg.click('[data-nf=pronta]'); ok(await pg.evaluate(() => Dados.e.notas[0].situacao === 'pronta'), 'marcada como pronta');
+    await foto('notas-editor');
+    const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('[data-nf=emissor]')]); const js = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
+    ok(js.cnpj_destinatario === '11444777000161' && js.items[0].cfop === '6108' && js.items[0].codigo_ncm === '48025610' && js.duplicatas.length === 2, 'JSON para o emissor (formato Focus NFe)');
+    const chave = await pg.evaluate(() => Notas.montarChave({ uf: 'GO', ano: 2026, mes: 10, cnpj: '11222333000181', serie: 1, numero: 57, codigo: '10203040' }));
+    await pg.click('[data-nf=autorizar]'); await pg.fill('.modal [name=chave]', chave.slice(0, 43) + ((+chave[43] + 1) % 10)); await pg.fill('.modal [name=protocolo]', '152260000099999'); await submit();
+    ok(await pg.locator('.modal').count() === 1, 'chave com dígito errado é recusada');
+    await pg.fill('.modal [name=chave]', chave); await submit(); await pg.waitForSelector('.danfe');
+    ok(await pg.evaluate(() => { const n = Dados.e.notas[0]; return n.situacao === 'autorizada' && n.numero === 57 && Dados.e.empresas.find(e => e.id === 'empnf').fiscal.proximoNumero === 58; }), 'autorização registrada e numeração avança');
+    await pg.waitForFunction(() => document.querySelectorAll('#dn-barras rect').length > 20, null, { timeout: 15000 }); ok(true, 'DANFE com código de barras da chave');
+    ok(/2026NE000123/.test(await pg.locator('.danfe').innerText()) && await pg.locator('.dn-marca').count() === 0, 'DANFE autorizado sem marca d’água, com empenho');
+    await foto('notas-danfe');
+    await pg.click('[data-v=financeiro]'); ok(await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => l.tipo === 'receita' && !l.pago && /NF-e 000057/.test(l.descricao)).length === 2), 'duplicatas lançadas a receber em Minhas Finanças');
+    await pg.click('[data-v=cce]'); await pg.fill('.modal [name=t]', 'Onde se lê caixa com 10 resmas, leia-se caixa com 10 resmas de 500 folhas'); await submit();
+    ok(await pg.locator('.dn-cce').count() === 1, 'carta de correção registrada');
+    // nota de entrada por XML
+    const xml = await pg.evaluate(() => { const ch = Notas.montarChave({ uf: 'SP', ano: 2026, mes: 10, cnpj: '11444777000161', serie: 3, numero: 880, codigo: '55555555' }); return `<?xml version="1.0"?><nfeProc><NFe><infNFe Id="NFe${ch}"><ide><natOp>Venda</natOp><mod>55</mod><serie>3</serie><nNF>880</nNF><dhEmi>2026-10-15T09:00:00-03:00</dhEmi><tpNF>1</tpNF></ide><emit><CNPJ>11444777000161</CNPJ><xNome>Distribuidora Paulista de Papel</xNome><enderEmit><xMun>São Paulo</xMun><UF>SP</UF></enderEmit></emit><dest><CNPJ>11222333000181</CNPJ><xNome>Papelaria Exemplo LTDA</xNome><enderDest><UF>GO</UF></enderDest></dest><det><prod><cProd>A4</cProd><xProd>Papel A4 75g cx 10</xProd><NCM>48025610</NCM><CFOP>6102</CFOP><uCom>CX</uCom><qCom>200</qCom><vUnCom>180.00</vUnCom><vProd>36000.00</vProd></prod><imposto><ICMS><ICMS00><orig>0</orig><CST>00</CST><pICMS>7</pICMS><vICMS>2520</vICMS></ICMS00></ICMS></imposto></det><total><ICMSTot><vProd>36000</vProd><vICMS>2520</vICMS><vNF>36000</vNF></ICMSTot></total><cobr><dup><nDup>001</nDup><dVenc>2026-11-15</dVenc><vDup>36000</vDup></dup></cobr></infNFe></NFe><protNFe><infProt><chNFe>${ch}</chNFe><nProt>135260000777</nProt><cStat>100</cStat><dhRecbto>2026-10-15T09:01:00-03:00</dhRecbto></infProt></protNFe></nfeProc>`; });
+    await pg.goto(url + '#/notas/entrada'); const fc = pg.waitForEvent('filechooser'); await pg.click('.barra-acoes [data-a=xml]'); await (await fc).setFiles(t.arquivo('nfe-880.xml', xml));
+    await pg.waitForSelector('tr:has-text("Distribuidora Paulista")'); ok(true, 'XML de compra importado como nota de entrada');
+    ok(await pg.evaluate(() => { const f = (Dados.e.fornecedores || []).find(x => x.cnpj === '11444777000161'); return f && f.portfolio.some(p => p.preco === 180); }), 'fornecedor criado com o preço no portfólio');
+    await pg.click('tr:has-text("Distribuidora Paulista")'); await pg.waitForSelector('.danfe'); await pg.click('[data-v=financeiro]');
+    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.some(l => l.tipo === 'despesa' && l.valor === 36000 && l.data === '2026-11-15')), 'duplicata da compra lançada a pagar');
+    const fc2 = pg.waitForEvent('filechooser'); await pg.goto(url + '#/notas/entrada'); await pg.click('.barra-acoes [data-a=xml]'); await (await fc2).setFiles(t.arquivo('nfe-880b.xml', xml));
+    await pg.waitForSelector('.toast:has-text("1 já existiam")'); ok(await pg.locator('tbody tr').count() === 1, 'XML repetido não duplica a nota');
+    await pg.goto(url + '#/notas/relatorios'); ok(/R\$\s?47\.700,00/.test(await pg.locator('.kpis').innerText()), 'relatório: faturamento de 12 meses');
+    await pg.goto(url + '#/notas/saida'); await pg.click('tr:has-text("Prefeitura") [data-danfe]'); await pg.waitForSelector('[data-v=cancelar]'); await pg.click('[data-v=cancelar]'); await pg.fill('.modal [name=j]', 'curta'); await submit();
+    ok(await pg.locator('.modal').count() === 1, 'cancelamento exige justificativa de 15 caracteres');
+    await pg.fill('.modal [name=j]', 'Erro na quantidade faturada ao órgão'); await pg.fill('.modal [name=p]', '152260000100000'); await submit();
+    await pg.waitForSelector('.dn-marca:has-text("CANCELADA")'); ok(true, 'nota cancelada com marca d’água');
+    await pg.evaluate(() => { Dados.e.empresaAtiva = Dados.e.empresas[0] && Dados.e.empresas[0].id !== 'empnf' ? Dados.e.empresas[0].id : 'empnf'; Dados.salvar(); });
+  },
   async musicas(t) {
     const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
     const wav = (seg) => { const sr = 8000, n = sr * seg; const b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; };
