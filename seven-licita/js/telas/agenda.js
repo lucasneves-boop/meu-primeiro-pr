@@ -88,7 +88,7 @@
     const g = el.querySelector('#ag-grupo'); if (g) g.onchange = function () { est.grupo = g.value; App.redesenhar(); };
     ligarComum(el);
     // arrastar tarefa para lista (lateral) ou para reordenar
-    el.addEventListener('dragstart', function (ev) { const li = ev.target.closest && ev.target.closest('[data-t]'); if (li) { ev.dataTransfer.setData('text/agenda', li.dataset.t); ev.dataTransfer.effectAllowed = 'move'; } });
+    el.ondragstart = function (ev) { const li = ev.target.closest && ev.target.closest('[data-t]'); if (li) { ev.dataTransfer.setData('text/agenda', li.dataset.t); ev.dataTransfer.effectAllowed = 'move'; } };
     el.querySelectorAll('[data-soltar]').forEach(function (a) {
       a.addEventListener('dragover', function (ev) { if (Array.prototype.indexOf.call(ev.dataTransfer.types, 'text/agenda') >= 0) { ev.preventDefault(); a.classList.add('alvo'); } });
       a.addEventListener('dragleave', function () { a.classList.remove('alvo'); });
@@ -242,7 +242,7 @@
       const r = await modal({ titulo: 'Nova tarefa em ' + d.slice(8) + '/' + d.slice(5, 7) + (hora ? ' às ' + hora : ''), botao: 'Criar', corpo: campo('Tarefa', '<input name="t" required autocomplete="off" placeholder="ex.: Conferir habilitação !alta #cliente">') });
       if (!r) return; const t = criar(r.get('t'), { data: d, hora: hora }); if (t && hora && !A.interpretar(r.get('t')).hora) t.hora = hora; salvar(); App.redesenhar();
     };
-    el.addEventListener('dragstart', function (ev) { const x = ev.target.closest && ev.target.closest('[data-t]'); if (x) { ev.dataTransfer.setData('text/agenda', x.dataset.t); est.agarre = ev.offsetY || 0; } });
+    el.ondragstart = function (ev) { const x = ev.target.closest && ev.target.closest('[data-t]'); if (x) { ev.dataTransfer.setData('text/agenda', x.dataset.t); est.agarre = ev.offsetY || 0; } };
     el.querySelectorAll('[data-dia],[data-col]').forEach(function (z) {
       z.addEventListener('dragover', function (ev) { if (Array.prototype.indexOf.call(ev.dataTransfer.types, 'text/agenda') >= 0) { ev.preventDefault(); z.classList.add('alvo'); } });
       z.addEventListener('dragleave', function () { z.classList.remove('alvo'); });
@@ -257,7 +257,7 @@
     const conteudo = '<header class="ag-cab"><h2>Matriz de Eisenhower</h2><small class="mudo">Arraste entre os quadrantes para mudar a prioridade</small></header><div class="ag-matriz">' + A.QUADRANTES.map(function (q, k) { const its = ts.filter(function (t) { return (t.prioridade || 0) === q.p; }).sort(A.comparar); return '<section class="ag-q ag-q' + k + '" data-q="' + q.p + '"><header><b>' + ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ'][k] + ' ' + q.nome + '</b><small>' + q.dica + ' · ' + its.length + '</small></header><form data-qadd="' + q.p + '"><input placeholder="+ Adicionar"></form><ul class="ag-lista">' + its.map(function (t) { return linhaTarefa(t, { lista: true }); }).join('') + '</ul></section>'; }).join('') + '</div>';
     casca(el, 'matriz', conteudo, ''); ligarComum(el);
     el.querySelectorAll('[data-qadd]').forEach(function (f) { f.onsubmit = function (ev) { ev.preventDefault(); const i = f.querySelector('input'); const t = criar(i.value, {}); if (!t) return; if (!A.interpretar(i.value).prioridade) t.prioridade = Number(f.dataset.qadd); salvar(); App.redesenhar(); }; });
-    el.addEventListener('dragstart', function (ev) { const x = ev.target.closest && ev.target.closest('[data-t]'); if (x) ev.dataTransfer.setData('text/agenda', x.dataset.t); });
+    el.ondragstart = function (ev) { const x = ev.target.closest && ev.target.closest('[data-t]'); if (x) ev.dataTransfer.setData('text/agenda', x.dataset.t); };
     el.querySelectorAll('[data-q]').forEach(function (q) {
       q.addEventListener('dragover', function (ev) { ev.preventDefault(); q.classList.add('alvo'); }); q.addEventListener('dragleave', function (ev) { if (!q.contains(ev.relatedTarget)) q.classList.remove('alvo'); });
       q.addEventListener('drop', function (ev) { ev.preventDefault(); const t = tarefa(ev.dataTransfer.getData('text/agenda')); if (t) { t.prioridade = Number(q.dataset.q); salvar(); App.redesenhar(); } });

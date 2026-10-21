@@ -357,6 +357,67 @@ const testes = {
     await pg.waitForSelector('.dn-marca:has-text("CANCELADA")'); ok(true, 'nota cancelada com marca d’água');
     await pg.evaluate(() => { Dados.e.empresaAtiva = Dados.e.empresas[0] && Dados.e.empresas[0].id !== 'empnf' ? Dados.e.empresas[0].id : 'empnf'; Dados.salvar(); });
   },
+  async comercial(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]'); const fs = require('fs');
+    // PNCP e Receita simulados com o formato real das APIs
+    const dia = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 19);
+    const orgs = ['Prefeitura de Catalão', 'Prefeitura de Goiânia', 'Secretaria de Educação de Goiás', 'Prefeitura de Anápolis', 'Câmara de Catalão'];
+    const compra = (i, aberta) => ({ numeroControlePNCP: (aberta ? 'AB' : 'CP') + i, orgaoEntidade: { cnpj: String(10000000000000 + i), razaoSocial: orgs[i % 5], esferaId: i % 3 ? 'M' : 'E' }, anoCompra: 2026, sequencialCompra: i, unidadeOrgao: { nomeUnidade: 'Compras', municipioNome: 'Catalão', ufSigla: 'GO', codigoIbge: '5205109' }, objetoCompra: (i % 2 ? 'Aquisição de papel A4 e material de expediente' : 'Registro de preços de toner e cartuchos') + ' lote ' + i, modalidadeId: 6, modalidadeNome: 'Pregão - Eletrônico', numeroCompra: String(90000 + i), processo: 'P' + i, srp: true, situacaoCompraNome: aberta ? 'Divulgada no PNCP' : 'Homologada', valorTotalEstimado: 150000 + i * 1000, valorTotalHomologado: aberta ? null : 120000 + i * 1000, dataAberturaProposta: dia(-2), dataEncerramentoProposta: aberta ? new Date(Date.now() + (5 + i) * 864e5).toISOString().slice(0, 19) : dia(30 + i), dataPublicacaoPncp: dia(10 + i * 3), dataAtualizacao: dia(5) });
+    const compras = Array.from({ length: 14 }, (_, i) => compra(i + 1)); const abertas = Array.from({ length: 3 }, (_, i) => compra(i + 50, true));
+    await pg.route('**/pncp.gov.br/api/consulta/v1/contratacoes/publicacao**', r => r.fulfill({ json: { data: compras, totalPaginas: 1, totalRegistros: compras.length } }));
+    await pg.route('**/pncp.gov.br/api/consulta/v1/contratacoes/proposta**', r => r.fulfill({ json: { data: abertas, totalPaginas: 1, totalRegistros: 3 } }));
+    await pg.route(/pncp\.gov\.br\/api\/pncp\/v1\/orgaos\/\d+\/compras\/\d+\/\d+\/itens(\?.*)?$/, r => { if (/pagina=2/.test(r.request().url())) return r.fulfill({ json: [] }); r.fulfill({ json: [{ numeroItem: 1, descricao: 'Papel A4 75 g/m² resma 500 folhas', quantidade: 1000, unidadeMedida: 'Resma', valorUnitarioEstimado: 30, temResultado: true }, { numeroItem: 2, descricao: 'Toner compatível HP 85A', quantidade: 50, unidadeMedida: 'Unidade', valorUnitarioEstimado: 120, temResultado: true }] }); });
+    await pg.route(/\/itens\/\d+\/resultados/, r => { const seq = Number(r.request().url().match(/compras\/2026\/(\d+)\//)[1]); const lider = seq % 3 !== 0; r.fulfill({ json: [{ nomeRazaoSocialFornecedor: lider ? 'Alfa Distribuidora LTDA' : (seq % 2 ? 'Beta Papéis ME' : 'Papelaria Exemplo LTDA'), niFornecedor: lider ? '22333444000155' : (seq % 2 ? '33444555000166' : '11222333000181'), porteFornecedorId: lider ? 3 : 1, valorUnitarioHomologado: /itens\/1\//.test(r.request().url()) ? 24 : 96, quantidadeHomologada: 100, valorTotalHomologado: /itens\/1\//.test(r.request().url()) ? 2400 : 9600, dataResultado: dia(20) }] }); });
+    await pg.route('**/brasilapi.com.br/api/cnpj/v1/**', r => r.fulfill({ json: { cnpj: '11222333000181', razao_social: 'PAPELARIA EXEMPLO LTDA', nome_fantasia: 'PAPELARIA EXEMPLO', uf: 'GO', municipio: 'CATALAO', porte: 'MICRO EMPRESA', data_inicio_atividade: '2015-03-15', descricao_situacao_cadastral: 'ATIVA', cnae_fiscal: 4761003, cnae_fiscal_descricao: 'Comércio varejista de artigos de papelaria', cnaes_secundarios: [{ codigo: 4751201, descricao: 'Comércio varejista especializado de equipamentos e suprimentos de informática' }], qsa: [{ nome_socio: 'MARIA DA SILVA', qualificacao_socio: 'Sócio-Administrador' }], ddd_telefone_1: '6434410000', email: 'CONTATO@EXEMPLO.COM' } }));
+    await pg.goto(url + '#/comercial'); await pg.waitForSelector('.kpis');
+    await pg.goto(url + '#/comercial/contas'); await pg.click('.vazio [data-a=nova]'); await pg.fill('.modal [name=cnpj]', '11.222.333/0001-81'); await pg.click('.modal [data-receita]');
+    await pg.waitForFunction(() => document.querySelector('.modal [name=razao]').value === 'PAPELARIA EXEMPLO LTDA'); ok(true, 'cadastro pelo CNPJ (Receita)');
+    await pg.fill('.modal [name=oQueVende]', 'Papel A4, toner, cartuchos, canetas e material de escritório'); await submit(); await pg.waitForSelector('.fo-cab');
+    ok(await pg.evaluate(() => { const c = Dados.e.comercial.contas[0]; return c.contatos[0].nome === 'MARIA DA SILVA' && c.contatos[0].papel === 'Decisor' && c.cnae.descricao.includes('papelaria'); }), 'sócio-administrador sugerido como decisor e CNAE gravado');
+    ok(await pg.evaluate(() => Dados.e.comercial.negocios.length === 1 && Dados.e.comercial.negocios[0].etapa === 'lead'), 'negócio aberto no funil');
+    await pg.click('[data-ed-ct]'); await pg.fill('.modal [name=whatsapp]', '(64) 99999-1234'); await submit();
+    await pg.click('[data-aba=diagnostico]'); for (const k of ['vendeGoverno', 'semEquipe', 'dorDeclarada', 'decisor']) await pg.check('#cm-diag [value=' + k + ']');
+    await pg.fill('#cm-diag [name=problema]', 'Perderam 3 pregões por certidão vencida no último semestre'); await pg.fill('#cm-diag [name=necessidade]', 'Disputar todas as licitações de papel e toner em GO e DF'); await pg.click('#cm-diag .btn.primario');
+    ok(/ICP B|ICP A/.test(await pg.locator('.fo-cab').innerText()), 'ICP calculado pelo diagnóstico');
+    // estudo de mercado
+    await pg.click('[data-aba=estudo]'); const termos = await pg.inputValue('#es-form [name=termos]'); ok(/papelaria/.test(termos) && /toner/.test(termos), 'termos sugeridos do CNAE e do catálogo (' + termos + ')');
+    await pg.fill('#es-form [name=termos]', 'papel, toner'); await pg.evaluate(() => document.querySelectorAll('#es-form [name=uf]').forEach(x => { x.checked = false; })); await pg.check('#es-form [name=uf][value=GO]'); await pg.selectOption('#es-form [name=meses]', '3');
+    await pg.click('#es-form .btn.primario'); await pg.waitForSelector('.es-rel', { timeout: 60000 });
+    const rel = await pg.locator('.es-rel').innerText();
+    ok(await pg.evaluate(() => [...Array(14).keys()].every(n => document.querySelectorAll('.es-rel #es-' + n).length === 1)), 'relatório com seções 0 a 13');
+    ok(await pg.locator('#es-13').count() === 1 && /Decisão recomendada:/.test(rel) && /Confiança:/.test(rel), 'abre com decisão e confiança');
+    ok(/14 licitações/.test(rel) && /Alfa Distribuidora/.test(rel), 'licitações e concorrente líder vindos do PNCP');
+    ok(/A PAPELARIA EXEMPLO já aparece entre os vencedores/i.test(rel), 'identifica o cliente entre os vencedores');
+    ok(await pg.locator('.es-tag.es-v').count() > 5 && await pg.locator('.es-tag.es-e').count() > 0 && await pg.locator('.es-tag.es-h').count() === 4, 'números etiquetados (Verificado / Estimado / Hipótese)');
+    ok(await pg.locator('#es-8 tbody tr').first().count() === 1 && /lote 5[0-2]/.test(await pg.locator('#es-8').innerText()), 'oportunidades abertas listadas');
+    ok(/Verificado/.test(await pg.locator('#es-0').innerText()) && /0 Memória/.test(await pg.locator('#es-0').innerText()), 'ficha com mix de evidência');
+    await foto('comercial-estudo');
+    const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('[data-exp]')]); ok(/estudo-papelaria-exemplo\.xlsx$/.test(dl.suggestedFilename()), 'exportar dados do estudo');
+    // proposta
+    await pg.goto(url + '#/comercial/config'); await pg.fill('#cm-cfg [name=mens0]', '1500'); await pg.fill('#cm-cfg [name=mens1]', '2500'); await pg.fill('#cm-cfg [name=mens2]', '4000'); await pg.fill('#cm-cfg [name=exi1]', '2'); await pg.click('#cm-cfg .btn.primario');
+    await pg.goto(url + '#/comercial/contas'); await pg.click('tr[data-ver]'); await pg.waitForSelector('.fo-cab'); await pg.click('[data-aba=proposta]'); await pg.click('[data-prop=criar]');
+    ok(await pg.inputValue('.modal [name=m1]') === '2500,00' || await pg.inputValue('.modal [name=m1]') === '2500', 'proposta herda os planos'); await pg.fill('.modal [name=sal]', '4500'); await submit();
+    ok(/Retorno/.test(await pg.locator('.kpis').innerText()) && /R\$\s?30\.000|R\$\s?3\d\.\d{3}/.test(await pg.locator('.kpis').innerText()), 'proposta com investimento e retorno');
+    await pg.click('a:has-text("Ver / imprimir")'); await pg.waitForSelector('.cm-prop'); ok(await pg.locator('.cm-opcao').count() === 3 && await pg.locator('.cm-opcao.rec').count() === 1, 'proposta impressa com 3 opções e recomendada');
+    ok(/Perderam 3 pregões/.test(await pg.locator('.cm-prop').innerText()) && /Lucas Neves \| Seven/.test(await pg.locator('.cm-prop').innerText()), 'proposta usa o diagnóstico e a assinatura');
+    await foto('comercial-proposta');
+    await pg.click('a:has-text("Voltar")'); await pg.waitForSelector('.fo-cab'); await pg.click('[data-prop=enviada]');
+    ok(await pg.evaluate(() => Dados.e.comercial.negocios[0].etapa === 'proposta' && Dados.e.comercial.atividades.filter(a => a.cadencia === 'pos_proposta').length === 5), 'enviada: etapa avança e cadência de follow-up criada');
+    // mensagem a partir do script
+    await pg.evaluate(() => { window.open = (u) => { window.__aberto = u; return null; }; });
+    await pg.click('[data-aba=atividades]'); await pg.click('[data-script]:has-text("primeiro contato")');
+    const msg = await pg.inputValue('.modal [name=t]'); ok(/Oi, MARIA!/.test(msg) && /\*14 licitações\*/.test(msg) && /Lucas Neves \| Seven/.test(msg), 'script preenchido com dados do estudo');
+    await pg.click('.modal [data-ir]'); ok((await pg.evaluate(() => window.__aberto)).startsWith('https://wa.me/5564999991234'), 'abre o WhatsApp do decisor');
+    // funil
+    await pg.goto(url + '#/comercial/funil'); await pg.waitForSelector('.cm-card'); const soltar = (etapa) => pg.evaluate((et) => { const dt = new DataTransfer(); const card = document.querySelector('.cm-card'); card.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt })); const col = document.querySelector('.cm-col[data-etapa=' + et + ']'); col.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt })); col.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })); }, etapa); await soltar('negociacao'); await pg.waitForTimeout(200);
+    ok(await pg.evaluate(() => Dados.e.comercial.negocios[0].etapa === 'negociacao'), 'arrastar no funil muda a etapa');
+    await soltar('ganho'); await pg.waitForSelector('.modal'); await submit(); await pg.waitForTimeout(300);
+    ok(await pg.evaluate(() => Dados.e.empresas.some(e => e.cnpj === '11222333000181') && (Dados.e.agenda.tarefas || []).filter(x => x.tags.includes('onboarding')).length === 3), 'ganho: vira cliente e cria onboarding na Agenda');
+    await foto('comercial-funil');
+    await pg.goto(url + '#/comercial'); const kp = await pg.locator('.kpis').innerText(); ok(/Taxa de ganho\s*100%/.test(kp) && /Novos clientes no mês\s*1/.test(kp), 'painel: taxa de ganho e meta do mês');
+    await foto('comercial-painel');
+    await pg.unrouteAll({ behavior: 'ignoreErrors' });
+  },
   async musicas(t) {
     const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
     const wav = (seg) => { const sr = 8000, n = sr * seg; const b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; };

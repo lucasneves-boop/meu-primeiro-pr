@@ -201,6 +201,7 @@
 
   Telas.mercado = {
     titulo: 'Análise de Mercado',
+    coletar: rodar, // usado pelo estudo de mercado da área Comercial
     render: function (el, sub) {
       sub = sub || 'analise';
       el.innerHTML = abas([{ id: 'analise', t: 'Análise de Mercado' }, { id: 'concorrentes', t: 'Concorrentes' }, { id: 'capag', t: 'CAPAG' }], sub, 'mercado') + '<div id="aba"></div>';
