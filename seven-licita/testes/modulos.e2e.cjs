@@ -108,6 +108,22 @@ const testes = {
     await pg.goto(url + '#/financas/contas'); ok(/Pagar fatura/.test(await pg.locator('.f-cartao').innerText()) || /Fatura/.test(await pg.locator('.f-cartao').innerText()), 'fatura do cartão');
     await pg.goto(url + '#/financas/relatorios'); ok(await pg.locator('text=DRE simplificada').count() === 1, 'relatórios e DRE');
     await foto('financas-relatorios'); await pg.goto(url + '#/financas/geral'); await foto('financas-geral');
+  },
+  async calculadora(t) {
+    const { pg, url, ok, foto } = t;
+    await pg.goto(url + '#/calculadora'); await pg.waitForSelector('.cl-calc');
+    for (const k of ['7', '×', '8', '+', '2', '%']) await pg.click('.cl-t[data-t="' + k + '"]');
+    ok((await pg.locator('#cl-prev').innerText()).includes('57,12'), 'prévia ao vivo (7×8+2% = 57,12)');
+    await pg.click('.cl-t[data-t="="]'); ok(await pg.locator('.cl-hist li').count() === 1, 'histórico');
+    await pg.fill('#cl-expr', 'sin(30)+√16'); await pg.press('#cl-expr', 'Enter'); ok((await pg.inputValue('#cl-expr')) === '4,5', 'digitação direta com funções em graus');
+    await pg.goto(url + '#/calculadora/datas'); await pg.fill('#cl-form [name=d1]', '2026-10-30'); await pg.fill('#cl-form [name=qt]', '3');
+    ok(/05\/11\/2026/.test(await pg.locator('#cl-saida').innerText()), 'prazo em dias úteis pulando Finados');
+    await pg.goto(url + '#/calculadora/financiamento'); ok(/Parcela/.test(await pg.locator('#cl-saida').innerText()), 'financiamento Price');
+    await pg.goto(url + '#/calculadora/conversor'); await pg.click('[data-cat=temperatura]'); await pg.selectOption('#cl-conv [name=de]', '°C'); await pg.selectOption('#cl-conv [name=para]', '°F'); await pg.fill('#cl-conv [name=v]', '100'); await pg.waitForTimeout(500);
+    ok(/212/.test(await pg.locator('.cl-grande').innerText()), 'conversor de temperatura');
+    await pg.fill('#cl-busca', 'roman'); await pg.waitForTimeout(400); ok(await pg.locator('.cl-menu a').count() === 1, 'busca de calculadoras');
+    await pg.goto(url + '#/calculadora/romanos'); await pg.click('[data-fav]'); ok(await pg.locator('.cl-menu h4:has-text("Favoritas")').count() === 1, 'favoritar');
+    await pg.goto(url + '#/calculadora'); await foto('calculadora');
   }
 };
 
