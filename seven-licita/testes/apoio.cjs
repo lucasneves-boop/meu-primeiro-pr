@@ -9,8 +9,9 @@ async function abrir(saida, opcoes) {
   const srv = http.createServer((q, r) => { const f = path.join(raiz, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); if (!f.startsWith(raiz) || !fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': tipos[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(r); });
   await new Promise(o => srv.listen(0, o));
   const url = 'http://127.0.0.1:' + srv.address().port + '/';
-  const nav = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
-  const ctx = await nav.newContext(Object.assign({ viewport: { width: 1440, height: 900 }, locale: 'pt-BR', acceptDownloads: true }, opcoes || {}));
+  const { args, ...ctxOpc } = opcoes || {};
+  const nav = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'].concat(args || []) });
+  const ctx = await nav.newContext(Object.assign({ viewport: { width: 1440, height: 900 }, locale: 'pt-BR', acceptDownloads: true }, ctxOpc));
   const pg = await ctx.newPage();
   const erros = []; pg.on('pageerror', e => erros.push(e.message)); pg.on('dialog', d => d.accept());
   return {

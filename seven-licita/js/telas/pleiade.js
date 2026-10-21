@@ -44,7 +44,8 @@
     },
     set: function (caminho, valor) { this.arv = P.definir(this.arv, caminho, valor); if (!this.remoto()) Dados.e.pleiade = this.arv; this.mudou(); return this.enviar(valor == null ? 'DELETE' : 'PUT', caminho, valor); },
     patch: function (caminho, obj) { this.arv = P.mesclar(this.arv, caminho, obj); if (!this.remoto()) Dados.e.pleiade = this.arv; this.mudou(); return this.enviar('PATCH', caminho, obj); },
-    mudou: function (ev) { if (this.remoto()) { clearTimeout(this._c); this._c = setTimeout(function () { Dados.e.pleiadeCache = T.arv; Dados.salvar(); }, 1500); } if (ev) notificarNovas(); agendar(); }
+    ouvintes: [],
+    mudou: function (ev) { this.ouvintes.forEach(function (f) { try { f(); } catch (err) { console.error(err); } }); if (this.remoto()) { clearTimeout(this._c); this._c = setTimeout(function () { Dados.e.pleiadeCache = T.arv; Dados.salvar(); }, 1500); } if (ev) notificarNovas(); agendar(); }
   };
   function arv() { if (!T.iniciado) T.iniciar(); return T.arv; }
   function membros() { return arv().membros || {}; }
@@ -94,6 +95,13 @@
     } else Object.keys(canais()).forEach(function (cid) { if (canais()[cid].padrao) T.set('canais/' + cid + '/membros/' + c.eu, true); });
     return true;
   }
+  function emChamada() { return !!(Telas.reuniao && Telas.reuniao.atual()); }
+  function cartaoChamada(sid) {
+    const s = ((arv().chamadas || {})[sid]) || null; if (!s) return '';
+    const ps = Object.keys(s.participantes || {}).filter(function (u) { return Date.now() - (s.participantes[u].visto || 0) < 30000; });
+    const ativa = !s.encerrada && ps.length;
+    return '<div class="pl-call' + (ativa ? ' ao-vivo' : '') + '"><span class="pl-call-ic">📹</span><div><b>' + esc(s.nome || 'Reunião') + '</b><small>' + (ativa ? ps.length + ' na chamada · ' + ps.map(function (u) { return esc(membro(u).nome.split(' ')[0]); }).join(', ') : 'Chamada encerrada') + '</small></div>' + (ativa || !s.encerrada ? '<a class="btn mini primario" href="#/reuniao/' + esc(sid) + '">Entrar</a>' : '') + '</div>';
+  }
   function mensagemSistema(cid, t) { const id = P.id(); return T.set('mensagens/' + cid + '/' + id, { u: eu(), t: t, em: Date.now(), sistema: true }); }
 
   // ---------- envio ----------
@@ -134,7 +142,7 @@
       return '<li><a href="#/pleiade/c/' + esc(k) + '" class="' + (est.canal === k && !est.vista ? 'ativo ' : '') + (r.n ? 'nl' : '') + '">' + (c.dm ? '<span class="pl-dm-av">' + avatar(outro || eu(), 20) + '<i class="pl-pres' + (ativo(outro || eu()) ? ' on' : '') + '"></i></span>' : '<span class="pl-hash">' + (c.privado ? '🔒' : '#') + '</span>') + '<span class="pl-nome">' + esc(nomeCanal(k)) + '</span>' + (n ? '<b class="pl-cont">' + n + '</b>' : '') + '</a></li>'; };
     const th = P.minhasThreads(arv(), eu(), cfgL.threadsLidas).reduce(function (s, x) { return s + x.novas; }, 0);
     return '<aside class="pl-lado"><header class="pl-espaco"><b>' + esc((cfgL.espaco || 'Seven').replace(/^./, function (x) { return x.toUpperCase(); })) + '</b><small class="pl-con' + (T.conectado ? ' ok' : '') + '" title="' + esc(T.erro || (T.remoto() ? 'Conectado ao servidor da equipe' : 'Modo local: só este navegador')) + '">' + (T.remoto() ? (T.conectado ? '● equipe' : '○ reconectando') : '● local') + '</small><button class="icone" data-pl="nova-dm" title="Nova mensagem" aria-label="Nova mensagem">✎</button></header>' +
-      '<ul class="pl-nav"><li><a href="#/pleiade/threads" class="' + (est.vista === 'threads' ? 'ativo' : '') + '">🧵 Threads' + (th ? '<b class="pl-cont">' + th + '</b>' : '') + '</a></li><li><a href="#/pleiade/atividade" class="' + (est.vista === 'atividade' ? 'ativo' : '') + '">@ Menções e reações</a></li><li><a href="#/pleiade/salvos" class="' + (est.vista === 'salvos' ? 'ativo' : '') + '">🔖 Itens salvos</a></li><li><a href="#/pleiade/pessoas" class="' + (est.vista === 'pessoas' ? 'ativo' : '') + '">👥 Pessoas</a></li></ul>' +
+      '<ul class="pl-nav"><li><a href="#/pleiade/threads" class="' + (est.vista === 'threads' ? 'ativo' : '') + '">🧵 Threads' + (th ? '<b class="pl-cont">' + th + '</b>' : '') + '</a></li><li><a href="#/pleiade/atividade" class="' + (est.vista === 'atividade' ? 'ativo' : '') + '">@ Menções e reações</a></li><li><a href="#/pleiade/salvos" class="' + (est.vista === 'salvos' ? 'ativo' : '') + '">🔖 Itens salvos</a></li><li><a href="#/pleiade/pessoas" class="' + (est.vista === 'pessoas' ? 'ativo' : '') + '">👥 Pessoas</a></li><li><a href="#/reuniao">📹 Reuniões' + (emChamada() ? '<b class="pl-cont">ao vivo</b>' : '') + '</a></li></ul>' +
       '<h4>Canais <span><button class="icone" data-pl="explorar" title="Explorar canais" aria-label="Explorar canais">⌕</button><button class="icone" data-pl="novo-canal" title="Criar canal" aria-label="Criar canal">＋</button></span></h4><ul class="pl-canais">' + meus.map(item).join('') + '</ul>' +
       '<h4>Mensagens diretas <button class="icone" data-pl="nova-dm" aria-label="Nova mensagem direta">＋</button></h4><ul class="pl-canais">' + dms.map(item).join('') + '</ul>' +
       '<footer class="pl-eu" data-pl="perfil">' + avatar(eu(), 28) + '<div><b>' + esc(meu.nome) + '</b><small>' + (meu.status ? esc(meu.status.emoji + ' ' + meu.status.texto) : 'Definir status') + '</small></div><button class="icone" data-pl="ajustes" title="Conexão e ajustes" aria-label="Ajustes">⚙</button></footer></aside>';
@@ -149,6 +157,7 @@
       (m.continua && !opc.novas ? '<span class="pl-hora-mini">' + hora(m.em) + '</span>' : avatar(m.u, 36)) + '<div class="pl-corpo">' +
       (m.continua && !opc.novas ? '' : '<div class="pl-cab"><b>' + esc(au.nome) + '</b>' + (au.status ? '<span title="' + esc(au.status.texto) + '">' + esc(au.status.emoji) + '</span>' : '') + '<time title="' + new Date(m.em).toLocaleString('pt-BR') + '">' + hora(m.em) + '</time>' + (m.fixado ? '<span class="pl-fix-tag">📌 fixada</span>' : '') + (opc.origem ? '<a class="pl-origem" href="#/pleiade/c/' + esc(cid) + '">' + esc(prefixo(c) + nomeCanal(cid)) + '</a>' : '') + '</div>') +
       (editando ? '<form class="pl-editar" data-ed="' + esc(m.id) + '"><textarea rows="2">' + esc(est.editTexto != null ? est.editTexto : P.textoPuro(m.t, ctx())) + '</textarea><div class="grupo-botoes"><button type="button" class="btn mini" data-pl="cancelar-ed">Cancelar</button><button class="btn mini primario">Salvar</button></div></form>' : '<div class="pl-txt">' + P.formatar(m.t, ctx()) + (m.editado ? ' <small class="mudo">(editado)</small>' : '') + '</div>') +
+      (m.chamada ? cartaoChamada(m.chamada) : '') +
       (m.tambemCanal && m.pai && !opc.naThread ? '<small class="mudo">respondeu numa thread</small>' : '') +
       (m.anexos ? '<div class="pl-anexos">' + m.anexos.map(function (a, i) { return /^image\//.test(a.tipo) ? '<button class="pl-img" data-anx="' + i + '"><img data-src-anx="' + i + '" alt="' + esc(a.nome) + '"></button>' : '<button class="pl-arq" data-anx="' + i + '"><span>📄</span><div><b>' + esc(a.nome) + '</b><small>' + Math.max(1, Math.round((a.tam || 0) / 1024)) + ' KB</small></div></button>'; }).join('') + '</div>' : '') +
       (reac.length ? '<div class="pl-reacoes">' + reac.map(function (e) { const us = Object.keys(m.reacoes[e]); return '<button class="pl-reac' + (us.indexOf(eu()) >= 0 ? ' minha' : '') + '" data-reac="' + esc(e) + '" title="' + esc(us.map(function (u) { return membro(u).nome; }).join(', ')) + '">' + esc(e) + ' <b>' + us.length + '</b></button>'; }).join('') + '<button class="pl-reac add" data-pl="emoji" aria-label="Adicionar reação">☺+</button></div>' : '') +
@@ -171,7 +180,7 @@
     const corpo = ms.map(function (m) { const novas = !marcouNovas && m.em > lidoAntes && m.u !== eu() && lidoAntes > 0; if (novas) marcouNovas = true; return linhaMsg(cid, m, { novas: novas }); }).join('');
     const nMemb = Object.keys(c.membros || {}).length;
     const intro = '<div class="pl-intro">' + (c.dm ? '<h2>' + esc(nomeCanal(cid)) + '</h2><p>Esta é a conversa direta entre vocês.</p>' : '<h2>' + esc(prefixo(c) + c.nome) + '</h2><p>' + (c.descricao ? esc(c.descricao) + ' · ' : '') + 'Criado por ' + esc(membro(c.criadoPor).nome) + ' em ' + new Date(c.criadoEm || Date.now()).toLocaleDateString('pt-BR') + '.</p>') + '</div>';
-    return '<header class="pl-topo"><div><h2>' + esc(prefixo(c) + nomeCanal(cid)) + '</h2>' + (c.topico ? '<small class="pl-topico" data-pl="topico" title="Editar tópico">' + P.formatar(c.topico, ctx()) + '</small>' : (c.dm ? '' : '<small class="pl-topico mudo" data-pl="topico">+ Adicionar tópico</small>')) + '</div><div class="pl-topo-d"><button class="btn mini" data-pl="membros" title="Membros">👥 ' + nMemb + '</button><button class="btn mini" data-pl="fixados" title="Mensagens fixadas">📌 ' + P.lista(msgs(cid)).filter(function (m) { return m.fixado; }).length + '</button><button class="btn mini" data-pl="detalhes" title="Detalhes do canal">ⓘ</button></div></header>' +
+    return '<header class="pl-topo"><div><h2>' + esc(prefixo(c) + nomeCanal(cid)) + '</h2>' + (c.topico ? '<small class="pl-topico" data-pl="topico" title="Editar tópico">' + P.formatar(c.topico, ctx()) + '</small>' : (c.dm ? '' : '<small class="pl-topico mudo" data-pl="topico">+ Adicionar tópico</small>')) + '</div><div class="pl-topo-d"><button class="btn mini pl-btn-call" data-pl="chamada" title="Iniciar videochamada neste ' + (c.dm ? 'chat' : 'canal') + '">📹 Chamada</button><button class="btn mini" data-pl="membros" title="Membros">👥 ' + nMemb + '</button><button class="btn mini" data-pl="fixados" title="Mensagens fixadas">📌 ' + P.lista(msgs(cid)).filter(function (m) { return m.fixado; }).length + '</button><button class="btn mini" data-pl="detalhes" title="Detalhes do canal">ⓘ</button></div></header>' +
       '<div class="pl-msgs" id="pl-msgs">' + intro + corpo + '</div>' + (souMembro(c) || c.dm ? compositor(cid) : '<div class="pl-entrar"><p>Você está vendo <b>#' + esc(c.nome) + '</b>.</p><button class="btn primario" data-pl="entrar">Entrar no canal</button></div>');
   }
 
@@ -314,6 +323,7 @@
       const tirar = ev.target.closest('[data-tirar]'); if (tirar) { T.set('canais/' + est.canal + '/membros/' + tirar.dataset.tirar, null); mensagemSistema(est.canal, '<@' + eu() + '> removeu <@' + tirar.dataset.tirar + '> do canal.'); return; }
       const a = ev.target.closest('[data-pl]'); if (!a) { const men = ev.target.closest('.pl-men[data-u]'); if (men && men.dataset.u !== eu()) abrirDM([men.dataset.u]); return; }
       const k = a.dataset.pl; const mEl = a.closest('[data-m]'); const cid = mEl ? mEl.dataset.c : est.canal; const mid = mEl && mEl.dataset.m;
+      if (k === 'chamada') { if (!T.remoto()) { aviso('Videochamada precisa do modo equipe (servidor configurado em Configurações da Plêiade).', 'erro'); return; } const sid = Telas.reuniao.criar({ canal: est.canal, nome: '' + (canais()[est.canal].dm ? 'Chamada' : 'Reunião em #' + canais()[est.canal].nome) }); location.hash = '#/reuniao/' + sid; return; }
       if (k === 'thread') { est.thread = { c: cid, m: mid }; est.painel = null; est.focoThread = true; if (cid !== est.canal || est.vista) location.hash = '#/pleiade/c/' + cid; else App.redesenhar(); }
       if (k === 'fechar-painel') { est.thread = null; est.painel = null; est.focoThread = false; App.redesenhar(); }
       if (k === 'emoji') { const e = await escolherEmoji(a); if (e) reagir(cid, mid, e); }
@@ -413,5 +423,5 @@
   setTimeout(function () { if (Dados.e.pleiadeCfg && Dados.e.pleiadeCfg.eu) { T.iniciar(); atualizarSelo(); } }, 800);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^#\/pleiade/.test(location.hash)) App.redesenhar(); });
 
-  Telas.pleiade = { titulo: 'Plêiade', render: render, _t: T };
+  Telas.pleiade = { titulo: 'Plêiade', render: render, _t: T, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso } };
 })();
