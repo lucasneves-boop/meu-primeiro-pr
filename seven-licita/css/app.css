@@ -457,3 +457,18 @@ textarea.peca { font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; min-hei
 .n-texto { background: #fff; color: #111; padding: 20px; max-width: 900px; width: 100%; max-height: 100%; overflow: auto; border-radius: 6px; white-space: pre-wrap; }
 .n-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.15); color: #fff; border: 0; font-size: 34px; width: 48px; height: 64px; border-radius: 8px; cursor: pointer; } .n-nav.ant { left: 6px; } .n-nav.prox { right: 6px; }
 @media (max-width: 900px) { .nuvem { grid-template-columns: 1fr; } .n-lado { flex-direction: row; flex-wrap: wrap; align-items: center; } .n-arm, .n-lado > p { display: none; } .n-novo { margin: 0 8px 0 0; } }
+
+/* precificação */
+.p-grade { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+.p-form fieldset .campo { min-width: 150px; }
+.p-campo { display: flex; align-items: center; gap: 4px; } .p-campo input { flex: 1; min-width: 0; } .p-campo span { color: var(--mudo); font-size: 12px; min-width: 18px; }
+.p-res { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 12px; } .p-res .cartao { margin: 0; }
+.p-destaque { border-top: 4px solid var(--ouro); } .p-destaque > span, .p-minimo > span { display: block; font-size: 12px; }
+.p-preco { display: block; font-size: 34px; font-weight: 800; color: var(--marca); margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
+.p-mini { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; }
+.p-minimo b { display: block; font-size: 22px; margin: 4px 0; font-variant-numeric: tabular-nums; } .p-minimo small { color: var(--mudo); }
+.p-alerta { border-left: 4px solid var(--perigo); }
+tr.p-zero td { color: var(--perigo); font-weight: 600; }
+tr.p-linha-ruim td { background: var(--perigo-claro); }
+.p-custo { width: 100px; text-align: right; }
+@media (max-width: 1000px) { .p-grade { grid-template-columns: 1fr; } .p-res { position: static; } }
