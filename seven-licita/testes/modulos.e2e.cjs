@@ -237,6 +237,78 @@ const testes = {
     ok(its.length === 3 && its[2][2] === 'PCT' && its[2][3] === 90 && its[0][4] === 2.35, 'itens lidos de edital em PDF (' + JSON.stringify(its) + ')');
     ok(await pg.evaluate(() => Dados.e.cotacoes[0].licitacao.numero === '15/2026' && Dados.e.cotacoes[0].licitacao.dataSessao === '2026-11-10T14:00'), 'número e sessão lidos do PDF');
   },
+  async agenda(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    const H = await pg.evaluate(() => 0); void H;
+    await pg.goto(url + '#/agenda'); await pg.waitForSelector('.ag-vazio');
+    const amanha = await pg.evaluate(() => Agenda.somar(Agenda.hojeLocal(), 1));
+    await pg.fill('#ag-novo', 'Enviar proposta amanhã 14h !alta #cliente ^Papelaria');
+    ok(/Amanhã 14:00/.test(await pg.locator('#ag-prev').innerText()) && /Alta/.test(await pg.locator('#ag-prev').innerText()), 'prévia da adição rápida');
+    await pg.keyboard.press('Enter'); await pg.waitForSelector('.ag-smart a:has-text("Papelaria")');
+    ok(await pg.evaluate((a) => { const x = Dados.e.agenda.tarefas[0]; return x.titulo === 'Enviar proposta' && x.data === a && x.hora === '14:00' && x.prioridade === 3 && x.tags[0] === 'cliente' && Dados.e.agenda.listas[0].nome === 'Papelaria'; }, amanha), 'tarefa criada com data, hora, prioridade, tag e lista nova');
+    await pg.fill('#ag-novo', 'Conferir PNCP todo dia 8h'); await pg.keyboard.press('Enter');
+    await pg.fill('#ag-novo', 'Atualizar certidões'); await pg.keyboard.press('Enter');
+    ok(await pg.locator('.ag-lista .ag-t').count() === 2, 'Hoje: tarefa recorrente e tarefa sem data criada em Hoje');
+    await pg.click('.ag-t:has-text("Atualizar certidões") .ag-t-tit'); await pg.waitForSelector('#ag-det');
+    await pg.fill('#ag-sub-add', 'CND federal'); await pg.keyboard.press('Enter'); await pg.fill('#ag-sub-add', 'FGTS'); await pg.keyboard.press('Enter');
+    await pg.click('#ag-det [data-pr="2"]'); await pg.selectOption('#ag-det [data-f=lembrete]', '15');
+    await pg.fill('#ag-det [data-f=notas]', 'Ver validade de todas'); await pg.locator('#ag-det [data-f=notas]').blur();
+    ok(await pg.evaluate(() => { const x = Dados.e.agenda.tarefas.find(t => t.titulo === 'Atualizar certidões'); return x.subtarefas.length === 2 && x.prioridade === 2 && x.lembrete === 15 && x.notas === 'Ver validade de todas'; }), 'detalhe: subtarefas, prioridade, lembrete e descrição');
+    ok(/☑ 0\/2/.test(await pg.locator('.ag-t:has-text("Atualizar certidões")').innerText()), 'contador de subtarefas na linha');
+    await pg.click('.ag-t:has-text("Conferir PNCP") .ag-chk');
+    ok(await pg.evaluate((a) => { const x = Dados.e.agenda.tarefas.find(t => t.titulo === 'Conferir PNCP'); return x.data === a && !x.feita && x.historico.length === 1; }, amanha), 'concluir recorrente avança para amanhã');
+    await pg.click('.ag-t:has-text("Atualizar certidões") .ag-chk'); ok(await pg.locator('.ag-feitas-t').count() === 1, 'concluídas de hoje aparecem recolhidas');
+    await pg.click('.ag-smart a:has-text("Amanhã")'); await pg.waitForSelector('.ag-cab h2:has-text("Amanhã")'); ok(await pg.locator('.ag-lista .ag-t').count() === 2, 'lista Amanhã');
+    // arrastar para a lista Papelaria
+    await pg.dragAndDrop('.ag-t:has-text("Conferir PNCP")', '.ag-smart a:has-text("Papelaria")');
+    ok(await pg.evaluate(() => Dados.e.agenda.tarefas.find(t => t.titulo === 'Conferir PNCP').lista === Dados.e.agenda.listas[0].id), 'arrastar tarefa para outra lista');
+    await foto('agenda-tarefas');
+    // calendário
+    await pg.evaluate(() => { Dados.e.cotacoes = [{ id: 'c1', numero: 'COT-2026-009', titulo: 'x', status: 'em-andamento', prazoResposta: Agenda.hojeLocal(), licitacao: {}, itens: [], fornecedores: [] }]; Dados.salvar(); });
+    await pg.goto(url + '#/agenda/calendario/mes'); await pg.waitForSelector('.ag-mes');
+    ok(await pg.locator('.ag-dia[data-dia="' + amanha + '"] .ag-ev').count() >= 2, 'tarefas no dia certo do mês (incluindo recorrência)');
+    ok(await pg.locator('.ag-ext:has-text("Prazo cotação COT-2026-009")').count() === 1, 'prazo da cotação aparece no calendário');
+    const dest = await pg.evaluate(() => Agenda.somar(Agenda.hojeLocal(), 3));
+    if (await pg.locator('.ag-dia[data-dia="' + dest + '"]').count()) {
+      await pg.dragAndDrop('.ag-dia[data-dia="' + amanha + '"] .ag-ev:has-text("Enviar proposta")', '.ag-dia[data-dia="' + dest + '"]');
+      ok(await pg.evaluate((d) => Dados.e.agenda.tarefas.find(t => t.titulo === 'Enviar proposta').data === d, dest), 'arrastar no calendário remarca');
+    }
+    await pg.dblclick('.ag-dia[data-dia="' + dest + '"] .ag-dia-n'); await pg.fill('.modal [name=t]', 'Sessão pública BLL 9h'); await submit();
+    ok(await pg.evaluate((d) => { const x = Dados.e.agenda.tarefas.find(t => t.titulo === 'Sessão pública BLL'); return x && x.data === d && x.hora === '09:00'; }, dest), 'duplo clique cria tarefa no dia');
+    await pg.goto(url + '#/agenda/calendario/semana'); await pg.evaluate((d) => {}, dest);
+    await pg.click('[data-nav="0"]'); if (await pg.locator('.ag-col[data-col="' + dest + '"]').count() === 0) await pg.click('[data-nav="1"]');
+    ok(await pg.locator('.ag-col[data-col="' + dest + '"] .ag-bloco:has-text("Sessão pública BLL")').count() === 1, 'visão semanal com bloco no horário');
+    await foto('agenda-semana');
+    // matriz
+    await pg.goto(url + '#/agenda/matriz'); await pg.waitForSelector('.ag-matriz');
+    ok(await pg.locator('.ag-q0 .ag-t:has-text("Enviar proposta")').count() === 1, 'alta prioridade no quadrante I');
+    await pg.dragAndDrop('.ag-q0 .ag-t:has-text("Enviar proposta")', '.ag-q1');
+    ok(await pg.evaluate(() => Dados.e.agenda.tarefas.find(t => t.titulo === 'Enviar proposta').prioridade === 2), 'arrastar entre quadrantes muda a prioridade');
+    await pg.fill('.ag-q3 [data-qadd] input', 'Organizar arquivo morto'); await pg.keyboard.press('Enter');
+    ok(await pg.locator('.ag-q3 .ag-t:has-text("Organizar arquivo morto")').count() === 1, 'adicionar direto no quadrante');
+    await foto('agenda-matriz');
+    // foco
+    await pg.goto(url + '#/agenda/foco'); await pg.selectOption('#ag-pomo-t', { label: await pg.locator('#ag-pomo-t option:has-text("Enviar proposta")').innerText() });
+    await pg.click('[data-pa=iniciar]'); await pg.waitForTimeout(1300);
+    ok(/24:5\d/.test(await pg.locator('#ag-relogio').innerText()), 'pomodoro contando (' + await pg.locator('#ag-relogio').innerText() + ')');
+    await pg.goto(url + '#/agenda/tarefas/hoje'); ok(await pg.locator('.ag-pomo-mini').count() === 1, 'relógio continua visível fora da tela de foco');
+    await pg.goto(url + '#/agenda/foco'); await pg.evaluate(() => { Telas.agenda._pomo.fimEm = Date.now() + 200; }); await pg.waitForTimeout(800);
+    ok(/Pausa/.test(await pg.locator('.ag-relogio small').innerText()) && /1/.test(await pg.locator('.kpis div:first-child b').innerText()), 'pomodoro concluído vira pausa e conta 1 pomo');
+    await foto('agenda-foco');
+    // hábitos
+    await pg.goto(url + '#/agenda/habitos'); await pg.click('[data-hb=novo]'); await pg.fill('.modal [name=nome]', 'Conferir novas licitações'); await submit();
+    const hj = await pg.evaluate(() => Agenda.hojeLocal()); await pg.click('.ag-hab [data-hd="' + hj + '"]');
+    ok(await pg.locator('.ag-hab-seq').innerText() === '1', 'check-in do hábito e sequência');
+    await pg.click('.ag-hab-nome'); ok(await pg.locator('.ag-hab-det').count() === 1, 'detalhe do hábito com mês');
+    await foto('agenda-habitos');
+    // lembrete
+    await pg.evaluate(() => { const n = new Date(); const x = Telas.agenda.criar('Ligar para o pregoeiro'); x.data = Agenda.hojeLocal(); x.hora = ('0' + n.getHours()).slice(-2) + ':' + ('0' + n.getMinutes()).slice(-2); x.lembrete = 0; Dados.salvar(); Telas.agenda._lembretes(); });
+    ok(await pg.locator('.toast:has-text("⏰ Ligar para o pregoeiro")').count() === 1, 'lembrete dispara aviso');
+    // exportar .ics
+    await pg.click('[data-ag=config]'); const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('.modal [data-ics]')]);
+    const ics = require('fs').readFileSync(await dl.path(), 'utf8'); ok(/BEGIN:VCALENDAR/.test(ics) && /SUMMARY:Sessão pública BLL/.test(ics) && /RRULE:FREQ=DAILY/.test(ics), 'exportar .ics');
+    await pg.keyboard.press('Escape');
+  },
   async musicas(t) {
     const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
     const wav = (seg) => { const sr = 8000, n = sr * seg; const b = Buffer.alloc(44 + n); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44); return b; };
