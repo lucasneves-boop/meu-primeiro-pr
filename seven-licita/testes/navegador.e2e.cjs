@@ -61,14 +61,14 @@ const servidor = http.createServer(function (req, res) {
 
   passo('quadro');
   await pg.click('.aviso [data-a=quadro] >> nth=0');
-  await pg.goto(url + '#/quadros'); await pg.waitForSelector('.kcartao'); await foto('04-quadro');
+  await pg.goto(url + '#/quadros'); await pg.click('.ktile:has-text("Licitações")'); await pg.waitForSelector('.kcartao'); await foto('04-quadro');
   // arrastar o cartão para "Análise do edital"
-  await pg.dragAndDrop('.kcartao >> nth=0', '.klista:nth-child(2) .kcartoes');
+  await pg.dragAndDrop('.kcartao >> nth=0', '.klista >> nth=1 >> .kcartoes');
   const ck = await pg.evaluate(function () { const c = Dados.e.quadros[0].cartoes[0]; return { lista: Dados.e.quadros[0].listas.find(function (l) { return l.id === c.lista; }).nome, cl: (c.checklists || []).map(function (x) { return x.titulo; }) }; });
   console.log('  cartão em:', ck.lista, '· checklists:', ck.cl.join(', '));
-  await pg.click('.kcartao >> nth=0'); await pg.waitForSelector('.kdetalhe'); await foto('05-cartao');
+  await pg.click('.kcartao >> nth=0'); await pg.waitForSelector('#kov .kjanela'); await foto('05-cartao');
   await pg.fill('[data-novo-comentario]', 'Conferir garantia @Lucas'); await pg.click('[data-k=comentar]');
-  await pg.click('.modal [type=submit]');
+  await pg.keyboard.press('Escape'); await pg.waitForSelector('#kov', { state: 'detached' });
   for (const v of ['tabela', 'calendario', 'painel']) { await pg.click('[data-visao=' + v + ']'); await pg.waitForTimeout(200); await foto('06-quadro-' + v); }
   await pg.click('[data-visao=quadro]');
 
