@@ -999,3 +999,136 @@ body.com-player .ag-pomo-mini { bottom: 96px; }
 .hb-nivel { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 8px; background: var(--primario); color: var(--primario-texto); font-size: 13px; margin-right: 6px; }
 .hb-docs { padding-left: 18px; margin: 6px 0 0; }
 .hb-docs li { margin: 4px 0; }
+
+/* ---------- Loja Seven ---------- */
+.lj-topo { display: flex; align-items: center; gap: 14px; background: #0b0b0b; color: #fff; padding: 10px 14px; border-radius: var(--raio) var(--raio) 0 0; flex-wrap: wrap; }
+.lj-topo a { color: #fff; text-decoration: none; }
+.lj-logo { display: flex; align-items: baseline; gap: 4px; padding: 4px 6px; border: 1px solid transparent; border-radius: 4px; }
+.lj-logo b { font-size: 22px; letter-spacing: -.5px; } .lj-logo span { color: var(--ouro); font-weight: 600; }
+.lj-logo:hover, .lj-atalhos a:hover { border-color: #fff; }
+.lj-entrega { display: flex; flex-direction: column; font-size: 13px; line-height: 1.2; max-width: 170px; }
+.lj-entrega small, .lj-atalhos small { color: #ccc; font-size: 11px; }
+.lj-entrega b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lj-busca { flex: 1 1 320px; display: flex; min-width: 0; border-radius: 6px; overflow: hidden; height: 40px; }
+.lj-busca select { width: auto; max-width: 140px; border: 0; border-radius: 0; background: #e6e6e6; color: #111; font-size: 12px; padding: 0 6px; }
+.lj-busca input { flex: 1; min-width: 0; border: 0; border-radius: 0; padding: 0 10px; background: #fff; color: #111; }
+.lj-busca button { width: 48px; border: 0; background: var(--ouro); color: #111; font-size: 20px; cursor: pointer; }
+.lj-busca button:hover { background: #c9a25a; }
+.lj-atalhos { display: flex; gap: 6px; align-items: center; }
+.lj-atalhos a { display: flex; flex-direction: column; font-size: 13px; line-height: 1.2; padding: 4px 6px; border: 1px solid transparent; border-radius: 4px; }
+.lj-carrinho { flex-direction: row !important; align-items: flex-end; gap: 2px; position: relative; font-size: 22px !important; }
+.lj-carrinho b { font-size: 13px; }
+.lj-cn { position: absolute; top: -4px; left: 18px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ouro); color: #111; font-size: 12px; font-weight: 800; line-height: 18px; text-align: center; }
+.lj-cats { display: flex; gap: 2px; background: #1c1c1c; padding: 4px 10px; overflow-x: auto; border-radius: 0 0 var(--raio) var(--raio); margin-bottom: 16px; }
+.lj-cats a { color: #fff; white-space: nowrap; padding: 6px 8px; font-size: 13px; text-decoration: none; border: 1px solid transparent; border-radius: 3px; }
+.lj-cats a:hover { border-color: #fff; }
+.lj-cats .lj-admin { margin-left: auto; color: var(--ouro); }
+.lj-hero { position: relative; border-radius: var(--raio); background: linear-gradient(120deg, var(--c1), var(--c2)); color: #fff; min-height: 260px; display: flex; align-items: flex-start; padding: 30px 70px 96px; margin-bottom: -64px; }
+.lj-hero a { color: #fff; text-decoration: none; max-width: 640px; }
+.lj-hero h2 { font-size: clamp(22px, 3.2vw, 34px); margin: 0 0 8px; }
+.lj-hero .btn { margin-top: 10px; background: #fff; color: #111; }
+.lj-seta { position: absolute; left: 8px; top: 30%; height: 80px; width: 40px; border: 0; background: rgba(0,0,0,.15); color: #fff; font-size: 34px; border-radius: 6px; cursor: pointer; }
+.lj-seta.d { left: auto; right: 8px; }
+.lj-grade-cat { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 0 16px; margin-bottom: 20px; }
+.lj-cat-card { background: var(--superficie); padding: 16px; border-radius: var(--raio); box-shadow: var(--sombra); display: flex; flex-direction: column; }
+.lj-cat-card h3 { margin: 0 0 10px; font-size: 18px; }
+.lj-mini4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; }
+.lj-mini4 a { text-decoration: none; color: var(--texto); font-size: 12px; }
+.lj-mini4 svg, .lj-mini4 img { width: 100%; aspect-ratio: 1; border-radius: 8px; object-fit: cover; display: block; }
+.lj-ver { margin-top: 10px; font-size: 13px; }
+.lj-trilho { background: var(--superficie); border-radius: var(--raio); padding: 14px 16px; margin-bottom: 16px; box-shadow: var(--sombra); }
+.lj-trilho header { display: flex; justify-content: space-between; align-items: baseline; }
+.lj-trilho h3 { margin: 0 0 10px; }
+.lj-trilho-l { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+.lj-trilho-l .lj-card { flex: 0 0 200px; scroll-snap-align: start; }
+.lj-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.lj-card { position: relative; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.lj-card-img svg, .lj-card-img img { width: 100%; aspect-ratio: 1; display: block; border-radius: 8px; object-fit: cover; }
+.lj-card-t { color: var(--texto); text-decoration: none; font-size: 14px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lj-card-t:hover { color: var(--marca); text-decoration: underline; }
+.lj-card .lj-add { margin-top: auto; border-radius: 999px; }
+.lj-coracao { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); color: #bbb; font-size: 17px; cursor: pointer; }
+.lj-coracao.on { color: #d0342c; }
+.lj-estrelas b { color: #e8a317; font-weight: 400; letter-spacing: 1px; } .lj-estrelas i { color: #ccc; font-style: normal; letter-spacing: 1px; }
+.lj-n { color: var(--azul); font-size: 13px; }
+.lj-sem-aval { color: var(--mudo); font-size: 12px; }
+.lj-preco { font-size: 22px; font-weight: 500; line-height: 1.2; }
+.lj-preco sup { font-size: 12px; vertical-align: super; }
+.lj-preco.grande { font-size: 30px; }
+.lj-preco.consulta { font-size: 16px; font-weight: 600; color: var(--marca); }
+.lj-un { font-size: 12px; color: var(--mudo); margin-left: 2px; }
+.lj-off { color: #cc0c39; font-size: .8em; font-weight: 300; }
+.lj-de { font-size: 12px; color: var(--mudo); }
+.lj-parc { font-size: 12px; }
+.lj-selo { display: inline-block; align-self: flex-start; font-size: 11px; padding: 1px 6px; border-radius: 3px; background: var(--ouro-claro); color: var(--marca); font-weight: 600; }
+.lj-busca-pg { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
+.lj-filtros h4 { margin: 14px 0 6px; font-size: 14px; }
+.lj-filtros .check { display: block; font-size: 13px; margin: 3px 0; }
+.lj-faixa { display: flex; gap: 6px; } .lj-faixa input { width: 50%; }
+.lj-res-cab { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.lj-res-cab select { width: auto; }
+.lj-prod { display: grid; grid-template-columns: minmax(220px, 380px) 1fr 260px; gap: 24px; align-items: start; margin-bottom: 20px; }
+.lj-prod-img svg, .lj-prod-img img { width: 100%; aspect-ratio: 1; border-radius: var(--raio); object-fit: cover; display: block; position: sticky; top: 10px; }
+.lj-prod-info h1 { font-size: 24px; font-weight: 500; margin: 0 0 4px; }
+.lj-bullets li { margin: 4px 0; }
+.lj-compra { border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--superficie); }
+.lj-compra .btn { border-radius: 999px; width: 100%; justify-content: center; }
+.lj-btn-add { background: #f7ca00 !important; color: #111 !important; border-color: #f2c200 !important; }
+.lj-btn-comprar { background: #fa8900 !important; color: #111 !important; border-color: #f08804 !important; }
+.lj-disp { color: var(--ok); font-weight: 600; font-size: 14px; margin: 0; }
+.lj-juntos-l { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lj-juntos-l a { width: 120px; text-decoration: none; color: var(--texto); font-size: 12px; }
+.lj-juntos-l svg, .lj-juntos-l img { width: 120px; height: 120px; border-radius: 8px; display: block; object-fit: cover; }
+.lj-mais { font-size: 26px; color: var(--mudo); }
+.lj-qa { border-bottom: 1px solid var(--borda); padding: 6px 0; } .lj-qa p { margin: 3px 0; }
+.lj-perguntar { display: flex; gap: 8px; margin-top: 10px; } .lj-perguntar input { flex: 1; }
+.lj-aval { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+.lj-dist { display: grid; grid-template-columns: 70px 1fr 40px; gap: 8px; align-items: center; font-size: 13px; margin: 4px 0; }
+.lj-dist i { height: 18px; background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 4px; overflow: hidden; }
+.lj-dist i b { display: block; height: 100%; background: #e8a317; }
+.lj-aval-l article { border-bottom: 1px solid var(--borda); padding: 10px 0; } .lj-aval-l p { margin: 3px 0; }
+.lj-verif { color: #c45500; font-weight: 600; }
+.lj-carr { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+.lj-linha { display: grid; grid-template-columns: 110px 1fr auto; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--borda); }
+.lj-linha svg, .lj-linha img { width: 110px; height: 110px; border-radius: 8px; object-fit: cover; display: block; }
+.lj-linha-ac { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+.lj-linha-ac select { width: auto; }
+.lj-linha-v { font-size: 18px; }
+.lj-sub { text-align: right; font-size: 18px; }
+.lj-resumo { position: sticky; top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.lj-fechar { background: #f7ca00 !important; color: #111 !important; border-color: #f2c200 !important; border-radius: 999px; justify-content: center; text-align: center; }
+.lj-cupom { display: flex; gap: 6px; } .lj-cupom input { flex: 1; min-width: 0; }
+.lj-total { font-size: 18px; color: #b12704; margin: 4px 0; }
+.lj-checkout h3 { margin: 18px 0 8px; border-top: 1px solid var(--borda); padding-top: 14px; }
+.lj-checkout h3:first-of-type { border: 0; padding: 0; }
+.lj-pag .check { display: block; margin: 4px 0; }
+.lj-rev { display: flex; justify-content: space-between; margin: 4px 0; }
+.lj-ped header { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; background: var(--superficie-2); margin: -16px -16px 12px; padding: 10px 16px; border-radius: var(--raio) var(--raio) 0 0; }
+.lj-ped header div { display: flex; flex-direction: column; font-size: 13px; } .lj-ped header small { color: var(--mudo); font-size: 11px; }
+.lj-ped header .btn { margin-left: auto; }
+.lj-status { display: flex; list-style: none; padding: 0; margin: 12px 0; counter-reset: s; }
+.lj-status li { flex: 1; position: relative; padding-top: 22px; font-size: 12px; text-align: center; color: var(--mudo); display: flex; flex-direction: column; }
+.lj-status li::before { content: ''; position: absolute; top: 6px; left: 0; right: 0; height: 4px; background: var(--borda); }
+.lj-status li::after { content: ''; position: absolute; top: 0; left: calc(50% - 8px); width: 16px; height: 16px; border-radius: 50%; background: var(--borda); }
+.lj-status li.feito { color: var(--texto); } .lj-status li.feito::before, .lj-status li.feito::after { background: var(--ok); }
+.lj-status li.atual b { color: var(--ok); }
+.lj-ped-cab { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lj-ped-cab h2 { margin: 0; }
+.lj-ped-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lj-integr { margin-top: 14px; }
+.lj-adm-img svg, .lj-adm-img img { width: 48px; height: 48px; border-radius: 6px; display: block; object-fit: cover; }
+.lj-rodape { text-align: center; color: var(--mudo); font-size: 13px; margin: 24px 0 8px; }
+@media (max-width: 900px) {
+  .lj-busca-pg, .lj-carr, .lj-aval, .lj-ped-grade { grid-template-columns: 1fr; }
+  .lj-prod { grid-template-columns: 1fr; }
+  .lj-prod-img svg, .lj-prod-img img { position: static; max-width: 360px; margin: auto; }
+  .lj-hero { padding: 22px 52px 90px; }
+  .lj-entrega { display: none; }
+}
+@media (max-width: 560px) {
+  .lj-linha { grid-template-columns: 72px 1fr; } .lj-linha svg, .lj-linha img { width: 72px; height: 72px; } .lj-linha-v { grid-column: 2; }
+  .lj-atalhos small { display: none; }
+  .lj-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .lj-grade-cat { padding: 0 6px; }
+}
+@media print { .lj-topo, .lj-cats { display: none !important; } }
