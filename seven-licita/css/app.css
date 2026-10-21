@@ -517,3 +517,35 @@ tr.p-linha-ruim td { background: var(--perigo-claro); }
 .ac-hero .btn.primario, .ac-banner .btn.primario { background: var(--ouro); border-color: var(--ouro); color: #050505; }
 .ac-hero .btn.primario:hover, .ac-banner .btn.primario:hover { background: #c9a25a; }
 .ac-info .barra { flex: none; }
+
+/* minhas finanças */
+.pos { color: var(--ok); } .neg { color: var(--perigo); }
+.f-cab { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-bottom: 4px; } .f-perfil { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--mudo); } .f-perfil select { font-weight: 700; color: var(--texto); }
+.f-mes { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; } .f-mes b { min-width: 150px; text-align: center; font-size: 16px; }
+.f-kpis > div span { display: block; font-size: 12px; color: var(--mudo); } .f-kpis b.pos { color: var(--ok); } .f-kpis b.neg { color: var(--perigo); }
+.f-analise { border-left: 4px solid var(--ouro); } .f-analise ul { margin: 0; padding-left: 18px; } .f-analise li { margin: 3px 0; }
+.f-rosca { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; } .f-rosca svg { width: 170px; height: 170px; flex: none; }
+.f-rosca-t { font-size: 6px; fill: var(--mudo); } .f-rosca-v { font-size: 7.5px; font-weight: 700; fill: var(--texto); }
+.f-rosca ul { list-style: none; padding: 0; margin: 0; flex: 1; min-width: 140px; } .f-rosca li { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 2px 0; } .f-rosca li b { margin-left: auto; } .f-rosca li i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.f-barras { display: flex; align-items: flex-end; gap: 10px; height: 170px; padding-top: 8px; } .f-barras > div { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 100%; position: relative; padding-bottom: 18px; }
+.f-b { width: 40%; border-radius: 4px 4px 0 0; min-height: 2px; } .f-b.r, .f-leg.r { background: var(--ok); } .f-b.d, .f-leg.d { background: var(--c-vermelho); } .f-barras small { position: absolute; bottom: 0; font-size: 10px; color: var(--mudo); text-transform: capitalize; }
+.f-leg { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; }
+.f-lista { list-style: none; padding: 0; margin: 0 0 8px; } .f-lista li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--borda); font-size: 13px; flex-wrap: wrap; } .f-lista li > i { width: 10px; height: 10px; border-radius: 50%; flex: none; } .f-lista li b { margin-left: auto; display: flex; gap: 4px; } .f-lista li.atrasado span { color: var(--perigo); font-weight: 700; }
+.f-orc { margin: 8px 0; font-size: 13px; } .f-orc .barra { max-width: none; margin: 3px 0; } .f-orc i.alerta { background: var(--c-amarelo); } .f-orc i.estourado { background: var(--c-vermelho); } .f-orc.grande span { display: flex; align-items: center; gap: 6px; font-weight: 600; } .f-orc span > i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.f-totais { display: flex; flex-wrap: wrap; gap: 6px 18px; background: var(--superficie); padding: 10px 14px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; box-shadow: var(--sombra); }
+.f-dia { margin: 16px 0 6px; }
+.f-lancs { list-style: none; padding: 0; margin: 0; background: var(--superficie); border-radius: 10px; box-shadow: var(--sombra); overflow: hidden; }
+.f-lancs li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--borda); cursor: pointer; } .f-lancs li:last-child { border-bottom: 0; } .f-lancs li:hover { background: var(--superficie-2); }
+.f-lancs li > div { flex: 1; min-width: 0; } .f-lancs li > div b { display: block; } .f-lancs li small { color: var(--mudo); font-size: 12px; } .f-lancs li.pend .f-valor { opacity: .7; }
+.f-ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-style: normal; font-weight: 700; flex: none; }
+.f-valor { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.f-st { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--borda); background: var(--superficie); cursor: pointer; color: var(--mudo); flex: none; } .f-st.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+.f-venc { font-size: 11px; background: var(--superficie-2); border-radius: 4px; padding: 1px 6px; margin-right: 4px; } .f-venc.atrasado { background: var(--perigo-claro); color: var(--perigo); font-weight: 700; } .f-venc.logo { background: var(--ouro-claro); }
+.f-receita { border-color: var(--ok); color: var(--ok); } .f-despesa { border-color: var(--perigo); color: var(--perigo); }
+.f-saldo { display: block; font-size: 24px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+.f-cartao > header { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; } .f-plastico { width: 230px; height: 130px; border-radius: 12px; color: #fff; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 6px 16px rgba(0,0,0,.25); } .f-plastico b { font-size: 16px; } .f-plastico small { opacity: .8; }
+.f-lim { flex: 1; min-width: 220px; } .f-lim .barra { max-width: none; } .f-lim span { font-size: 12px; color: var(--mudo); }
+.f-fatura { margin-top: 12px; border-top: 1px solid var(--borda); padding-top: 10px; }
+.f-meta { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borda); } .f-meta > div { flex: 1; } .f-meta small { display: block; color: var(--mudo); font-size: 12px; } .f-meta .barra { max-width: none; }
+.f-bol { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+tr.f-sub td { font-weight: 700; background: var(--superficie-2); }

@@ -79,6 +79,35 @@ const testes = {
     ok(await pg.locator('[data-a=certificado]').count() === 1, 'certificado liberado ao concluir');
     ok(await pg.evaluate(() => Dados.e.academy.notas && Object.values(Dados.e.academy.notas)[0] === 'Revisar Lei 14.133'), 'anotações salvas');
     await foto('academy-curso'); await pg.goto(url + '#/academy'); await foto('academy-vitrine');
+  },
+  async financas(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    await pg.goto(url + '#/financas/contas'); await pg.waitForSelector('.f-conta');
+    await pg.click('[data-ajuste]'); await pg.fill('.modal [name=v]', '2000'); await submit();
+    await pg.click('[data-a=cartao]'); await pg.fill('.modal [name=nome]', 'Visa Seven'); await pg.fill('.modal [name=limite]', '5000'); await pg.fill('.modal [name=fechamento]', '5'); await pg.fill('.modal [name=vencimento]', '12'); await submit();
+    await pg.goto(url + '#/financas/lancamentos');
+    await pg.click('[data-novo=receita]'); await pg.fill('.modal [name=descricao]', 'Honorários cliente X'); await pg.fill('.modal [name=valor]', '3.500,00'); await pg.selectOption('.modal [name=categoria]', { label: 'Honorários' }); await submit();
+    await pg.click('[data-novo=despesa]'); await pg.fill('.modal [name=descricao]', 'Aluguel'); await pg.fill('.modal [name=valor]', '1500'); await pg.selectOption('.modal [name=categoria]', { label: 'Moradia' }); await pg.selectOption('.modal [name=modo]', 'fixa'); await pg.fill('.modal [name=vezes]', '3'); await submit();
+    await pg.click('[data-novo=cartao]'); await pg.fill('.modal [name=descricao]', 'Notebook'); await pg.fill('.modal [name=valor]', '3000'); await pg.selectOption('.modal [name=categoria]', { label: 'Compras' }); await pg.selectOption('.modal [name=modo]', 'parcelada'); await pg.fill('.modal [name=vezes]', '10'); await submit();
+    await pg.waitForTimeout(200);
+    const n = await pg.evaluate(() => Dados.e.financas.lancamentos.length);
+    ok(n === 1 + 1 + 3 + 10, 'lançamentos: receita, ajuste, fixa (3x) e parcelada (10x) — ' + n);
+    ok(/Receitas R\$\s?3\.500,00/.test(await pg.locator('.f-totais').innerText()), 'totais do mês (ajuste de saldo fora das receitas)');
+    await pg.goto(url + '#/financas/geral'); await pg.waitForSelector('.f-analise');
+    ok(await pg.locator('.f-analise li').count() >= 2, 'análise do mês em texto');
+    ok(/4\.000,00/.test(await pg.locator('.f-kpis').innerText()), 'saldo das contas (2.000 + 3.500 − 1.500 do aluguel pago)');
+    await pg.goto(url + '#/financas/planejamento'); await pg.click('[data-a=orc]');
+    await pg.locator('.modal tr:has-text("Moradia") input').fill('1600'); await submit();
+    ok(await pg.locator('.f-orc.grande').count() === 1, 'orçamento por categoria');
+    await pg.click('[data-a=meta]'); await pg.fill('.modal [name=n]', 'Reserva'); await pg.fill('.modal [name=a]', '10000'); await submit(); await pg.click('[data-aporte]'); await pg.fill('.modal [name=v]', '1000'); await submit();
+    ok(/10%/.test(await pg.locator('.f-meta').innerText()), 'meta com aporte');
+    const ofx = '<OFX><STMTTRN><DTPOSTED>' + (new Date().toISOString().slice(0, 10).replace(/-/g, '')) + '<TRNAMT>-89.90<FITID>x1<MEMO>SUPERMERCADO BOM PRECO</STMTTRN></OFX>';
+    await pg.goto(url + '#/financas/importar'); const fc = pg.waitForEvent('filechooser'); await pg.click('[data-a=arquivo]'); await (await fc).setFiles(t.arquivo('extrato.ofx', ofx));
+    await pg.waitForSelector('[data-a=confirmar]'); await pg.click('[data-a=confirmar]'); await pg.waitForSelector('.f-lancs');
+    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.some(l => l.idBanco === 'x1')), 'importação de extrato OFX');
+    await pg.goto(url + '#/financas/contas'); ok(/Pagar fatura/.test(await pg.locator('.f-cartao').innerText()) || /Fatura/.test(await pg.locator('.f-cartao').innerText()), 'fatura do cartão');
+    await pg.goto(url + '#/financas/relatorios'); ok(await pg.locator('text=DRE simplificada').count() === 1, 'relatórios e DRE');
+    await foto('financas-relatorios'); await pg.goto(url + '#/financas/geral'); await foto('financas-geral');
   }
 };
 
