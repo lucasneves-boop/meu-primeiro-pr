@@ -631,6 +631,51 @@ const testes = {
     await pg.goto(url + '#/anotacoes/lixeira'); ok(await pg.locator('.an-card').count() === 1 && /Exclui em 30/.test(await pg.locator('.an-card small').innerText()), 'lixeira com prazo de 30 dias');
     await pg.click('.an-card'); await pg.check('.modal [value=restaurar]'); await submit(); ok(await pg.locator('.an-card').count() === 0, 'restaurar da lixeira');
     await pg.goto(url + '#/anotacoes'); await pg.waitForSelector('.an-card'); await foto('anotacoes-lista');
+  },
+  async design(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]'); const fs = require('fs');
+    await pg.goto(url + '#/design'); await pg.waitForSelector('.ds-formato');
+    ok(await pg.locator('.ds-modelo').count() === 6, '6 modelos Seven na vitrine');
+    await foto('design-inicio');
+    await pg.click('.ds-modelo[data-m="post-licitacao"]'); await pg.waitForSelector('.ds-pg');
+    ok(await pg.locator('.ds-paginas .ds-pg .ds-el').count() === 7, 'modelo aberto no editor com 7 elementos');
+    // adicionar retângulo e mover
+    await pg.click('[data-aba=elementos]'); await pg.click('[data-add=ret]');
+    const id = await pg.evaluate(() => Dados.e.design.designs[0].paginas[0].elementos.slice(-1)[0].id);
+    const antes = await pg.evaluate((i) => { const x = Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i); return { x: x.x, y: x.y, w: x.w }; }, id);
+    const b = await pg.locator(`.ds-paginas .ds-el[data-id="${id}"]`).boundingBox();
+    await pg.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await pg.mouse.down(); await pg.mouse.move(b.x + b.width / 2 + 60, b.y + b.height / 2 + 30, { steps: 6 }); await pg.mouse.up();
+    const depois = await pg.evaluate((i) => { const x = Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i); return { x: x.x, y: x.y }; }, id);
+    ok(depois.x > antes.x && depois.y > antes.y, 'arrastar move o elemento');
+    // redimensionar pela alça sudeste
+    const al = await pg.locator('.ds-alca.a-se').boundingBox(); await pg.mouse.move(al.x + al.width / 2, al.y + al.height / 2); await pg.mouse.down(); await pg.mouse.move(al.x + 80, al.y + 5, { steps: 5 }); await pg.mouse.up();
+    ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).w, id) > antes.w, 'redimensionar pela alça');
+    // cor pela barra
+    await pg.click('#ds-props [data-prop=cor][data-v="#800000"]'); ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).cor === '#800000', id), 'trocar cor pela barra de propriedades');
+    // desfazer
+    await pg.click('[data-a=desfazer]'); ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).cor !== '#800000', id), 'desfazer');
+    await pg.click('[data-a=refazer]');
+    // texto: editar com duplo clique
+    await pg.click('[data-aba=texto]'); await pg.click('[data-add=titulo]');
+    const tid = await pg.evaluate(() => Dados.e.design.designs[0].paginas[0].elementos.slice(-1)[0].id);
+    await pg.dblclick(`.ds-paginas .ds-el[data-id="${tid}"]`); await pg.keyboard.type('Pregão 90021/2026'); await pg.click('.ds-area', { position: { x: 5, y: 200 } });
+    ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).texto === 'Pregão 90021/2026', tid), 'editar texto com duplo clique');
+    // fonte e alinhamento
+    await pg.click(`.ds-paginas .ds-el[data-id="${tid}"]`); await pg.selectOption('#ds-props [data-prop-sel=fonte]', 'Playfair Display'); await pg.click('#ds-props [data-prop=alinh][data-v=center]');
+    ok(await pg.evaluate((i) => { const x = Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i); return x.fonte === 'Playfair Display' && x.alinh === 'center'; }, tid), 'fonte e alinhamento');
+    // logo da marca e página nova
+    await pg.click('[data-aba=marca]'); await pg.click('[data-logo="img/seven-logo.png"]');
+    await pg.click('[data-a=add-pagina]'); ok(await pg.evaluate(() => Dados.e.design.designs[0].paginas.length === 2), 'adicionar página');
+    await pg.click('[data-aba=elementos]'); await pg.click('[data-add=estrela]'); await pg.keyboard.press('Delete');
+    ok(await pg.evaluate(() => Dados.e.design.designs[0].paginas[1].elementos.length === 0), 'Delete apaga o selecionado');
+    await pg.locator('[data-pgw]').first().scrollIntoViewIfNeeded(); await pg.click('[data-pgw] .ds-pg', { position: { x: 3, y: 3 } });
+    await foto('design-editor');
+    // exportar PNG
+    const [dl] = await Promise.all([pg.waitForEvent('download'), (async () => { await pg.click('[data-a=baixar]'); await pg.selectOption('.modal [name=pags]', 'atual'); await submit(); })()]);
+    const buf = fs.readFileSync(await dl.path());
+    ok(buf.slice(1, 4).toString() === 'PNG' && buf.readUInt32BE(16) === 1080 && buf.readUInt32BE(20) === 1080, 'PNG exportado em 1080×1080');
+    ok(/\.png$/.test(dl.suggestedFilename()), 'nome do arquivo: ' + dl.suggestedFilename());
+    await pg.goto(url + '#/design'); ok(await pg.locator('.ds-meu').count() === 1, 'design aparece em Seus designs');
   }
 };
 

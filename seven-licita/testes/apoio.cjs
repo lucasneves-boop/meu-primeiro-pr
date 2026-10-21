@@ -10,7 +10,7 @@ async function abrir(saida, opcoes) {
   await new Promise(o => srv.listen(0, o));
   const url = 'http://127.0.0.1:' + srv.address().port + '/';
   const { args, ...ctxOpc } = opcoes || {};
-  const nav = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'].concat(args || []) });
+  const nav = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'].concat(args || []), env: Object.assign({}, process.env, { LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' }) });
   const ctx = await nav.newContext(Object.assign({ viewport: { width: 1440, height: 900 }, locale: 'pt-BR', acceptDownloads: true }, ctxOpc));
   const pg = await ctx.newPage();
   const erros = []; pg.on('pageerror', e => erros.push(e.message)); pg.on('dialog', d => d.accept());
