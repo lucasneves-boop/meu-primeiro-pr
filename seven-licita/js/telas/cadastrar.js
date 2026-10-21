@@ -6,7 +6,7 @@
   const STATUS = { rascunho: 'Rascunho', pronta: 'Pronta para envio', enviada: 'Enviada no portal', erro: 'Envio com erro', vencida: 'Ganha / readequada', perdida: 'Não vencida' };
   const PORTAIS = ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Compras Públicas', 'SISLOG-GO', 'Licitações-e', 'Licitar Digital', 'BBMNet', 'Portal próprio do órgão', 'Outro'];
   const LINKS_CERTIDOES = [
-    { t: 'CND Federal (Receita/PGFN)', u: 'https://solucoes.receita.fazenda.gov.br/Servicos/certidaointernet/PJ/Emitir' },
+    { t: 'CND Federal (Receita/PGFN)', u: 'https://www.gov.br/pt-br/servicos/emitir-certidao-de-regularidade-fiscal' },
     { t: 'CRF do FGTS (Caixa)', u: 'https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf' },
     { t: 'CNDT (TST)', u: 'https://cndt-certidao.tst.jus.br/inicio.faces' },
     { t: 'SICAF', u: 'https://www3.comprasnet.gov.br/sicaf-web/index.jsf' }
@@ -263,7 +263,7 @@
     if (!emp) { el.innerHTML = UI.vazio('Sem cliente', 'Cadastre um cliente para guardar documentos.', '<a class="btn primario" href="#/empresas">Cadastrar cliente</a>'); return; }
     const l = e().documentos.filter(function (d) { return d.empresaId === emp.id; }).sort(function (a, b) { return (a.validade || '9999') < (b.validade || '9999') ? -1 : 1; });
     el.innerHTML = '<div class="barra-acoes"><p class="mudo">Documentos de <b>' + esc(emp.fantasia || emp.razao) + '</b>. Aviso 7 dias antes do vencimento. Diferente da referência, nada é apagado sozinho: o vencido fica marcado.</p><button class="btn primario" data-a="novo">+ Adicionar documentos</button></div>' +
-      '<p class="mini">Emitir certidões: ' + LINKS_CERTIDOES.map(function (x) { return '<a href="' + x.u + '" target="_blank" rel="noopener">' + esc(x.t) + ' ↗</a>'; }).join(' · ') + '</p>' +
+      '<p class="mini">Emitir certidões: ' + LINKS_CERTIDOES.map(function (x) { return '<a href="' + x.u + '" target="_blank" rel="noopener">' + esc(x.t) + ' ↗</a>'; }).join(' · ') + ' · <a href="#/habilitacao"><b>Todos os estados e municípios →</b></a></p>' +
       (l.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Documento</th><th>Tipo</th><th>Número</th><th>Órgão expedidor</th><th>Emissão</th><th>Validade</th><th>Status</th><th></th></tr></thead><tbody>' +
         l.map(function (d) { const s = Nucleo.statusDocumento(d.validade); return '<tr data-id="' + d.id + '"><td><b>' + esc(d.nome) + '</b>' + (d.arquivo ? '<br><a href="#" data-a="abrir" class="mini">' + esc(d.arquivo.nome) + '</a>' : '') + '</td><td>' + esc(d.tipo) + '</td><td>' + esc(d.numero || '') + '</td><td>' + esc(d.orgao || '') + '</td><td>' + data(d.emissao) + '</td><td>' + data(d.validade) + '</td><td><span class="tag st-doc-' + s.codigo + '">' + esc(s.rotulo) + '</span></td><td class="acoes"><button class="btn mini fantasma" data-a="editar">Editar</button><button class="btn mini fantasma" data-a="substituir">Nova versão</button><button class="btn mini fantasma perigo" data-a="excluir">×</button></td></tr>'; }).join('') + '</tbody></table></div>'
         : UI.vazio('Nenhum documento', 'Adicione certidões, contrato social, atestados e balanço. Até 10 arquivos por vez.', '<button class="btn primario" data-a="novo">+ Adicionar documentos</button>'));

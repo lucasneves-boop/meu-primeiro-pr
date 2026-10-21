@@ -965,3 +965,37 @@ body.com-player .ag-pomo-mini { bottom: 96px; }
 .cm-opcoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .cm-opcao { position: relative; border: 1px solid var(--borda); border-radius: 12px; padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; } .cm-opcao.rec { border: 2px solid var(--ouro); box-shadow: 0 8px 24px rgba(182, 141, 64, .2); } .cm-opcao em { position: absolute; top: -11px; left: 14px; background: var(--ouro); color: #050505; font-style: normal; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 99px; } .cm-opcao h3 { margin: 0; } .cm-preco { font-size: 26px; color: #050505; } .cm-preco small { font-size: 13px; color: var(--mudo); } .cm-opcao ul { padding-left: 18px; margin: 8px 0 0; font-size: 13px; }
 @media (max-width: 800px) { .cm-spin, .cm-opcoes { grid-template-columns: 1fr; } .cm-prop, .es-rel { padding: 18px; } .es-capa { margin: -18px -18px 18px; padding: 18px; } .es-ficha dl { grid-template-columns: 1fr; } .cm-funil > div { grid-template-columns: 110px 1fr 28px; } .cm-funil small { display: none; } }
 @media print { .cm-prop, .es-rel { box-shadow: none; max-width: none; padding: 0; } .es-capa { margin: 0 0 16px; } .es-rel section, .cm-prop section { break-inside: avoid-page; } .cm-opcoes { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------- SICAF e Certidões ---------- */
+.hb-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.hb-card h3 { margin-top: 0; }
+.hb-item { padding: 6px 0; border-bottom: 1px dashed var(--borda); }
+.hb-item:last-child { border-bottom: 0; }
+.hb-item p { margin: 2px 0 0; }
+.hb-link { font-weight: 600; word-break: break-word; }
+.hb-sem { color: var(--mudo); }
+.hb-selo { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; margin-left: 4px; white-space: nowrap; }
+.hb-v { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.hb-d { background: var(--ouro-claro); color: var(--marca); }
+.hb-n { background: var(--perigo-claro); color: var(--perigo); }
+.hb-u { background: color-mix(in srgb, var(--azul) 14%, transparent); color: var(--azul); }
+.hb-val { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; margin-left: 4px; background: var(--superficie-2); color: var(--mudo); }
+.hb-legenda { margin-top: 18px; line-height: 2; }
+.hb-ufs { flex-wrap: wrap; margin-bottom: 12px; }
+.hb-filtro { width: 100%; max-width: 420px; margin-bottom: 10px; }
+.hb-tab td { vertical-align: top; }
+.hb-tit { margin: 6px 0 12px; }
+.hb-resumo .hb-barra { height: 10px; border-radius: 999px; background: var(--superficie-2); overflow: hidden; margin: 10px 0 6px; }
+.hb-resumo .hb-barra i { display: block; height: 100%; background: var(--ouro); }
+.hb-num .ok { color: var(--ok); } .hb-num .alerta { color: var(--alerta); } .hb-num .perigo { color: var(--perigo); }
+.hb-st-ok, .hb-st-sem-validade { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.hb-st-vencendo { background: var(--ouro-claro); color: #7a5300; }
+.hb-st-vencido { background: var(--perigo-claro); color: var(--perigo); }
+.hb-st-falta { background: var(--superficie-2); color: var(--mudo); }
+.hb-busca { display: flex; gap: 8px; flex-wrap: wrap; }
+.hb-busca input { flex: 1 1 220px; }
+.hb-passos li { margin: 6px 0; }
+.hb-passos .hb-item { display: inline; border: 0; padding: 0; }
+.hb-nivel { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 8px; background: var(--primario); color: var(--primario-texto); font-size: 13px; margin-right: 6px; }
+.hb-docs { padding-left: 18px; margin: 6px 0 0; }
+.hb-docs li { margin: 4px 0; }

@@ -441,6 +441,41 @@ const testes = {
     await pg.goto(url + '#/musicas/externos'); await pg.fill('#mu-ext [name=u]', 'https://open.spotify.com/intl-pt/playlist/37i9dQZF1DX8NTLI2TtZa6'); await pg.click('#mu-ext button');
     ok((await pg.getAttribute('.mu-ext iframe', 'src')).startsWith('https://open.spotify.com/embed/playlist/'), 'playlist do Spotify incorporada');
     await pg.goto(url + '#/musicas'); await foto('musicas-inicio'); await pg.goto(url + '#/musicas/biblioteca'); await foto('musicas-biblioteca');
+  },
+  async habilitacao(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    await pg.goto(url); await pg.evaluate(() => {
+      Dados.e.empresas.push({ id: 'emphb', razao: 'Papelaria Exemplo LTDA', fantasia: 'Papelaria Exemplo', cnpj: '11222333000181', uf: 'GO', municipio: 'Catalão' }); Dados.e.empresaAtiva = 'emphb';
+      const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+      Dados.e.documentos.push({ id: 'dh1', empresaId: 'emphb', nome: 'CND Federal', tipo: 'Habilitação', validade: d(90) }, { id: 'dh2', empresaId: 'emphb', nome: 'CRF FGTS', tipo: 'Habilitação', validade: d(3) }, { id: 'dh3', empresaId: 'emphb', nome: 'Certidão Municipal', tipo: 'Habilitação', validade: d(-2) }, { id: 'dh4', empresaId: 'emphb', nome: 'Contrato Social', tipo: 'Habilitação' });
+      Dados.salvar(); });
+    await pg.goto(url + '#/habilitacao'); await pg.waitForSelector('.hb-resumo');
+    ok(await pg.locator('.menu a[data-rota=habilitacao].ativo').count() === 1, 'menu SICAF e Certidões ativo');
+    ok(await pg.locator('tr[data-item=cnd-federal] .hb-st-ok').count() === 1, 'CND Federal válida reconhecida pelo nome');
+    ok(await pg.locator('tr[data-item=crf-fgts] .hb-st-vencendo').count() === 1, 'FGTS vencendo');
+    ok(await pg.locator('tr[data-item=cnd-municipal] .hb-st-vencido').count() === 1, 'certidão municipal vencida');
+    ok(await pg.getAttribute('tr[data-item=cnd-municipal] a.btn', 'href') === 'https://www.catalao.go.gov.br/certidoes-negativas', 'emitir certidão municipal leva à prefeitura de Catalão');
+    ok((await pg.getAttribute('tr[data-item=cnd-estadual] a.btn', 'href')).includes('go.gov.br/servicos-digitais/economia'), 'emitir certidão estadual leva à Economia-GO');
+    ok(await pg.locator('.abas a.ativa .contador').innerText() === '2', 'contador de vencidos/vencendo na aba');
+    await pg.click('[data-a=lembretes]'); ok(await pg.evaluate(() => Dados.e.agenda.tarefas.filter(x => /^Renovar /.test(x.titulo)).length === 3), 'lembretes de renovação criados na Agenda');
+    await pg.click('[data-a=lembretes]'); ok(await pg.evaluate(() => Dados.e.agenda.tarefas.filter(x => /^Renovar /.test(x.titulo)).length === 3), 'lembretes não duplicam');
+    await foto('habilitacao-cliente');
+    await pg.goto(url + '#/habilitacao/estados'); await pg.waitForSelector('tr[data-txt]');
+    ok(await pg.locator('tr[data-txt]').count() === 27, '27 UFs na visão geral');
+    await pg.fill('.hb-filtro', 'tocantins'); ok(await pg.locator('tr[data-txt]:visible').count() === 1, 'filtro por estado');
+    await pg.goto(url + '#/habilitacao/estados/RN'); ok(await pg.locator('.hb-card .hb-n').count() >= 1 && await pg.locator('.hb-card a:has-text("Buscar")').count() >= 1, 'link não confirmado mostra busca');
+    await foto('habilitacao-estado');
+    await pg.goto(url + '#/habilitacao/municipios/GO'); await pg.waitForSelector('#hb-busca');
+    ok(await pg.locator('.hb-tab tr').count() === 2, 'Goiânia e Catalão listadas');
+    await pg.fill('#hb-busca input', 'Anápolis'); await pg.click('[data-a=novo]');
+    await pg.fill('.modal [name=u]', 'javascript:alert(1)'); await submit(); ok(await pg.locator('.modal').count() === 1, 'URL inválida recusada');
+    await pg.fill('.modal [name=u]', 'https://www.anapolis.go.gov.br/'); await submit(); await pg.waitForSelector('.hb-u');
+    ok(await pg.locator('.hb-tab tr').count() === 3 && await pg.evaluate(() => Dados.e.linksHab[0].m === 'Anápolis'), 'link municipal cadastrado pela equipe');
+    await pg.goto(url + '#/habilitacao/sicaf'); await pg.waitForSelector('.hb-nivel');
+    ok(await pg.locator('.hb-nivel').count() === 6, '6 níveis do SICAF');
+    await pg.click('[data-a=revisei]'); ok(await pg.evaluate(() => !!Dados.e.sicafRev.emphb), 'revisão do SICAF registrada');
+    await foto('habilitacao-sicaf');
+    await pg.goto(url + '#/cadastrar/documentos'); ok(await pg.locator('#conteudo a[href="#/habilitacao"]').count() === 1, 'atalho em Meus Documentos');
   }
 };
 
