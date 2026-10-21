@@ -1,0 +1,10 @@
+{
+  "name": "seven-licita",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gestão de licitações da Seven: encontrar, cadastrar, disputar, monitorar, quadros e análise de mercado com dados do PNCP.",
+  "scripts": {
+    "test": "node --test testes/*.test.cjs",
+    "e2e": "node testes/navegador.e2e.cjs"
+  }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seven Licita</title>
+  <meta name="description" content="Encontrar, cadastrar, disputar e monitorar licitações — Seven, BPO de Licitações.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5c4d'/%3E%3Cpath d='M9 9h14l-8 15' stroke='%23f2b441' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+  <div class="casca">
+    <aside class="lateral" id="lateral">
+      <div class="marca">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 9h14l-8 15" stroke="#f2b441" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>Seven Licita</strong><small>BPO de Licitações</small></div>
+      </div>
+      <nav class="menu" aria-label="Principal">
+        <a href="#/painel" data-rota="painel"><span class="ic">◧</span>Painel</a>
+        <p class="grupo">Rotina</p>
+        <a href="#/encontrar" data-rota="encontrar"><span class="ic">⌕</span>Encontrar</a>
+        <a href="#/cadastrar" data-rota="cadastrar"><span class="ic">✎</span>Cadastrar</a>
+        <a href="#/disputar" data-rota="disputar"><span class="ic">⚡</span>Disputar</a>
+        <a href="#/monitorar" data-rota="monitorar"><span class="ic">◉</span>Monitorar</a>
+        <a href="#/quadros" data-rota="quadros"><span class="ic">▦</span>Quadros</a>
+        <a href="#/pecas" data-rota="pecas"><span class="ic">§</span>Peças Jurídicas</a>
+        <p class="grupo">Dados</p>
+        <a href="#/mercado" data-rota="mercado"><span class="ic">▤</span>Análise de Mercado</a>
+        <a href="#/mercado/pagometro" data-rota="pagometro"><span class="ic">$</span>Pagômetro</a>
+        <p class="grupo">Conta</p>
+        <a href="#/empresas" data-rota="empresas"><span class="ic">▣</span>Clientes (CNPJs)</a>
+        <a href="#/config" data-rota="config"><span class="ic">⚙</span>Configurações</a>
+      </nav>
+      <div class="rodape-lateral">Seven · (61) 98347-2232<br>seg–sex 9h–18h · sáb até 12h</div>
+    </aside>
+    <div class="principal">
+      <header class="topo">
+        <button class="icone abrir-menu" id="abrir-menu" aria-label="Abrir menu" aria-controls="lateral" aria-expanded="false">☰</button>
+        <h1 id="titulo-tela">Painel</h1>
+        <label class="seletor-empresa"><span>Cliente</span><select id="empresa-ativa" aria-label="Cliente ativo"></select></label>
+      </header>
+      <main id="conteudo" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="avisos-flutuantes" aria-live="polite"></div>
+
+  <script src="js/nucleo.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/dados.js"></script>
+  <script src="js/pncp.js"></script>
+  <script src="js/telas/painel.js"></script>
+  <script src="js/telas/empresas.js"></script>
+  <script src="js/telas/encontrar.js"></script>
+  <script src="js/telas/cadastrar.js"></script>
+  <script src="js/telas/disputar.js"></script>
+  <script src="js/telas/monitorar.js"></script>
+  <script src="js/telas/mercado.js"></script>
+  <script src="js/telas/quadros.js"></script>
+  <script src="js/telas/pecas.js"></script>
+  <script src="js/telas/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
