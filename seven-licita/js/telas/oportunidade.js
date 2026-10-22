@@ -1,11 +1,11 @@
 /* Anotações da oportunidade: uma só linha do tempo por licitação, que acompanha o edital
-   do Encontrar ao Cadastrar, Disputar, Monitorar e Quadros. A chave é o id do aviso (PNCP);
+   do Encontrar ao Cadastrar, Disputar, Monitorar e SevenHub. A chave é o id do aviso (PNCP);
    sem aviso vinculado, a chave é o próprio registro (proposta, disputa, monitor). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
   const { esc, dataHora, aviso, confirmar } = UI;
-  const ETAPAS = { encontrar: 'Encontrar', cadastrar: 'Cadastrar', disputar: 'Disputar', monitorar: 'Monitorar', quadros: 'Quadros', busca: 'Busca' };
+  const ETAPAS = { encontrar: 'Encontrar', cadastrar: 'Cadastrar', disputar: 'Disputar', monitorar: 'Monitorar', quadros: 'SevenHub', busca: 'Busca' };
 
   function e() { return Dados.e; }
   function loja() { e().notasOport = e().notasOport || {}; return e().notasOport; }

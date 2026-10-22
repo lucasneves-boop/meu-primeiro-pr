@@ -63,7 +63,7 @@
     },
     quadro: function (tam) {
       const q = (Dados.e.quadros || []).find(function (x) { return /licita/i.test(x.nome || x.titulo || '') && !x.arquivado; }) || (Dados.e.quadros || [])[0];
-      if (!q) return { corpo: '<p class="mudo">Crie o quadro de licitações em <a href="#/quadros">Quadros</a>.</p>' };
+      if (!q) return { corpo: '<p class="mudo">Crie o quadro de licitações em <a href="#/quadros">SevenHub</a>.</p>' };
       const it = q.listas.filter(function (l) { return !l.arquivada; }).map(function (l) { return { r: l.nome, v: q.cartoes.filter(function (c) { return c.lista === l.id && !c.arquivado; }).length }; });
       return { link: '#/quadros/' + q.id, corpo: G.barras(it, { largura: LARG[tam], fmt: inteiro, linha: 24, titulo: 'Cartões por lista' }), tabela: G.tabela(['Lista', 'Cartões'], it.map(function (x) { return [x.r, x.v]; })) };
     },
