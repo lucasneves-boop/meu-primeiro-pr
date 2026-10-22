@@ -127,7 +127,7 @@
       '<div class="grupo-botoes vertical"><button class="btn" data-a="pronta">Marcar como pronta</button><button class="btn primario" data-a="enviada">Registrar envio no portal</button><button class="btn" data-a="erro">Registrar erro no envio</button>' +
       '<label class="check"><input type="checkbox" data-a="disputar"' + (p.disputar ? ' checked' : '') + '> Enviar ao Seven Sniper</label>' +
       '<button class="btn fantasma" data-a="imprimir">Imprimir proposta</button><button class="btn fantasma" data-a="readequar">Proposta atualizada (pós-lances)</button>' +
-      '<button class="btn fantasma" data-a="monitorar">Adicionar ao Seven Watch</button><button class="btn fantasma" data-a="quadro">Criar cartão no Quadro</button><button class="btn fantasma perigo" data-a="excluir">Excluir proposta</button></div></section></div>';
+      (self.Integra ? Integra.botoesResultado(p.id) : '') + '<button class="btn fantasma" data-a="monitorar">Adicionar ao Seven Watch</button><button class="btn fantasma" data-a="quadro">Criar cartão no Seven Hub</button><button class="btn fantasma perigo" data-a="excluir">Excluir proposta</button></div></section></div>';
 
     el.insertAdjacentHTML('beforeend', Telas.oport.secao(Telas.oport.chaveProposta(p), 'cadastrar'));
     el.querySelector('#cab').oninput = function () { const fd = new FormData(this); p.portal = fd.get('portal'); p.validade = fd.get('validade'); p.prazoEntrega = fd.get('prazoEntrega'); p.impostos = Nucleo.lerNumeroBR(fd.get('impostos')) || 0; p.margem = Nucleo.lerNumeroBR(fd.get('margem')) || 0; Dados.salvar(); };
@@ -166,7 +166,7 @@
       if (a === 'imprimir') { imprimir(p, false); return; }
       if (a === 'readequar') { await readequar(p); }
       if (a === 'monitorar') { const av = e().avisos[p.avisoId]; Telas.monitorar.adicionar(av || { id: p.id, objeto: p.objeto, orgao: p.orgao, numero: p.numero, modalidade: p.modalidade, edital: p.edital, linkOrigem: p.linkOrigem, encerramento: p.encerramento }, p.portal); }
-      if (a === 'quadro') { const av = e().avisos[p.avisoId]; if (av) Telas.quadros.cartaoDeAviso(av); else aviso('Proposta sem licitação do PNCP vinculada.', 'erro'); }
+      if (a === 'quadro') { const ja = Integracao.cartaoDaProposta(Dados.e, p); if (ja) aviso('Esta licitação já está no quadro "' + ja.q.nome + '".'); else { Telas.quadros.cartaoDaProposta(p, true); aviso('Cartão criado no Seven Hub com os dados da proposta.'); } }
       if (a === 'excluir' && await confirmar('Excluir proposta', 'Excluir esta proposta?', 'Excluir')) { e().propostas = e().propostas.filter(function (x) { return x !== p; }); Dados.salvar(); location.hash = '#/cadastrar'; return; }
       Dados.salvar(); App.redesenhar();
     };

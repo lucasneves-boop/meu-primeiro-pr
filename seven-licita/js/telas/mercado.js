@@ -185,7 +185,7 @@
       const r = orgaos[org] = orgaos[org] || { orgao: org, notas: 0, pagas: 0, atrasoDias: [], aberto: 0, vencido: 0 };
       (ex.notas || []).forEach(function (n) {
         r.notas++;
-        const pgs = (ex.pagamentos || []).filter(function (p) { return p.ref && String(p.ref) === String(n.numero); });
+        const pgs = (ex.pagamentos || []).filter(function (p) { return (n.id && p.notaId === n.id) || (!p.notaId && p.ref && String(p.ref) === String(n.numero)); });
         const pago = pgs.reduce(function (s, p) { return s + (p.valor || 0); }, 0);
         if (pago + 0.01 >= n.valor && pgs.length) {
           r.pagas++;

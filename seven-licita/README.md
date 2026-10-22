@@ -55,6 +55,17 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Seven Calc | Científica com histórico e dezenas de calculadoras do dia a dia, incluindo custo de viagem (combustível, pedágio, diárias, paradas) | All-in-One Calculator |
 | Seven Music | Biblioteca, playlists, Spotify/Deezer/Apple Music, equalizador, velocidade, volume normalizado e timer de sono | Spotify |
 
+## Integração entre as ferramentas
+
+O que é lançado numa ferramenta aparece nas outras, sem digitar de novo (`js/integracao.js`, regras puras e testadas, ligadas à gravação por `js/sincronia.js`):
+
+- **Seven Radar → Seven Bid → Seven Sniper / Seven Watch / Seven Hub**: a proposta nasce do aviso; disputa, acompanhamento e cartão ficam ligados a ela. Preço, custo e quantidade alterados na proposta seguem para a disputa (o valor limite é preservado).
+- **Resultado único**: "Ganhamos" ou "Não vencemos" (no Seven Bid, Sniper ou Watch, ou a etiqueta no cartão) vale para todas. Ganha: o cartão vai para *Contrato* com a Execução preparada (valor adjudicado) e a tarefa de assinatura entra na Seven Task. Perdida: cartão arquivado e Watch encerrado.
+- **Seven NFe → Execução → Seven Pay**: a NF da proposta já vem com empenho e endereço do órgão; autorizada, entra na Execução do cartão (ligada ao empenho) e vira conta a receber no Seven Pay, com o órgão como contato.
+- **Pagamentos nos dois sentidos**: baixa no Seven Pay registra o pagamento na Execução, e pagamento lançado na Execução dá baixa no Seven Pay.
+- **Seven Task**: mostra sozinha sessões, prazos do Seven Watch, cotações, cartões, vencimento de certidões, assinaturas pendentes do Seven Sign, pagamentos de NF, fim de vigência, contas do Seven Pay e atividades do Seven Sales.
+- **Cadastros**: o cliente herda e-mail, telefone e representante do Seven Sales (usados no Seven Sign); peças do Seven Jus usam o cliente da própria licitação e listam as notas em aberto para a cobrança.
+
 ## O que ficou de fora, e por quê
 
 - **Enviar proposta, lance, documento ou mensagem ao portal.** Exigiria entrar nos portais com as credenciais

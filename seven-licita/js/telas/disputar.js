@@ -100,7 +100,7 @@
     const c = d.config;
     el.innerHTML = '<p><a href="#/disputar">← Minhas disputas</a></p>' +
       '<section class="cartao"><header><h2>' + esc(d.titulo) + '</h2><span class="mudo">' + esc(d.portal || '') + ' · sessão ' + dataHora(d.sessao) + '</span></header>' +
-      '<form id="cfg">' + formConfig(c) + '</form></section>' +
+      (d.propostaId && self.Integra ? Integra.botoesResultado(d.propostaId) : '') + '<form id="cfg">' + formConfig(c) + '</form></section>' +
       '<section class="cartao"><header><h3>Itens · valor limite e lance fechado</h3><div class="grupo-botoes"><button class="btn fantasma" data-a="limite-lote">Alterar valor limite em lote</button><button class="btn fantasma" data-a="exportar">Exportar valores</button><button class="btn fantasma" data-a="importar">Importar valores</button></div></header>' +
       '<p class="mini mudo">Valor limite é o piso: o lance nunca vai abaixo dele. Inclua custo, impostos, frete e margem mínima, e tenha a aprovação do cliente por escrito.</p>' +
       '<div class="tabela-rolagem"><table class="tabela" id="itens-disp"><thead><tr><th>Pausar</th><th>Item</th><th>Descrição</th><th class="n">Proposta</th><th class="n">Referência</th><th class="n">Custo</th><th class="n">Valor limite</th><th class="n">Lance fechado</th><th class="n">Desconto máx.</th><th>Aprovado</th><th></th></tr></thead><tbody>' +

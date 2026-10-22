@@ -2539,3 +2539,7 @@ body.modo-publico .lateral, body.modo-publico .abrir-menu, body.modo-publico .se
 .principal:has(#conteudo h1 + p.mudo) .desc-tela, .principal:has(#conteudo .kd-cab) .desc-tela { display: none; }
 @media print { .desc-tela { display: none !important; } }
 .menu-sep { border: 0; border-top: 1px solid #1f1a10; margin: 12px 6px 6px; }
+/* resultado da licitação (Seven Bid, Sniper e Watch) */
+.int-res { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; } .int-res-dica { margin: 0 0 10px; }
+.ag-ext-prazo, .ag-ext-documento, .ag-ext-pagamento, .ag-ext-contrato, .ag-ext-financeiro, .ag-ext-comercial { border-left: 3px solid var(--ouro); }
+.ag-ext-pagamento, .ag-ext-financeiro { border-left-color: var(--ok) !important; } .ag-ext-documento { border-left-color: var(--alerta) !important; } .ag-ext-prazo { border-left-color: var(--perigo) !important; } .ag-ext-comercial { border-left-color: var(--azul) !important; }

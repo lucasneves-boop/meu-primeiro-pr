@@ -38,12 +38,15 @@
   function e() { const d = Dados.e; d.pecas = d.pecas || []; return d; }
 
   function contexto(ref) {
-    const emp = Dados.empresaAtiva() || {};
+    // Cliente da própria licitação (não o cliente ativo), e notas em aberto da Execução para a cobrança.
+    let emp = Dados.empresaAtiva() || {};
+    const reg = ref && ref.indexOf('mon:') === 0 ? (e().monitor || []).find(function (x) { return x.id === ref.slice(4); }) : ref ? ((Telas.quadros.achar(ref.split(':')[0], ref.split(':')[1]) || {}).cartao) : null;
+    if (reg && reg.empresaId) emp = (Dados.e.empresas || []).find(function (x) { return x.id === reg.empresaId; }) || emp;
     const ctx = { empresa: emp.razao || '', cnpj: cnpj(emp.cnpj), representante: emp.representante || '', cidade: emp.municipio || '', data: new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }), orgao: '', modalidade: '', numero: '', processo: '', objeto: '' };
     if (!ref) return ctx;
     let av = null;
     if (ref.indexOf('mon:') === 0) { const m = e().monitor.find(function (x) { return x.id === ref.slice(4); }); if (m) av = Dados.e.avisos[m.avisoId] || { orgao: m.titulo, objeto: m.objeto }; }
-    else { const p = ref.split(':'); const r = Telas.quadros.achar(p[0], p[1]); if (r && r.cartao) { av = Dados.e.avisos[r.cartao.avisoId] || { orgao: (r.cartao.valores || {}).orgao, numero: (r.cartao.valores || {}).numero, objeto: r.cartao.titulo }; if (r.cartao.execucao) ctx.contrato = r.cartao.execucao.numero || ''; } }
+    else { const p = ref.split(':'); const r = Telas.quadros.achar(p[0], p[1]); if (r && r.cartao) { av = Dados.e.avisos[r.cartao.avisoId] || { orgao: (r.cartao.valores || {}).orgao, numero: (r.cartao.valores || {}).numero, objeto: r.cartao.titulo }; if (r.cartao.execucao) { const x = r.cartao.execucao; ctx.contrato = x.numero || (x.empenhos || []).map(function (y) { return y.numero; }).filter(Boolean).join(', '); const rs = Execucao.resumo(Execucao.normalizar(x)); const ab = rs.notas.filter(function (n) { return n.aberto > 0.009; }); if (ab.length) { ctx.notas = ab.map(function (n) { return 'NF ' + n.numero + ' · ' + UI.moeda(n.aberto) + (n.vencimento ? ' · vencimento ' + n.vencimento.split('-').reverse().join('/') : ''); }).join('\n'); ctx.total = UI.moeda(ab.reduce(function (s, n) { return s + n.aberto; }, 0)); } } } }
     if (av) Object.assign(ctx, { orgao: av.orgao || '', modalidade: av.modalidade || '', numero: av.numero || '', processo: av.processo || '', objeto: av.objeto || '' });
     return ctx;
   }

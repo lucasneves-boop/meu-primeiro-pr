@@ -30,7 +30,11 @@
     return vazio();
   }
 
+  // Regras que rodam antes de cada gravação (integração entre ferramentas). Gravações feitas
+  // de dentro delas não disparam as regras de novo.
+  const antes = []; let sincronizando = false;
   function salvar() {
+    if (!sincronizando && antes.length) { sincronizando = true; try { antes.forEach(function (f) { f(estado); }); } catch (e) { console.warn('Integração:', e); } finally { sincronizando = false; } }
     try { localStorage.setItem(CHAVE, JSON.stringify(estado)); }
     catch (e) { UI && UI.aviso('Não foi possível salvar: armazenamento do navegador cheio. Exporte um backup e limpe a lixeira de avisos.', 'erro'); }
     ouvintes.forEach(function (f) { f(); });
@@ -93,7 +97,7 @@
   function empresaAtiva() { return empresa(estado.empresaAtiva) || estado.empresas[0] || null; }
 
   self.Dados = {
-    get e() { return estado; }, salvar: salvar, id: id, aoMudar: function (f) { ouvintes.push(f); },
+    get e() { return estado; }, salvar: salvar, id: id, aoMudar: function (f) { ouvintes.push(f); }, antesDeSalvar: function (f) { antes.push(f); },
     limparAvisosAntigos: limparAvisosAntigos, guardarArquivo: guardarArquivo, lerArquivo: lerArquivo, apagarArquivo: apagarArquivo,
     exportar: exportar, importar: importar, empresa: empresa, empresaAtiva: empresaAtiva,
     zerar: function () { estado = vazio(); salvar(); }

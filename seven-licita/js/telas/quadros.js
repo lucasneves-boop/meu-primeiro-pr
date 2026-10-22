@@ -1197,11 +1197,11 @@
   }
 
   // ---------- integrações com outras telas ----------
-  function cartaoDeAviso(a) {
-    garantirQuadroPadrao();
-    const q = e().quadros.find(function (x) { return !x.arquivado && x.listas.some(function (l) { return l.nome === 'Oportunidade'; }); }) || e().quadros.find(function (x) { return !x.arquivado; });
+  function quadroLicitacoes() { garantirQuadroPadrao(); return e().quadros.find(function (x) { return !x.arquivado && x.listas.some(function (l) { return l.nome === 'Oportunidade'; }); }) || e().quadros.find(function (x) { return !x.arquivado; }); }
+  function cartaoDeAviso(a, silencioso) {
+    const q = quadroLicitacoes();
     const ja = q.cartoes.find(function (c) { return c.avisoId === a.id; });
-    if (ja) { aviso('Esta licitação já está no quadro "' + q.nome + '".'); return ja; }
+    if (ja) { if (!silencioso) aviso('Esta licitação já está no quadro "' + q.nome + '".'); return ja; }
     const et = function (n) { const x = q.etiquetas.find(function (y) { return y.nome === n; }); return x ? [x.id] : []; };
     const c = criarCartao(q, (q.listas.find(function (l) { return l.nome === 'Oportunidade'; }) || q.listas[0]).id, {
       titulo: (a.modalidade || '') + ' ' + (a.numero || '') + ' · ' + (a.municipio || '') + '-' + (a.uf || '') + ' · ' + String(a.objeto || '').slice(0, 90),
@@ -1211,8 +1211,31 @@
       membros: [eu()],
       valores: { valor: a.valorEstimado, orgao: a.orgao, numero: a.numero, portal: /compras\.gov|comprasnet|serpro|cnetmobile/i.test((a.linkOrigem || '') + (a.sistema || '')) ? 'Compras.gov.br' : /bll/i.test(a.sistema) ? 'BLL' : /bnc/i.test(a.sistema) ? 'BNC' : '' }
     });
-    salvar(); aviso('Cartão criado no quadro "' + q.nome + '".');
+    salvar(); if (!silencioso) aviso('Cartão criado no quadro "' + q.nome + '".');
     return c;
+  }
+  // Cartão da proposta (cria se não existir, com os dados que já estão na proposta e no aviso).
+  function cartaoDaProposta(p, silencioso) {
+    const ja = Integracao.cartaoDaProposta(Dados.e, p); if (ja) return ja;
+    const av = Dados.e.avisos[p.avisoId] || { id: p.avisoId || 'ppt:' + p.id, modalidade: p.modalidade, numero: p.numero, municipio: p.municipio, uf: p.uf, objeto: p.objeto || '', orgao: p.orgao || '', edital: p.edital || '', encerramento: p.encerramento, linkOrigem: p.linkOrigem, valorEstimado: Integracao.totalProposta(p) };
+    const c = cartaoDeAviso(av, silencioso); c.propostaId = p.id; if (p.empresaId) c.empresaId = p.empresaId;
+    const q = e().quadros.find(function (x) { return x.cartoes.indexOf(c) >= 0; });
+    return { q: q, c: c };
+  }
+  // Resultado da licitação no cartão: ganha vai para "Contrato" com a Execução preparada; perdida é arquivada.
+  function aplicarResultado(p, r) {
+    const x = cartaoDaProposta(p, true); const q = x.q, c = x.c; if (!q || c.resultadoAplicado === r) return x;
+    const et = q.etiquetas.find(function (y) { return y.nome === (r === 'ganha' ? 'Ganha' : 'Perdida'); });
+    if (et && (c.etiquetas || []).indexOf(et.id) < 0) c.etiquetas = (c.etiquetas || []).concat(et.id);
+    c.resultadoAplicado = r;
+    if (r === 'ganha') {
+      const total = p.lanceFinal || Integracao.totalVencido(p);
+      c.execucao = c.execucao || { numero: '', valor: total, empenhos: [], notas: [], pagamentos: [] }; if (!c.execucao.valor) c.execucao.valor = total;
+      c.valores = Object.assign({}, c.valores, { valor: total });
+      const l = q.listas.find(function (y) { return y.nome === 'Contrato'; }); if (l && c.lista !== l.id) moverCartao(q, c, l.id);
+      registrar(q, c, 'licitação ganha: cartão preparado para o contrato');
+    } else { c.arquivado = true; registrar(q, c, r === 'fracassada' ? 'licitação fracassada' : 'licitação não vencida'); }
+    return x;
   }
 
   function pendencias() {
@@ -1243,6 +1266,8 @@
       if (reabrir) { /* a janela do cartão continua aberta por cima */ }
     },
     cartaoDeAviso: cartaoDeAviso,
+    cartaoDaProposta: cartaoDaProposta,
+    aplicarResultado: aplicarResultado,
     pendencias: pendencias,
     todosCartoes: function () { const out = []; e().quadros.forEach(function (q) { q.cartoes.forEach(function (c) { out.push({ quadro: q, cartao: c }); }); }); return out; },
     achar: acharId,

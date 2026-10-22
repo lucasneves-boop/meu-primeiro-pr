@@ -341,7 +341,7 @@ const testes = {
     await pg.waitForFunction(() => document.querySelectorAll('#dn-barras rect').length > 20, null, { timeout: 15000 }); ok(true, 'DANFE com código de barras da chave');
     ok(/2026NE000123/.test(await pg.locator('.danfe').innerText()) && await pg.locator('.dn-marca').count() === 0, 'DANFE autorizado sem marca d’água, com empenho');
     await foto('notas-danfe');
-    await pg.click('[data-v=financeiro]'); ok(await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => l.tipo === 'receita' && !l.pago && /NF-e 000057/.test(l.descricao)).length === 2), 'duplicatas lançadas a receber no Seven Pay');
+    ok(await pg.locator('[data-v=financeiro]').count() === 0 && await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => l.tipo === 'receita' && !l.pago && /NF-e 000057/.test(l.descricao)).length === 2), 'duplicatas lançadas sozinhas a receber no Seven Pay');
     await pg.click('[data-v=cce]'); await pg.fill('.modal [name=t]', 'Onde se lê caixa com 10 resmas, leia-se caixa com 10 resmas de 500 folhas'); await submit();
     ok(await pg.locator('.dn-cce').count() === 1, 'carta de correção registrada');
     // nota de entrada por XML
@@ -349,8 +349,8 @@ const testes = {
     await pg.goto(url + '#/notas/entrada'); const fc = pg.waitForEvent('filechooser'); await pg.click('.barra-acoes [data-a=xml]'); await (await fc).setFiles(t.arquivo('nfe-880.xml', xml));
     await pg.waitForSelector('tr:has-text("Distribuidora Paulista")'); ok(true, 'XML de compra importado como nota de entrada');
     ok(await pg.evaluate(() => { const f = (Dados.e.fornecedores || []).find(x => x.cnpj === '11444777000161'); return f && f.portfolio.some(p => p.preco === 180); }), 'fornecedor criado com o preço no portfólio');
-    await pg.click('tr:has-text("Distribuidora Paulista")'); await pg.waitForSelector('.danfe'); await pg.click('[data-v=financeiro]');
-    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.some(l => l.tipo === 'despesa' && l.valor === 36000 && l.data === '2026-11-15')), 'duplicata da compra lançada a pagar');
+    await pg.click('tr:has-text("Distribuidora Paulista")'); await pg.waitForSelector('.danfe');
+    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.some(l => l.tipo === 'despesa' && l.valor === 36000 && l.data === '2026-11-15')), 'duplicata da compra lançada sozinha a pagar');
     const fc2 = pg.waitForEvent('filechooser'); await pg.goto(url + '#/notas/entrada'); await pg.click('.barra-acoes [data-a=xml]'); await (await fc2).setFiles(t.arquivo('nfe-880b.xml', xml));
     await pg.waitForSelector('.toast:has-text("1 já existiam")'); ok(await pg.locator('tbody tr').count() === 1, 'XML repetido não duplica a nota');
     await pg.goto(url + '#/notas/relatorios'); ok(/R\$\s?47\.700,00/.test(await pg.locator('.kpis').innerText()), 'relatório: faturamento de 12 meses');
