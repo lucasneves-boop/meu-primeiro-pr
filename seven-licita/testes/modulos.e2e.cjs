@@ -49,10 +49,13 @@ const testes = {
     await pg.goto(url + '#/precificacao/salvas'); ok(await pg.locator('tr[data-id]').count() === 2, 'precificações salvas');
     // lote em uma proposta
     await pg.evaluate(() => { Dados.e.propostas.push({ id: 'pp1', numero: '9', modalidade: 'Pregão', orgao: 'Prefeitura', itens: [{ numero: 1, descricao: 'Caneta', quantidade: 100, refUnitaria: 3, participar: true }, { numero: 2, descricao: 'Lápis', quantidade: 50, refUnitaria: 1, participar: true }], status: 'rascunho', declaracoes: {} }); Dados.salvar(); });
-    await pg.goto(url + '#/precificacao/lote'); await pg.fill('.p-custo >> nth=0', '1,50'); await pg.locator('.p-custo >> nth=0').press('Tab'); await pg.waitForTimeout(200);
-    await pg.fill('.p-custo >> nth=1', '0,95'); await pg.locator('.p-custo >> nth=1').press('Tab'); await pg.waitForTimeout(200);
-    ok(await pg.locator('tr.p-linha-ruim').count() === 1, 'lote marca item que não fecha a conta');
-    await pg.click('[data-a=aplicar-lote]');
+    await pg.goto(url + '#/precificacao/lote'); await pg.waitForSelector('.pp-inicio');
+    await pg.click('[data-a=da-proposta]'); await pg.selectOption('.modal [name=p]', 'pp1'); await pg.click('.modal [type=submit]'); await pg.waitForSelector('.pp-tab tbody tr');
+    await pg.locator('.pp-tab tbody tr').nth(0).locator('[data-k=custo]').fill('1,50');
+    await pg.locator('.pp-tab tbody tr').nth(1).locator('[data-k=custo]').fill('0,95'); await pg.waitForTimeout(350);
+    ok(await pg.locator('.pp-tab tr.pp-erro').count() === 1, 'planilha marca o item que não fecha a conta');
+    await pg.click('[data-a=aplicar]'); await pg.waitForTimeout(150); if (await pg.locator('.modal [type=submit]').count()) await pg.click('.modal [type=submit]');
+    await pg.waitForFunction(() => /cadastrar\/proposta\/pp1/.test(location.hash));
     ok(await pg.evaluate(() => Dados.e.propostas.find(p => p.id === 'pp1').itens[0].unitario > 1.5), 'preços aplicados na proposta');
     await foto('precificacao-lote');
   },

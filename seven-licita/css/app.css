@@ -460,7 +460,7 @@ textarea.peca { font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; min-hei
 
 /* precificação */
 .p-grade { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
-.p-form fieldset .campo { min-width: 150px; }
+.p-form fieldset .campo { min-width: 0; }
 .p-campo { display: flex; align-items: center; gap: 4px; } .p-campo input { flex: 1; min-width: 0; } .p-campo span { color: var(--mudo); font-size: 12px; min-width: 18px; }
 .p-res { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 12px; } .p-res .cartao { margin: 0; }
 .p-destaque { border-top: 4px solid var(--ouro); } .p-destaque > span, .p-minimo > span { display: block; font-size: 12px; }
@@ -2213,3 +2213,23 @@ tr.f-atual td { background: var(--ouro-claro); }
 @media (max-width: 700px) { .cartoes, .cartoes.largos { grid-template-columns: minmax(0, 1fr); } }
 .cartao { min-width: 0; }
 .nowrap { white-space: nowrap; }
+
+/* Alinhamento dos formulários: numa .linha, todos os campos dividem as mesmas faixas
+   (rótulo · controle · dica). Rótulo que quebra em 2 linhas não desce o controle do vizinho. */
+.linha { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); column-gap: 12px; row-gap: 0; align-items: start; }
+.linha > .campo { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 4px; min-width: 0; margin-bottom: 10px; }
+.linha > .campo > span { align-self: end; }
+.linha > .campo > small { align-self: start; }
+.linha > :not(.campo) { grid-row: span 3; align-self: end; margin-bottom: 10px; }
+.campo > input, .campo > select, .campo > textarea, .campo > .p-campo { width: 100%; min-width: 0; }
+.campo input:not([type=checkbox]):not([type=radio]), .campo select { min-height: 38px; }
+.p-campo span { min-width: 30px; text-align: left; }
+.p-form .linha { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+.linha > .campo > span, .campo > span { white-space: normal; overflow-wrap: break-word; min-width: 0; }
+/* Funil do Comercial: nome, quantidade e valor numa linha; barra embaixo (nada corta em cartão estreito). */
+.cm-funil > div { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "nome qtd valor" "barra barra barra"; column-gap: 12px; row-gap: 4px; margin: 0 0 10px; align-items: baseline; }
+.cm-funil > div > span { grid-area: nome; min-width: 0; overflow-wrap: anywhere; }
+.cm-funil > div > b { grid-area: qtd; text-align: right; font-variant-numeric: tabular-nums; }
+.cm-funil > div > small { grid-area: valor; display: block !important; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 84px; }
+.cm-funil > div > i { grid-area: barra; height: 8px; border-radius: 4px; justify-self: start; max-width: 100%; }
+@media (max-width: 800px) { .cm-funil > div { grid-template-columns: minmax(0, 1fr) auto auto; } }
