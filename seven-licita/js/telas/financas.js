@@ -1,4 +1,4 @@
-/* Minhas Finanças: controle financeiro pessoal, da empresa e de clientes assessorados. */
+/* Seven Pay: controle financeiro pessoal, da empresa e de clientes assessorados. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -420,7 +420,7 @@
   }
 
   Telas.financas = {
-    titulo: 'Minhas Finanças',
+    titulo: 'Seven Pay',
     // Usado por outros módulos (ex.: Notas Fiscais) para lançar contas a receber/pagar no perfil ativo.
     lancar: function (itens) {
       const f = base(), p = perfil(); const conta = f.contas.find(function (c) { return c.perfil === p.id; });

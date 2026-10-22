@@ -306,11 +306,11 @@
       (n.situacao === 'autorizada' && !n.lancadoFinanceiro ? b('financeiro', n.operacao === 'entrada' ? 'Lançar a pagar' : 'Lançar a receber') : '') + (n.situacao === 'autorizada' && n.operacao === 'saida' ? b('cce', 'Carta de correção') + b('cancelar', 'Cancelar', 'perigo') : '');
   }
   function lancarFinanceiro(n) {
-    if (!Telas.financas || !Telas.financas.lancar) return aviso('Minhas Finanças indisponível.', 'erro');
+    if (!Telas.financas || !Telas.financas.lancar) return aviso('Seven Pay indisponível.', 'erro');
     const entrada = n.operacao === 'entrada'; const nome = entrada ? (n.emitenteExterno || {}).nome : n.destinatario.nome;
     const dups = (n.duplicatas || []).length ? n.duplicatas : [{ numero: '001', vencimento: somarDias(n.emissao, 30), valor: n.liquido || n.totalNota }];
     const perfil = Telas.financas.lancar(dups.map(function (x, i) { return { tipo: entrada ? 'despesa' : 'receita', descricao: (entrada ? 'NF ' : 'NF-e ') + numero(n) + ' · ' + (nome || '') + (dups.length > 1 ? ' (' + (i + 1) + '/' + dups.length + ')' : ''), valor: Number(x.valor), data: x.vencimento, categoria: entrada ? 'Fornecedores' : 'Vendas', origem: 'nota:' + n.id }; }));
-    n.lancadoFinanceiro = true; log(n, dups.length + ' parcela(s) lançada(s) em Minhas Finanças (' + perfil + ').'); Dados.salvar(); aviso(dups.length + ' lançamento(s) pendente(s) criados em Minhas Finanças, perfil ' + perfil + '.'); App.redesenhar();
+    n.lancadoFinanceiro = true; log(n, dups.length + ' parcela(s) lançada(s) no Seven Pay (' + perfil + ').'); Dados.salvar(); aviso(dups.length + ' lançamento(s) pendente(s) criados no Seven Pay, perfil ' + perfil + '.'); App.redesenhar();
   }
   async function cancelar(n) {
     const horas = (Date.now() - new Date(n.autorizadaEm || n.emissao)) / 36e5;

@@ -114,14 +114,14 @@
       return { link: '#/comercial/atividades', corpo: lista(l.map(function (a) { const ct = conta(a.contaId); return '<li class="' + (a.data < h ? 'atrasado' : 'logo') + '"><b>' + (a.data < h ? 'Atrasada · ' : 'Hoje · ') + esc(a.titulo) + '</b>' + (ct ? '<br><a href="#/comercial/conta/' + ct.id + '">' + esc(ct.fantasia || ct.razao) + '</a>' : '') + '</li>'; }), 'Nada para hoje.') };
     },
     'fin-fluxo': function (tam) {
-      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Minhas Finanças</a>.</p>' };
+      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Seven Pay</a>.</p>' };
       const ls = (f.lancamentos || []).filter(function (l) { return l.perfil === f.perfilAtivo; }); const ms = PC.mesesAte(hoje(), 6);
       const rs = ms.map(function (m) { return Financas.resumo(ls, m); });
       const series = [{ nome: 'Receitas', valores: rs.map(function (r) { return r.receitas; }) }, { nome: 'Despesas', valores: rs.map(function (r) { return r.despesas; }) }];
       return { link: '#/financas', corpo: G.agrupadas(ms.map(PC.rotuloMes), series, { largura: LARG[tam], fmt: function (v) { return moeda(v); }, titulo: 'Receitas e despesas' }) + G.legenda(series.map(function (s) { return { r: s.nome, v: s.valores.reduce(function (a, b) { return a + (b || 0); }, 0), pct: false }; }), reais), tabela: G.tabela(['Mês', 'Receitas', 'Despesas', 'Resultado'], ms.map(function (m, i) { return [PC.rotuloMes(m), moeda(rs[i].receitas), moeda(rs[i].despesas), moeda(rs[i].receitas - rs[i].despesas)]; })) };
     },
     'fin-categorias': function () {
-      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Minhas Finanças</a>.</p>' };
+      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Seven Pay</a>.</p>' };
       const mes = hoje().slice(0, 7); const nomes = {}; (f.categorias || []).forEach(function (c) { nomes[c.id] = c.nome; });
       const soma = {}; (f.lancamentos || []).forEach(function (l) { if (l.perfil !== f.perfilAtivo || l.tipo !== 'despesa' || String(l.data).slice(0, 7) !== mes) return; const k = nomes[l.categoria] || 'Sem categoria'; soma[k] = (soma[k] || 0) + Number(l.valor || 0); });
       const it = Object.keys(soma).map(function (k) { return { r: k, v: Math.round(soma[k] * 100) / 100 }; }).sort(function (a, b) { return b.v - a.v; });

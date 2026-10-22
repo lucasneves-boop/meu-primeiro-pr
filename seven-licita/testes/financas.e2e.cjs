@@ -1,4 +1,4 @@
-// Minhas Finanças no modelo Conta Azul: cliente/fornecedor e centro de custo no lançamento, fluxo de caixa, inadimplência e conciliação.
+// Seven Pay no modelo Conta Azul: cliente/fornecedor e centro de custo no lançamento, fluxo de caixa, inadimplência e conciliação.
 const path = require('path');
 const { abrir } = require('./apoio.cjs');
 (async () => {
