@@ -2539,3 +2539,4 @@ body.modo-publico .lateral, body.modo-publico .abrir-menu, body.modo-publico .se
 /* telas que já têm título e descrição próprios ficam só com o delas */
 .principal:has(#conteudo h1 + p.mudo) .desc-tela, .principal:has(#conteudo .kd-cab) .desc-tela { display: none; }
 @media print { .desc-tela { display: none !important; } }
+.menu-sep { border: 0; border-top: 1px solid #1f1a10; margin: 12px 6px 6px; }
