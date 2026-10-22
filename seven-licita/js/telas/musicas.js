@@ -1,4 +1,4 @@
-/* Músicas: biblioteca, playlists e links externos, no estilo de um app de streaming. */
+/* Músicas: biblioteca, playlists e plataformas (Spotify, Deezer, Apple Music, YouTube Music…), no estilo de um app de streaming. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -84,7 +84,7 @@
       '<div class="mu-atalhos"><a href="#/musicas/curtidas" class="mu-atalho"><span style="background:linear-gradient(135deg,#5b3fa0,#b68d40)">♥</span>Músicas curtidas</a>' + m().playlists.slice(0, 5).map(function (p) { return '<a href="#/musicas/playlist/' + p.id + '" class="mu-atalho"><span style="background:' + p.cor + '">♪</span>' + esc(p.nome) + '</a>'; }).join('') + '</div>' +
       (rec.length ? '<h3>Tocadas recentemente</h3><div class="mu-cards">' + rec.map(function (x) { return '<button class="mu-card" data-rec="' + x.id + '">' + capaHTML(x, 'mu-card-capa') + '<b>' + esc(x.titulo) + '</b><small>' + esc(x.artista || '') + '</small></button>'; }).join('') + '</div>' : '') +
       (m().playlists.length ? '<h3>Suas playlists</h3><div class="mu-cards">' + m().playlists.map(function (p) { return '<a class="mu-card" href="#/musicas/playlist/' + p.id + '"><span class="mu-card-capa" style="background:' + p.cor + '">♪</span><b>' + esc(p.nome) + '</b><small>' + p.faixas.length + ' música(s)</small></a>'; }).join('') + '</div>' : '') +
-      (!f.length ? '<div class="mu-vazio"><h3>Monte sua trilha de trabalho</h3><p>Envie arquivos de música (MP3, M4A, OGG, WAV, FLAC) do seu computador; o título, o artista e a capa são lidos das tags. Ou adicione playlists do Spotify e do YouTube em <b>Links externos</b>.</p><button class="btn primario" data-enviar>Enviar músicas</button></div>' : '');
+      (!f.length ? '<div class="mu-vazio"><h3>Monte sua trilha de trabalho</h3><p>Envie arquivos de música (MP3, M4A, OGG, WAV, FLAC) do seu computador; o título, o artista e a capa são lidos das tags. Ou ouça Spotify, Deezer, Apple Music, YouTube Music e SoundCloud em <a href="#/musicas/plataformas"><b>Plataformas</b></a>.</p><button class="btn primario" data-enviar>Enviar músicas</button></div>' : '');
     carregarCapas(el);
     el.onclick = function (ev) { const r = ev.target.closest('[data-rec]'); if (r) { const ids = rec.map(function (x) { return x.id; }); Player.tocarFila(ids, ids.indexOf(r.dataset.rec)); } if (ev.target.closest('[data-enviar]')) document.getElementById('mu-up').click(); };
   }
@@ -131,32 +131,17 @@
     });
   }
 
-  // Spotify, YouTube, SoundCloud e Deezer por link (tocam dentro do app, no player oficial de cada serviço).
-  function embed(u) {
-    let x;
-    if ((x = String(u).match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]+)/))) return { tipo: 'Spotify', url: 'https://open.spotify.com/embed/' + x[1] + '/' + x[2], alt: 352 };
-    if ((x = String(u).match(/[?&]list=([\w-]+)/)) && /youtu/.test(u)) return { tipo: 'YouTube', url: 'https://www.youtube.com/embed/videoseries?list=' + x[1], alt: 315 };
-    if ((x = String(u).match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|music\.youtube\.com\/watch\?v=)([\w-]{11})/))) return { tipo: 'YouTube', url: 'https://www.youtube.com/embed/' + x[1], alt: 315 };
-    if (/soundcloud\.com\//.test(u)) return { tipo: 'SoundCloud', url: 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(u) + '&visual=true', alt: 300 };
-    if ((x = String(u).match(/deezer\.com\/(?:[a-z]{2}\/)?(track|album|playlist)\/(\d+)/))) return { tipo: 'Deezer', url: 'https://widget.deezer.com/widget/dark/' + x[1] + '/' + x[2], alt: 300 };
-    return null;
-  }
-  function telaExternos(el) {
-    const l = m().externos;
-    el.innerHTML = '<h2>Links externos</h2><p class="mudo">Cole o link de uma playlist, álbum ou faixa do Spotify, YouTube, SoundCloud ou Deezer. Toca no player oficial do serviço (para ouvir completo no Spotify, entre na sua conta nele).</p><form id="mu-ext" class="linha">' + campo('Link', '<input name="u" required placeholder="https://open.spotify.com/playlist/...">') + campo('Nome', '<input name="n" placeholder="Foco total">') + '<button class="btn primario">Adicionar</button></form>' +
-      (l.length ? '<div class="mu-ext">' + l.map(function (x, i) { const e = embed(x.url); return '<section class="cartao"><header><h3>' + esc(x.nome || e.tipo) + '</h3><span class="tag claro">' + esc(e.tipo) + '</span><button class="icone" data-del="' + i + '" aria-label="Remover">×</button></header><iframe src="' + esc(e.url) + '" height="' + e.alt + '" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" title="' + esc(x.nome || e.tipo) + '"></iframe></section>'; }).join('') + '</div>' : '');
-    el.querySelector('#mu-ext').onsubmit = function (ev) { ev.preventDefault(); const fd = new FormData(this); if (!embed(fd.get('u'))) { aviso('Link não reconhecido. Use links do Spotify, YouTube, SoundCloud ou Deezer.', 'erro'); return; } m().externos.unshift({ url: fd.get('u'), nome: fd.get('n') }); salvar(); App.redesenhar(); };
-    el.onclick = function (ev) { const d = ev.target.closest('[data-del]'); if (d) { m().externos.splice(Number(d.dataset.del), 1); salvar(); App.redesenhar(); } };
-  }
+  // Link de plataforma → player oficial embutido (mantido para quem chama Telas.musicas.embed).
+  function embed(u) { const r = Plataformas.reconhecer(u); return r && r.embed ? { tipo: Plataformas.plataforma(r.plataforma).nome, url: r.embed, alt: r.alt } : null; }
 
   Telas.musicas = {
     titulo: 'Músicas',
     render: function (el, sub, param) {
       el.onclick = null;
-      const nav = [['', '⌂ Início'], ['biblioteca', '♫ Sua biblioteca'], ['curtidas', '♥ Curtidas'], ['externos', '🔗 Links externos']];
-      el.innerHTML = '<div class="musicas"><aside class="mu-lado"><nav>' + nav.map(function (x) { return '<a href="#/musicas' + (x[0] ? '/' + x[0] : '') + '" class="' + ((sub || '') === x[0] ? 'ativa' : '') + '">' + x[1] + '</a>'; }).join('') + '</nav><div class="mu-pls"><header><b>Playlists</b><button class="icone" data-nova-pl aria-label="Criar playlist" title="Criar playlist">＋</button></header>' + m().playlists.map(function (p) { return '<a href="#/musicas/playlist/' + p.id + '" class="' + (sub === 'playlist' && param === p.id ? 'ativa' : '') + '"><i style="background:' + p.cor + '"></i>' + esc(p.nome) + '</a>'; }).join('') + '</div><button class="btn primario" data-enviar-lado>⬆ Enviar músicas</button><input type="file" id="mu-up" accept="audio/*,.mp3,.m4a,.flac,.ogg,.wav,.opus" multiple hidden></aside><section class="mu-principal" id="mu-principal"></section></div>';
+      const nav = [['', '⌂ Início'], ['biblioteca', '♫ Sua biblioteca'], ['curtidas', '♥ Curtidas'], ['plataformas', '🎧 Plataformas']];
+      el.innerHTML = '<div class="musicas"><aside class="mu-lado"><nav>' + nav.map(function (x) { return '<a href="#/musicas' + (x[0] ? '/' + x[0] : '') + '" class="' + ((sub === 'externos' ? 'plataformas' : sub || '') === x[0] ? 'ativa' : '') + '">' + x[1] + '</a>'; }).join('') + '</nav><div class="mu-pls"><header><b>Playlists</b><button class="icone" data-nova-pl aria-label="Criar playlist" title="Criar playlist">＋</button></header>' + m().playlists.map(function (p) { return '<a href="#/musicas/playlist/' + p.id + '" class="' + (sub === 'playlist' && param === p.id ? 'ativa' : '') + '"><i style="background:' + p.cor + '"></i>' + esc(p.nome) + '</a>'; }).join('') + '</div><button class="btn primario" data-enviar-lado>⬆ Enviar músicas</button><input type="file" id="mu-up" accept="audio/*,.mp3,.m4a,.flac,.ogg,.wav,.opus" multiple hidden></aside><section class="mu-principal" id="mu-principal"></section></div>';
       const p = el.querySelector('#mu-principal');
-      if (sub === 'biblioteca') telaBiblioteca(p); else if (sub === 'curtidas') telaCurtidas(p); else if (sub === 'playlist') telaPlaylist(p, param); else if (sub === 'externos') telaExternos(p); else telaInicio(p);
+      if (sub === 'biblioteca') telaBiblioteca(p); else if (sub === 'curtidas') telaCurtidas(p); else if (sub === 'playlist') telaPlaylist(p, param); else if (sub === 'plataformas' || sub === 'externos') Telas.musicas.telaPlataformas(p, sub === 'externos' ? 'salvos' : param); else telaInicio(p);
       el.querySelector('#mu-up').onchange = function () { enviar(Array.prototype.slice.call(this.files), sub === 'playlist' ? param : null); };
       el.querySelector('[data-enviar-lado]').onclick = function () { document.getElementById('mu-up').click(); };
       el.querySelector('[data-nova-pl]').onclick = async function () { const pl = await novaPlaylist(); if (pl) location.hash = '#/musicas/playlist/' + pl.id; };
