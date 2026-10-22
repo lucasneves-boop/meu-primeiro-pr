@@ -1,4 +1,4 @@
-/* Nuvem: arquivos e pastas no estilo Google Drive (os arquivos ficam no navegador, em IndexedDB). */
+/* Seven Drive: arquivos e pastas no estilo Google Drive (os arquivos ficam no navegador, em IndexedDB). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -335,7 +335,7 @@
   }
 
   Telas.nuvem = {
-    titulo: 'Nuvem',
+    titulo: 'Seven Drive',
     render: function (el) { render(el); },
     // usado por outros módulos para guardar arquivos na nuvem
     salvarArquivo: async function (arquivo, caminhoPastas) { const pai = garantirCaminho(caminhoPastas || [], null); await enviarArquivos([arquivo], pai); },

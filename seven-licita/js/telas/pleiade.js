@@ -126,7 +126,7 @@
   async function anexar(arqs) {
     const out = [];
     for (const f of arqs) {
-      if (T.remoto()) { if (f.size > 750 * 1024) { aviso('"' + f.name + '" passa de 750 KB. No modo equipe, envie arquivos grandes pela Nuvem e cole o link.', 'erro'); continue; } const url = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(f); }); out.push({ nome: f.name, tipo: f.type, tam: f.size, dados: url }); }
+      if (T.remoto()) { if (f.size > 750 * 1024) { aviso('"' + f.name + '" passa de 750 KB. No modo equipe, envie arquivos grandes pelo Seven Drive e cole o link.', 'erro'); continue; } const url = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(f); }); out.push({ nome: f.name, tipo: f.type, tam: f.size, dados: url }); }
       else { const aid = 'pl-' + P.id(); await Dados.guardarArquivo(aid, f); out.push({ nome: f.name, tipo: f.type, tam: f.size, arq: aid }); }
     }
     return out;

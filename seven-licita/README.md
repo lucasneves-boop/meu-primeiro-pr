@@ -45,7 +45,7 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Seven Sign | Contratos e termos para assinatura eletrônica: PDF próprio ou modelo da Seven (BPO, NDA, aditivo), signatários com papel e ordem, mensagem e prazo, link por WhatsApp/e-mail (texto revisado antes), assinatura remota ou presencial (digitada ou desenhada, com CPF e aceite), conferência do PDF por SHA-256, comprovante protegido (HMAC), trilha de auditoria, PDF final com página de registro e validador por arquivo ou código | Clicksign |
 | Aparência | Temas automático, claro, escuro e dourado com preto, pelo botão do topo ou em Configurações | — |
 | Minhas Finanças | Controle financeiro pessoal, da empresa e de clientes assessorados: contas, cartões, orçamento, metas e perfis com PIN; no modelo Conta Azul, fluxo de caixa projetado (30/60/90 dias, faturas incluídas), previsto × realizado, clientes e fornecedores com inadimplência por faixa, conciliação bancária, centro de custo e competência | minhasfinancas.app.br + Conta Azul |
-| Nuvem | Pastas e arquivos no navegador (IndexedDB) | Google Drive |
+| Seven Drive | Pastas e arquivos no navegador (IndexedDB) | Google Drive |
 | Seven Academy | Área de membros com cursos, mentorias e dicas | Kiwify |
 | Seven Codex | Biblioteca e leitura paginada de EPUB, PDF, Word e texto, com destaques, notas, marcadores e leitura em voz alta | Kindle |
 | Seven Synapse | Fontes (PDF, DOCX, TXT) com perguntas respondidas por trechos citados, resumo, FAQ, linha do tempo, quiz e análise de edital, sem IA externa | NotebookLM |
