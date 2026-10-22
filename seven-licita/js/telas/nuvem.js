@@ -289,7 +289,7 @@
     const lixo = x.lixeira;
     const opcoesMenu = lixo ? [['restaurar', 'Restaurar'], ['excluir-de-vez', 'Excluir para sempre']] :
       [['abrir', x.tipo === 'pasta' ? 'Abrir' : 'Visualizar'], ['baixar', 'Fazer download'], ['renomear', 'Renomear'], ['copiar', 'Fazer uma cópia'], ['mover', 'Mover para…'], ['estrela', x.estrela ? 'Remover estrela' : 'Adicionar estrela'], x.tipo === 'pasta' ? ['cor', 'Cor da pasta'] : null, ['detalhes', 'Detalhes'],
-        x.tipo === 'arquivo' && Telas.leitor && /pdf|epub|text|html|markdown/.test((x.mime || '') + x.nome) ? ['leitor', 'Abrir no Leitor'] : null,
+        x.tipo === 'arquivo' && Telas.leitor && /pdf|epub|text|html|markdown/.test((x.mime || '') + x.nome) ? ['leitor', 'Abrir no Seven Codex'] : null,
         x.tipo === 'arquivo' && Telas.musicas && /^audio\//.test(x.mime || '') ? ['musica', 'Adicionar às Músicas'] : null,
         x.tipo === 'arquivo' && Telas.cadernos && /pdf|text|markdown|html/.test((x.mime || '') + x.nome) ? ['caderno', 'Adicionar a um Caderno'] : null,
         ['lixeira', 'Mover para a lixeira']].filter(Boolean);

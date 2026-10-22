@@ -1,4 +1,4 @@
-/* Leitor no estilo Kindle: biblioteca, leitura paginada de EPUB, PDF, Word e texto, destaques, notas e marcadores. */
+/* Seven Codex (leitor no estilo Kindle): biblioteca, leitura paginada de EPUB, PDF, Word e texto, destaques, notas e marcadores. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -113,7 +113,7 @@
   }
 
   function exportarNotas(l) {
-    const linhas = ['# ' + l.titulo + (l.autor ? ' — ' + l.autor : ''), '', 'Notas e destaques exportados do Leitor Seven em ' + new Date().toLocaleString('pt-BR'), ''];
+    const linhas = ['# ' + l.titulo + (l.autor ? ' — ' + l.autor : ''), '', 'Notas e destaques exportados do Seven Codex em ' + new Date().toLocaleString('pt-BR'), ''];
     l.destaques.slice().sort(function (a, b) { return (a.pct || 0) - (b.pct || 0); }).forEach(function (d) { linhas.push('> ' + d.texto.replace(/\n+/g, ' ')); linhas.push('— ' + (d.local || '') + ' · destaque ' + d.cor + (d.nota ? '\n\n**Nota:** ' + d.nota : '')); linhas.push(''); });
     if (l.marcadores.length) { linhas.push('## Marcadores'); l.marcadores.forEach(function (m) { linhas.push('- ' + (m.rotulo || '') + ' (' + Math.round((m.pct || 0) * 100) + '%)'); }); }
     UI.baixar(Nucleo.normalizar(l.titulo).replace(/ /g, '-').slice(0, 60) + '-notas.md', linhas.join('\n'), 'text/markdown;charset=utf-8');
@@ -495,7 +495,7 @@
   }
 
   Telas.leitor = {
-    titulo: 'Leitor',
+    titulo: 'Seven Codex',
     render: function (el, sub, param) {
       el.onclick = null;
       if (sub === 'ler') { biblioteca(el); abrir(param); return; }

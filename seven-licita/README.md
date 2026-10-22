@@ -47,7 +47,7 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Minhas Finanças | Controle financeiro pessoal, da empresa e de clientes assessorados: contas, cartões, orçamento, metas e perfis com PIN; no modelo Conta Azul, fluxo de caixa projetado (30/60/90 dias, faturas incluídas), previsto × realizado, clientes e fornecedores com inadimplência por faixa, conciliação bancária, centro de custo e competência | minhasfinancas.app.br + Conta Azul |
 | Nuvem | Pastas e arquivos no navegador (IndexedDB) | Google Drive |
 | Seven Academy | Área de membros com cursos, mentorias e dicas | Kiwify |
-| Leitor | Biblioteca e leitura paginada de EPUB, PDF, Word e texto, com destaques, notas, marcadores e leitura em voz alta | Kindle |
+| Seven Codex | Biblioteca e leitura paginada de EPUB, PDF, Word e texto, com destaques, notas, marcadores e leitura em voz alta | Kindle |
 | Cadernos | Fontes (PDF, DOCX, TXT) com perguntas respondidas por trechos citados, resumo, FAQ, linha do tempo, quiz e análise de edital, sem IA externa | NotebookLM |
 | Autoconhecimento | Big Five (IPIP-50, domínio público), estilo DISC (uso reflexivo), temperamento e prática de raciocínio, por pessoa e em equipe. Não estima QI: isso exige teste normatizado e aplicação supervisionada | — |
 | Jogos | Xadrez com IA, quiz da Lei 14.133 com repetição espaçada, n-back, memória, matrizes, lances e tabela de Schulte, com as evidências científicas de cada um | — |
