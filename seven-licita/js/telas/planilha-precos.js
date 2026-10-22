@@ -256,7 +256,7 @@
 
   function limitesDisputa(x) {
     const d = x.propostaId && Dados.e.disputas.find(function (q) { return q.propostaId === x.propostaId; });
-    if (!d) { aviso('Vincule uma proposta que já esteja no Seven Lance (ligue "Enviar ao Seven Lance" na proposta).', 'erro'); return; }
+    if (!d) { aviso('Vincule uma proposta que já esteja no Seven Sniper (ligue "Enviar ao Seven Sniper" na proposta).', 'erro'); return; }
     const r = P.planilha(x);
     let k = 0; d.itens.forEach(function (it) { const pi = acharItem(x.itens, it, x); const c = pi && r.itens.find(function (y) { return y.id === pi.id && y.ok; }); if (c) { it.limite = c.minimo; it.custo = c.custoDireto; it.aprovado = false; k++; } });
     Dados.salvar(); aviso(k + ' valor(es) limite definidos. Marque "Aprovado" depois do aceite do cliente.');

@@ -1,4 +1,4 @@
-/* Seven Nota (notas fiscais no estilo Bling): NF-e e NFS-e de saída, notas de entrada por XML, DANFE, retenções de órgão público e integração com Finanças. */
+/* Seven NFe (notas fiscais no estilo Bling): NF-e e NFS-e de saída, notas de entrada por XML, DANFE, retenções de órgão público e integração com Finanças. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -118,7 +118,7 @@
     const n = nota(id); if (!n) { el.innerHTML = UI.vazio('Nota não encontrada', '<a href="#/notas/saida">Voltar</a>'); return; }
     const e = emitente(n); const serv = n.tipo === 'servico'; const simples = e && e.regime === 'simples';
     const d = n.destinatario;
-    el.innerHTML = '<p class="migalhas"><a href="#/notas/saida">Seven Nota</a> › ' + (serv ? 'NFS-e' : 'NF-e') + ' ' + rotSit(n) + '</p>' +
+    el.innerHTML = '<p class="migalhas"><a href="#/notas/saida">Seven NFe</a> › ' + (serv ? 'NFS-e' : 'NF-e') + ' ' + rotSit(n) + '</p>' +
       '<div class="nf-ed"><div class="nf-col">' +
       '<section class="cartao"><h3>' + (serv ? 'Nota de serviço (NFS-e)' : 'Nota fiscal eletrônica (NF-e)') + '</h3><div class="linha">' + campo('Natureza da operação', '<input data-k="natureza" list="nf-naturezas" value="' + esc(n.natureza) + '"><datalist id="nf-naturezas">' + N.NATUREZAS.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>') + (serv ? '' : campo('Finalidade', sel('finalidade', n, [{ v: 'normal', t: 'Normal' }, { v: 'complementar', t: 'Complementar' }, { v: 'ajuste', t: 'Ajuste' }, { v: 'devolucao', t: 'Devolução' }]))) + campo('Emissão', '<input type="date" data-k="emissao" value="' + esc(n.emissao) + '">') + (serv ? '' : campo('Saída', '<input type="date" data-k="saida" value="' + esc(n.saida || '') + '">')) + '</div>' +
       '<p class="mini mudo">Emitente: <b>' + esc(e ? e.nome : 'cadastre em Clientes') + '</b>' + (e ? ' · CNPJ ' + esc(cnpj(e.cnpj)) + ' · ' + esc((e.municipio || '') + '-' + (e.uf || '')) + ' · ' + { simples: 'Simples Nacional', presumido: 'Lucro Presumido', real: 'Lucro Real' }[e.regime] : '') + ' · <a href="#/notas/config">ajustar</a></p></section>' +
@@ -350,7 +350,7 @@
   }
 
   Telas.notas = {
-    titulo: 'Seven Nota',
+    titulo: 'Seven NFe',
     render: function (el, sub, param) {
       el.onclick = el.oninput = el.onchange = null; const aj = document.getElementById('nf-ajuda'); if (aj && sub !== 'editar') { aj.remove(); guia.ajuda = null; document.body.classList.remove('com-ajuda-nf'); }
       if (sub === 'editar') return telaEditor(el, param);

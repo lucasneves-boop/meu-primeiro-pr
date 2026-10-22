@@ -81,7 +81,7 @@
   function telaPropostas(el) {
     const l = daEmpresa(e().propostas);
     el.innerHTML = '<div class="barra-acoes"><p class="mudo">Propostas do cliente ativo. O envio ao portal é feito no próprio portal; aqui você prepara itens, preços, declarações e anexos, e registra o status do envio.</p><button class="btn primario" data-a="nova">+ Cadastrar proposta</button></div>' +
-      (l.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Licitação</th><th>Portal</th><th>Prazo</th><th class="n">Itens</th><th class="n">Total</th><th>Status</th><th>Seven Lance</th></tr></thead><tbody>' +
+      (l.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Licitação</th><th>Portal</th><th>Prazo</th><th class="n">Itens</th><th class="n">Total</th><th>Status</th><th>Seven Sniper</th></tr></thead><tbody>' +
         l.map(function (p) {
           const fim = p.encerramento && new Date(p.encerramento);
           return '<tr class="clicavel" data-id="' + p.id + '"><td><b>' + esc((p.modalidade || '') + ' ' + (p.numero || '')) + '</b><br><span class="mini">' + esc(p.orgao) + '</span><br><span class="mini mudo">' + esc(String(p.objeto || '').slice(0, 120)) + '</span></td><td>' + esc(p.portal) + '</td><td class="' + (fim && fim - Date.now() < 2 * 86400000 && fim > Date.now() ? 'alerta' : '') + '">' + dataHora(p.encerramento) + (fim ? '<br><small>' + emQuanto(p.encerramento) + '</small>' : '') + '</td><td class="n">' + p.itens.filter(function (i) { return i.participar !== false; }).length + '/' + p.itens.length + '</td><td class="n">' + moeda(totalProposta(p)) + '</td><td><span class="tag st-' + p.status + '">' + STATUS[p.status] + '</span></td><td>' + (p.disputar ? '⚡ Sim' : '—') + '</td></tr>';
@@ -125,7 +125,7 @@
       '<section class="cartao"><h3>Documentos anexos</h3>' + (docs.length ? '<form id="docs">' + docs.map(function (d) { const s = Nucleo.statusDocumento(d.validade); return '<label class="check"><input type="checkbox" name="doc" value="' + d.id + '"' + ((p.documentos || []).indexOf(d.id) >= 0 ? ' checked' : '') + '> ' + esc(d.nome) + ' <span class="tag st-doc-' + s.codigo + '">' + esc(s.rotulo) + '</span></label>'; }).join('') + '</form>' : '<p class="mudo">Nenhum documento do cliente. <a href="#/cadastrar/documentos">Cadastrar documentos</a></p>') + '</section>' +
       '<section class="cartao"><h3>Envio e próximos passos</h3><p class="mini">' + (p.enviadaEm ? 'Enviada em ' + dataHora(p.enviadaEm) + (p.protocolo ? ' · protocolo ' + esc(p.protocolo) : '') : 'Ainda não registrada como enviada.') + '</p>' +
       '<div class="grupo-botoes vertical"><button class="btn" data-a="pronta">Marcar como pronta</button><button class="btn primario" data-a="enviada">Registrar envio no portal</button><button class="btn" data-a="erro">Registrar erro no envio</button>' +
-      '<label class="check"><input type="checkbox" data-a="disputar"' + (p.disputar ? ' checked' : '') + '> Enviar ao Seven Lance</label>' +
+      '<label class="check"><input type="checkbox" data-a="disputar"' + (p.disputar ? ' checked' : '') + '> Enviar ao Seven Sniper</label>' +
       '<button class="btn fantasma" data-a="imprimir">Imprimir proposta</button><button class="btn fantasma" data-a="readequar">Proposta atualizada (pós-lances)</button>' +
       '<button class="btn fantasma" data-a="monitorar">Adicionar ao Seven Watch</button><button class="btn fantasma" data-a="quadro">Criar cartão no Quadro</button><button class="btn fantasma perigo" data-a="excluir">Excluir proposta</button></div></section></div>';
 

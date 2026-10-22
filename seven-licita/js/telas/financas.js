@@ -421,7 +421,7 @@
 
   Telas.financas = {
     titulo: 'Seven Pay',
-    // Usado por outros módulos (ex.: Seven Nota) para lançar contas a receber/pagar no perfil ativo.
+    // Usado por outros módulos (ex.: Seven NFe) para lançar contas a receber/pagar no perfil ativo.
     lancar: function (itens) {
       const f = base(), p = perfil(); const conta = f.contas.find(function (c) { return c.perfil === p.id; });
       itens.forEach(function (x) { const cat = f.categorias.find(function (c) { return c.perfil === p.id && c.tipo === x.tipo && Cotacoes.normalizar(c.nome).indexOf(Cotacoes.normalizar(x.categoria || '')) === 0; }); f.lancamentos.push({ id: Dados.id('lc'), perfil: p.id, tipo: x.tipo, descricao: x.descricao, valor: x.valor, data: x.data, conta: conta ? conta.id : '', categoria: cat ? cat.id : '', pago: false, origem: x.origem || '' }); });

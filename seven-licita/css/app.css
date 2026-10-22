@@ -46,7 +46,9 @@ p { margin: 0 0 .7em; }
 .lateral { width: var(--lateral); flex: none; background: #050505; color: #ececec; border-right: 1px solid #1f1a10; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .marca { display: flex; gap: 12px; align-items: center; padding: 20px 18px 18px; color: #fff; text-decoration: none; border-bottom: 1px solid #1f1a10; margin-bottom: 6px; }
 .marca img { width: 40px; height: auto; flex: none; }
-.marca strong { display: block; font-size: 20px; font-weight: 800; letter-spacing: .01em; color: var(--ouro); line-height: 1; white-space: nowrap; }
+.marca-nome { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.marca-pl { font-size: 19px; font-weight: 700; letter-spacing: -.025em; line-height: 1; background: linear-gradient(180deg, #ffffff 0%, #d9d2c3 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.marca-7 { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font-size: 17px; font-weight: 800; line-height: 1; color: #050505; background: linear-gradient(135deg, #f1d58a 0%, #c9a25a 45%, #8a6a2f 100%); box-shadow: 0 0 0 1px rgba(241,213,138,.35), 0 4px 14px rgba(182,141,64,.35); }
 .marca small { display: block; font-size: 9px; font-weight: 600; letter-spacing: .22em; color: var(--ouro); margin-top: 5px; }
 .menu { display: flex; flex-direction: column; padding: 4px 8px; gap: 1px; }
 .menu a { color: #cfcfcf; font-weight: 500; text-decoration: none; padding: 8px 10px; border-radius: 8px; display: flex; gap: 10px; align-items: center; }
@@ -2532,3 +2534,8 @@ body.modo-publico .lateral, body.modo-publico .abrir-menu, body.modo-publico .se
   .ds-dica { display: none; }
 }
 .kd-cab { margin-bottom: 18px; } .kd-cab h1 { margin: 0 0 4px; } .kd-cab p { margin: 0; }
+.desc-tela { padding: 20px 24px 0; } .desc-tela h1 { margin: 0 0 4px; } .desc-tela p { margin: 0; max-width: 980px; }
+.desc-tela:not([hidden]) + main { padding-top: 18px; }
+/* telas que já têm título e descrição próprios ficam só com o delas */
+.principal:has(#conteudo h1 + p.mudo) .desc-tela, .principal:has(#conteudo .kd-cab) .desc-tela { display: none; }
+@media print { .desc-tela { display: none !important; } }

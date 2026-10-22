@@ -1,4 +1,4 @@
-/* Regras do Seven Nota (notas fiscais no estilo Bling): cálculo de tributos, CFOP, chave de acesso, retenções de órgão público, XML da NF-e e validação.
+/* Regras do Seven NFe (notas fiscais no estilo Bling): cálculo de tributos, CFOP, chave de acesso, retenções de órgão público, XML da NF-e e validação.
    Puro, testável no Node. Os cálculos são estimativas de apoio: a contabilidade confirma alíquotas e enquadramento. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.Notas = fabrica();
