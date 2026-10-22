@@ -1733,3 +1733,43 @@ kbd { font: 12px monospace; padding: 1px 5px; border: 1px solid var(--borda); bo
 .sm-tr { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--borda); font-size: 13px; } .sm-tr span:first-child { font-weight: 600; }
 .sm-ciclo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; } .sm-ciclo div { flex: 1; display: flex; flex-direction: column; } .sm-ciclo small { color: var(--mudo); } .sm-ciclo.ativo { border-color: var(--ouro); }
 @media (max-width: 600px) { .sm-areas label { grid-template-columns: 1fr 1fr 24px auto; } }
+
+/* ---------- Autoconhecimento ---------- */
+.pf { max-width: 1100px; margin: 0 auto; }
+.pf-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; } .pf-topo h1 { margin: 0 0 4px; }
+.pf-pessoa { display: flex; align-items: center; gap: 6px; } .pf-pessoa select { width: auto; }
+.pf-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 16px 0; }
+.pf-card { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 16px; background: var(--superficie); border: 1px solid var(--borda); }
+.pf-card > span { font-size: 32px; } .pf-card b { font-size: 18px; } .pf-card p { margin: 0; color: var(--mudo); font-size: 14px; flex: 1; } .pf-card small { color: var(--marca); }
+.pf-perfil h2 { margin: 18px 0 10px; }
+.pf-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.pf-radar { width: 100%; max-width: 300px; display: block; margin: 0 auto; }
+.pf-anel { fill: none; stroke: var(--borda); } .pf-eixo { stroke: var(--borda); } .pf-rot { font-size: 11px; fill: var(--mudo); font-family: var(--fonte); }
+.pf-area { fill: color-mix(in srgb, var(--ouro) 35%, transparent); stroke: var(--ouro); stroke-width: 2; } .pf-ponto { fill: var(--marca); }
+.pf-fat { list-style: none; padding: 0; } .pf-fat li { padding: 6px 0; border-bottom: 1px solid var(--borda); } .pf-fat small { display: block; color: var(--mudo); }
+.pf-fx { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--superficie-2); } .pf-fx.alto { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); } .pf-fx.baixo { background: var(--ouro-claro); color: var(--marca); }
+.pf-disc-b { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.pf-db { display: grid; grid-template-columns: 24px 1fr; gap: 2px 10px; align-items: center; } .pf-db b { grid-row: span 2; font-size: 20px; color: var(--mudo); } .pf-db.prim b { color: var(--marca); }
+.pf-db span { height: 10px; background: var(--superficie-2); border-radius: 5px; overflow: hidden; } .pf-db i { display: block; height: 100%; background: var(--ouro); } .pf-db small { color: var(--mudo); }
+.pf-temp { background: linear-gradient(135deg, var(--superficie), var(--ouro-claro)); }
+.pf-evol { display: flex; gap: 6px; align-items: flex-end; height: 120px; } .pf-evol div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; } .pf-evol i { width: 100%; max-width: 30px; background: var(--ouro); border-radius: 4px 4px 0 0; min-height: 2px; } .pf-evol small { font-size: 10px; color: var(--mudo); }
+.pf-eq { margin-top: 14px; overflow-x: auto; }
+.pf-ciencia { margin-top: 14px; } .pf-ciencia li { margin: 8px 0; line-height: 1.5; }
+.pf-teste { max-width: 820px; margin: 0 auto; }
+.pf-teste > header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; } .pf-teste > header h2 { margin: 0; flex: 1; font-size: 20px; }
+.pf-prog { height: 6px; background: var(--superficie-2); border-radius: 3px; overflow: hidden; margin-bottom: 12px; } .pf-prog i { display: block; height: 100%; background: var(--ouro); transition: width .2s; }
+.pf-item { border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px; margin: 0 0 10px; background: var(--superficie); } .pf-item legend { font-weight: 600; padding: 0 4px; }
+.pf-esc { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.pf-esc label { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 11px; color: var(--mudo); cursor: pointer; padding: 6px 2px; border-radius: 8px; }
+.pf-esc label:has(input:checked) { background: var(--ouro-claro); color: var(--texto); font-weight: 600; } .pf-esc input { width: 20px; height: 20px; accent-color: var(--ouro); }
+.pf-nav { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 30px; }
+.pf-grupo { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 12px; margin-bottom: 8px; background: var(--superficie); } .pf-grupo > b { color: var(--mudo); width: 22px; }
+.pf-op { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; }
+.pf-pal { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 8px; background: var(--superficie-2); } .pf-pal span { flex: 1; font-size: 14px; }
+.pf-pal label { display: inline-flex; align-items: center; gap: 2px; font-weight: 800; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+.pf-pal label:first-of-type:has(input:checked) { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); } .pf-pal label:last-of-type:has(input:checked) { background: var(--perigo-claro); color: var(--perigo); }
+.pf-tempo { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--marca); }
+.pf-q h3 { font-size: 20px; line-height: 1.4; } .pf-ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 12px 0; }
+.pf-ops button { padding: 14px; border: 2px solid var(--borda); border-radius: 12px; background: var(--superficie); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; color: var(--texto); } .pf-ops button:hover { border-color: var(--ouro); }
+.pf-res { text-align: center; } .pf-res > b { font-size: 46px; } .pf-res ol { text-align: left; } .pf-res li { margin: 8px 0; } .pf-res li.nao { color: var(--perigo); }
+@media (max-width: 600px) { .pf-esc span { font-size: 9px; } }

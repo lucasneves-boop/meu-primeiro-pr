@@ -755,6 +755,37 @@ const testes = {
     ok(await pg.evaluate(() => Dados.e.semanas.ciclos.length === 2 && Dados.e.semanas.ciclos[1].visao.longo === Dados.e.semanas.ciclos[0].visao.longo), 'próximo ciclo parte da visão anterior');
     await pg.goto(url + '#/semanas/ciclos'); ok(await pg.locator('.sm-ciclo').count() === 2, 'lista de ciclos');
     await pg.click('.sm-ciclo:not(.ativo) [data-a=ativar]'); await pg.waitForSelector('.sm-hero'); await foto('semanas-painel');
+  },
+  async perfil(t) {
+    const { pg, url, ok, foto } = t;
+    await pg.goto(url + '#/perfil'); await pg.waitForSelector('.pf-cards');
+    ok(await pg.locator('.pf-card').count() === 3 && /não há número de QI/.test(await pg.locator('.pf-ciencia').innerText()), 'três testes e aviso honesto sobre QI');
+    // Big Five: extrovertido e estável
+    await pg.click('.pf-card:has-text("Big Five") a'); await pg.waitForSelector('.pf-item');
+    for (let pag = 0; pag < 5; pag++) {
+      await pg.evaluate(() => { document.querySelectorAll('.pf-item').forEach(fs => { const i = Number(fs.querySelector('input').name.slice(1)); const [, f, k] = Perfil.IPIP[i]; const v = (f === 'E' || f === 'N') ? (k > 0 ? 5 : 1) : 3; const r = fs.querySelector('input[value="' + v + '"]'); r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }); });
+      if (pag === 0) await foto('perfil-big5');
+      await pg.click('#pf-f .btn.primario');
+    }
+    await pg.waitForSelector('.pf-perfil');
+    ok(await pg.evaluate(() => { const r = Dados.e.perfil.resultados.find(x => x.tipo === 'big5').dados; return r.E === 100 && r.N === 100 && r.C === 50; }), 'Big Five pontuado com itens invertidos');
+    ok(/Temperamento: Sanguíneo/.test(await pg.locator('.pf-temp').innerText()), 'temperamento derivado: sanguíneo');
+    // DISC: sempre "mais" no D e "menos" no S
+    await pg.goto(url + '#/perfil/disc'); await pg.waitForSelector('.pf-grupo');
+    await pg.click('#pf-d .btn.primario'); ok(await pg.evaluate(() => !Dados.e.perfil.resultados.some(r => r.tipo === 'disc')) && await pg.locator('.pf-grupo').count() === 24, 'exige grupos completos (nada salvo em branco)');
+    await pg.evaluate(() => { for (let i = 0; i < 24; i++) { const m = document.querySelector('[name=m' + i + '][value="0"]'); m.checked = true; m.dispatchEvent(new Event('change', { bubbles: true })); const n = document.querySelector('[name=n' + i + '][value="2"]'); n.checked = true; n.dispatchEvent(new Event('change', { bubbles: true })); } });
+    await foto('perfil-disc');
+    await pg.click('#pf-d .btn.primario'); await pg.waitForSelector('.pf-perfil');
+    ok(/Estilo DISC: D/.test(await pg.locator('.pf-perfil').innerText()), 'DISC primário: Dominância');
+    // raciocínio
+    await pg.goto(url + '#/perfil/raciocinio'); await pg.click('[data-a=comecar]');
+    for (let i = 0; i < 12; i++) { await pg.waitForSelector('.pf-ops'); await pg.locator('.pf-ops button').first().click(); }
+    await pg.waitForSelector('.pf-res'); ok(/de 12/.test(await pg.locator('.pf-res b').innerText()), 'prova de raciocínio concluída');
+    await pg.goto(url + '#/perfil'); ok(await pg.locator('.pf-evol div').count() === 1, 'evolução do raciocínio');
+    // equipe
+    await pg.click('[data-a=add-pessoa]'); await pg.fill('.modal [name=n]', 'Ana'); await pg.click('.modal [type=submit]');
+    await pg.waitForSelector('.pf-eq'); ok(await pg.locator('.pf-eq tbody tr').count() === 2, 'tabela da equipe');
+    await pg.selectOption('#pf-pessoa', 'pf-eu'); await pg.waitForSelector('.pf-radar'); await foto('perfil-resultado');
   }
 };
 
