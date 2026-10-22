@@ -85,7 +85,7 @@
     capag: function (tam) {
       const vistos = {}; const regs = valores((Dados.e.config || {}).capag).filter(function (v) { const k = v.ibge || (v.municipio + '-' + v.uf); if (vistos[k]) return false; vistos[k] = 1; return true; });
       const it = ['A', 'B', 'C', 'D', 'n.d.'].map(function (n) { return { r: 'CAPAG ' + n, v: regs.filter(function (r) { return String(r.nota).replace('+', '') === n; }).length }; });
-      return { link: '#/mercado/capag', corpo: regs.length ? G.barras(it, { largura: LARG[tam], fmt: inteiro, linha: 24, titulo: 'Municípios por nota CAPAG' }) : '<p class="mudo">Importe a planilha da CAPAG em <a href="#/mercado/capag">Análise de Mercado › CAPAG</a>.</p>', tabela: G.tabela(['Nota', 'Municípios'], it.map(function (x) { return [x.r, x.v]; })) };
+      return { link: '#/mercado/capag', corpo: regs.length ? G.barras(it, { largura: LARG[tam], fmt: inteiro, linha: 24, titulo: 'Municípios por nota CAPAG' }) : '<p class="mudo">Importe a planilha da CAPAG em <a href="#/mercado/capag">Seven Market › Seven Pag</a>.</p>', tabela: G.tabela(['Nota', 'Municípios'], it.map(function (x) { return [x.r, x.v]; })) };
     },
     'com-kpis': function () {
       const c = Dados.e.comercial || {}; const m = Comercial.metricas(c.negocios || [], hoje());
