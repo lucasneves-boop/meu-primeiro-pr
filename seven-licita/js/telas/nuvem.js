@@ -291,7 +291,7 @@
       [['abrir', x.tipo === 'pasta' ? 'Abrir' : 'Visualizar'], ['baixar', 'Fazer download'], ['renomear', 'Renomear'], ['copiar', 'Fazer uma cópia'], ['mover', 'Mover para…'], ['estrela', x.estrela ? 'Remover estrela' : 'Adicionar estrela'], x.tipo === 'pasta' ? ['cor', 'Cor da pasta'] : null, ['detalhes', 'Detalhes'],
         x.tipo === 'arquivo' && Telas.leitor && /pdf|epub|text|html|markdown/.test((x.mime || '') + x.nome) ? ['leitor', 'Abrir no Seven Codex'] : null,
         x.tipo === 'arquivo' && Telas.musicas && /^audio\//.test(x.mime || '') ? ['musica', 'Adicionar às Músicas'] : null,
-        x.tipo === 'arquivo' && Telas.cadernos && /pdf|text|markdown|html/.test((x.mime || '') + x.nome) ? ['caderno', 'Adicionar a um Caderno'] : null,
+        x.tipo === 'arquivo' && Telas.cadernos && /pdf|text|markdown|html/.test((x.mime || '') + x.nome) ? ['caderno', 'Adicionar ao Seven Synapse'] : null,
         ['lixeira', 'Mover para a lixeira']].filter(Boolean);
     const f = await modal({ titulo: x.nome, botao: false, corpo: '<div class="n-menu">' + opcoesMenu.map(function (o) { return '<button type="button" class="btn ' + (o[0] === 'lixeira' || o[0] === 'excluir-de-vez' ? 'perigo' : '') + '" data-op="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>',
       aoAbrir: function (form) { form.addEventListener('click', async function (ev) { const b = ev.target.closest('[data-op]'); if (!b) return; form.closest('.modal-fundo').remove(); const op = b.dataset.op;

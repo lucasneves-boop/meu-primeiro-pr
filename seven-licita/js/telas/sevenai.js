@@ -1,6 +1,6 @@
 /* Seven.ia (estilo claude.ai): conversas com a API da Anthropic direto do navegador, com a chave do próprio usuário.
    Streaming, anexos (PDF, imagem, DOCX, texto), pesquisa na web com fontes, raciocínio visível, projetos com instruções
-   e documentos (inclusive fontes dos Cadernos) e contexto opcional dos dados da Plataforma 7. */
+   e documentos (inclusive cadernos do Seven Synapse) e contexto opcional dos dados da Plataforma 7. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -301,8 +301,8 @@
       '<h3>Conversas</h3>' + (convs.length ? '<ul class="ia-pj-convs">' + convs.map(function (c) { return '<li><a href="#/ia/c/' + c.id + '"><b>' + esc(c.titulo) + '</b><small>' + new Date(c.editadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + '</small></a></li>'; }).join('') + '</ul>' : '<p class="mudo">Comece uma conversa acima; ela usará as instruções e as fontes do projeto.</p>') + '</div>' +
       '<aside class="ia-pj-lado"><section><h3>Instruções</h3><p class="ia-pj-instr">' + (p.instrucoes ? esc(p.instrucoes).replace(/\n/g, '<br>') : '<span class="mudo">Nenhuma. Ex.: "Responda sempre com tabela de prazos" ou "O cliente é ME e usa o benefício da LC 123".</span>') + '</p></section>' +
       '<section><h3>Fontes</h3><ul class="ia-pj-fontes">' + (p.fontes || []).map(function (f) { return '<li>📄 ' + esc(f.nome) + ' <small>' + (f.tam < 1000 ? f.tam + ' caracteres' : Math.round(f.tam / 1000) + ' mil caracteres') + '</small><button type="button" class="ia-acao" data-ia="tirar-fonte" data-id="' + f.id + '" aria-label="Remover fonte ' + esc(f.nome) + '">×</button></li>'; }).join('') +
-      (p.cadernos || []).map(function (cid) { const c = cads.find(function (x) { return x.id === cid; }); return c ? '<li>📒 Caderno: ' + esc(c.titulo) + ' <small>' + c.fontes.length + ' fonte' + (c.fontes.length === 1 ? '' : 's') + '</small><button type="button" class="ia-acao" data-ia="tirar-caderno" data-id="' + cid + '" aria-label="Desvincular caderno">×</button></li>' : ''; }).join('') + '</ul>' +
-      '<div class="ia-pj-bts"><button type="button" class="btn mini" data-ia="fonte-arquivo">＋ Arquivo</button><button type="button" class="btn mini" data-ia="fonte-texto">＋ Texto</button>' + (cads.length ? '<button type="button" class="btn mini" data-ia="fonte-caderno">＋ Caderno</button>' : '') + '</div>' +
+      (p.cadernos || []).map(function (cid) { const c = cads.find(function (x) { return x.id === cid; }); return c ? '<li>📒 Seven Synapse: ' + esc(c.titulo) + ' <small>' + c.fontes.length + ' fonte' + (c.fontes.length === 1 ? '' : 's') + '</small><button type="button" class="ia-acao" data-ia="tirar-caderno" data-id="' + cid + '" aria-label="Desvincular caderno">×</button></li>' : ''; }).join('') + '</ul>' +
+      '<div class="ia-pj-bts"><button type="button" class="btn mini" data-ia="fonte-arquivo">＋ Arquivo</button><button type="button" class="btn mini" data-ia="fonte-texto">＋ Texto</button>' + (cads.length ? '<button type="button" class="btn mini" data-ia="fonte-caderno">＋ Caderno do Synapse</button>' : '') + '</div>' +
       '<p class="mudo mini">As fontes vão inteiras em cada pergunta; o cache da API barateia as repetições.</p></section></aside></div></div>');
     el.querySelector('.ia-comp').dataset.projeto = p.id;
   }

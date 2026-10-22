@@ -1,4 +1,4 @@
-/* Cadernos (estilo NotebookLM): divide fontes em trechos, busca BM25, responde com citações, resume, extrai datas,
+/* Seven Synapse (cadernos no estilo NotebookLM): divide fontes em trechos, busca BM25, responde com citações, resume, extrai datas,
    termos-chave, perguntas e os campos de um edital. Tudo local e extrativo: só devolve o que está nas fontes. Puro. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.Cadernos = fabrica();

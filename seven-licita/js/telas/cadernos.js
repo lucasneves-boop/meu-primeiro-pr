@@ -1,4 +1,4 @@
-/* Cadernos (estilo NotebookLM): fontes (PDF, DOCX, TXT, texto colado), chat com citações, estúdio (resumo, guia, FAQ,
+/* Seven Synapse (cadernos no estilo NotebookLM): fontes (PDF, DOCX, TXT, texto colado), chat com citações, estúdio (resumo, guia, FAQ,
    linha do tempo, quiz, análise de edital, resumo em áudio) e notas. Respostas extrativas: só o que está nas fontes. */
 (function () {
   'use strict';
@@ -39,7 +39,7 @@
   // ---------- início ----------
   function telaInicio(el) {
     const ls = e().slice().sort(function (a, b) { return b.editadoEm - a.editadoEm; });
-    el.innerHTML = '<div class="cd-home"><header><div><h1>Cadernos</h1><p class="mudo">Junte editais, termos de referência, leis e atas num caderno e converse com eles. As respostas citam o trecho de onde vieram.</p></div><button class="btn primario" data-a="novo">＋ Novo caderno</button></header>' +
+    el.innerHTML = '<div class="cd-home"><header><div><h1>Seven Synapse</h1><p class="mudo">Junte editais, termos de referência, leis e atas num caderno e converse com eles. As respostas citam o trecho de onde vieram.</p></div><button class="btn primario" data-a="novo">＋ Novo caderno</button></header>' +
       '<div class="cd-grade">' + '<button class="cd-card novo" data-a="novo"><span>＋</span><b>Criar novo caderno</b></button>' + ls.map(function (c) { return '<a class="cd-card" href="#/cadernos/c/' + c.id + '" style="--cd-cor:' + esc(c.cor || '#f5ecdb') + '"><span class="cd-emoji">' + esc(c.emoji || '📒') + '</span><b>' + esc(c.titulo) + '</b><small>' + new Date(c.editadoEm).toLocaleDateString('pt-BR') + ' · ' + c.fontes.length + ' fonte' + (c.fontes.length === 1 ? '' : 's') + '</small><button class="icone cd-del" data-del="' + c.id + '" aria-label="Excluir caderno">🗑</button></a>'; }).join('') + '</div></div>';
     el.onclick = async function (ev) {
       const del = ev.target.closest('[data-del]'); if (del) { ev.preventDefault(); const c = caderno(del.dataset.del); if (await confirmar('Excluir caderno', 'Excluir <b>' + esc(c.titulo) + '</b> e suas fontes?', 'Excluir')) { for (const f of c.fontes) await Dados.apagarArquivo(f.arq); Dados.e.cadernos = e().filter(function (x) { return x !== c; }); Dados.salvar(); App.redesenhar(); } return; }
@@ -191,7 +191,7 @@
   window.addEventListener('hashchange', function () { if (!/^#\/cadernos\/c\//.test(location.hash)) { if (self.speechSynthesis) speechSynthesis.cancel(); mem.falando = false; } });
 
   Telas.cadernos = {
-    titulo: 'Cadernos',
+    titulo: 'Seven Synapse',
     render: function (el, sub, param) { if (sub === 'c') return telaCaderno(el, param); mem.id = null; mem.ix = null; telaInicio(el); }
   };
 })();
