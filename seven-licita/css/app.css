@@ -2096,3 +2096,38 @@ main#conteudo { flex: 1; }
 .pc-tag-contrarrazoes { background: #e4f5ec; color: #1b6b43; } .pc-tag-execucao { background: var(--superficie-2); color: var(--mudo); }
 .modal .op-secao { margin-top: 0; }
 .modal .op-secao > header { padding: 0 0 8px; }
+
+/* Execução do contrato (Quadros) */
+.ex-cab-contrato { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; margin-bottom: 6px; }
+.ex-cab-contrato .campo:nth-child(5) { grid-column: span 2; }
+.ex-cab-contrato .campo:nth-child(6) { grid-column: span 2; }
+.ex-cab-contrato input { width: 100%; height: 38px; }
+.ex-secao { border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 12px 12px; margin: 12px 0; }
+.ex-secao > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ex-secao > header h4 { margin: 0; }
+.ex-linha { display: grid; gap: 8px; align-items: center; margin-bottom: 6px; }
+.ex-linha.ex-empenhos { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr) 32px; }
+.ex-linha.ex-notas { grid-template-columns: minmax(0, .9fr) repeat(3, minmax(0, 1fr)) minmax(0, .9fr) minmax(0, 1.2fr) 32px; }
+.ex-linha.ex-pagamentos { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1.4fr) 32px; }
+.ex-cab { font-size: 12px; font-weight: 600; color: var(--mudo); margin-bottom: 4px; }
+.ex-cel { min-width: 0; }
+.ex-cel input, .ex-cel select { width: 100%; height: 38px; min-width: 0; }
+.ex-cel .ms > summary { height: 38px; }
+.ex-tirar { width: 32px; height: 32px; }
+.ex-sub { margin: 10px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--mudo); }
+.ex-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.ex-alertas { list-style: none; margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--perigo-claro); color: var(--perigo); font-size: 13px; }
+.tag.ex-paga { background: #e4f5ec; color: #1b6b43; } .tag.ex-parcial { background: #fff1db; color: #7a4a00; }
+.tag.ex-aberta { background: var(--superficie-2); color: var(--mudo); } .tag.ex-atrasada { background: var(--perigo-claro); color: var(--perigo); }
+@media (max-width: 760px) {
+  .ex-cab-contrato { grid-template-columns: 1fr 1fr; }
+  .ex-cab { display: none; }
+  .ex-linha.ex-empenhos, .ex-linha.ex-notas, .ex-linha.ex-pagamentos { grid-template-columns: 1fr 1fr; border-bottom: 1px dashed var(--borda); padding-bottom: 8px; }
+  .ex-cel::before { content: attr(data-rot); display: block; font-size: 11px; font-weight: 600; color: var(--mudo); margin-bottom: 2px; }
+  .ex-tirar { justify-self: end; grid-column: 2; }
+}
+.ex-secao > header, .modal .op-secao > header { padding: 0; border: 0; background: none; position: static; }
+.ex-secao > header { margin-bottom: 8px; }
+.ex-cel .ms-lista input[type=checkbox] { width: 16px; height: 16px; flex: none; }
+.ex-cel .ms-lista label { justify-content: flex-start; text-align: left; }
+.ex-cel select { appearance: none; -webkit-appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--mudo) 50%), linear-gradient(135deg, var(--mudo) 50%, transparent 50%); background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }

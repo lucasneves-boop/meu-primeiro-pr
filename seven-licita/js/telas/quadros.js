@@ -846,38 +846,117 @@
   }
 
   // ---------- execução: contrato, empenhos, notas, pagamentos ----------
+  const ST_NF = { paga: 'Paga', parcial: 'Paga em parte', aberta: 'Em aberto', atrasada: 'Em atraso' };
   function execucaoResumo(c) {
     const x = c.execucao; if (!x) return '<p class="mudo mini">Sem dados de execução.</p>';
-    const soma = function (l) { return (l || []).reduce(function (s, i) { return s + (Number(i.valor) || 0); }, 0); };
-    const emp = soma(x.empenhos), nf = soma(x.notas), pg = soma(x.pagamentos);
+    Execucao.normalizar(x); const r = Execucao.resumo(x);
     const vig = x.vigenciaFim ? Nucleo.diasEntre(new Date(), x.vigenciaFim + 'T12:00:00') : null;
     return '<dl class="numeros"><div><dt>Contrato</dt><dd>' + esc(x.numero || '—') + ' · ' + moeda(x.valor) + '</dd></div><div><dt>Vigência</dt><dd class="' + (vig != null && vig < 30 ? 'alerta' : '') + '">' + data(x.vigenciaFim) + (vig != null ? ' (' + vig + ' d)' : '') + '</dd></div>' +
-      '<div><dt>Empenhado</dt><dd>' + moeda(emp) + '</dd></div><div><dt>Faturado (NF)</dt><dd>' + moeda(nf) + '</dd></div><div><dt>Recebido</dt><dd>' + moeda(pg) + '</dd></div><div><dt>A receber</dt><dd class="' + (nf - pg > 0.01 ? 'alerta' : '') + '">' + moeda(nf - pg) + '</dd></div><div><dt>Saldo do contrato</dt><dd>' + moeda((Number(x.valor) || 0) - emp) + '</dd></div></dl>';
+      '<div><dt>Empenhado</dt><dd>' + moeda(r.empenhado) + '</dd></div><div><dt>Faturado (NF)</dt><dd>' + moeda(r.faturado) + '</dd></div><div><dt>Recebido</dt><dd>' + moeda(r.recebido) + '</dd></div><div><dt>A receber</dt><dd class="' + (r.aReceber > 0.009 ? 'alerta' : '') + '">' + moeda(r.aReceber) + '</dd></div><div><dt>Saldo do contrato</dt><dd>' + moeda(r.saldoContrato) + '</dd></div></dl>' +
+      (r.empenhos.length ? '<h5 class="ex-sub">Empenhos</h5><ul class="ex-lista">' + r.empenhos.map(function (m) { return '<li><b>' + esc(m.numero || '(sem número)') + '</b> · ' + moeda(m.valor) + ' · NF: ' + (m.notas.length ? esc(m.notas.join(', ')) : '—') + ' · <span class="' + (m.excedido ? 'alerta' : 'mudo') + '">saldo ' + moeda(m.saldo) + '</span></li>'; }).join('') + '</ul>' : '') +
+      (r.notas.length ? '<h5 class="ex-sub">Notas fiscais</h5><ul class="ex-lista">' + r.notas.map(function (n) { return '<li><b>NF ' + esc(n.numero || '—') + '</b> · ' + moeda(n.valor) + ' · empenho ' + esc(n.empenho || '—') + ' · <span class="tag ex-' + n.status + '">' + ST_NF[n.status] + '</span>' + (n.aberto ? ' <span class="mudo">falta ' + moeda(n.aberto) + (n.vencimento ? ', vence ' + data(n.vencimento) : '') + '</span>' : '') + '</li>'; }).join('') + '</ul>' : '') +
+      (r.alertas.length ? '<ul class="ex-alertas">' + r.alertas.map(function (t) { return '<li>⚠ ' + esc(t) + '</li>'; }).join('') + '</ul>' : '');
+  }
+
+  const EX_COLS = {
+    empenhos: { rot: 'Empenhos', novo: '+ Adicionar empenho', cols: [['numero', 'Nº do empenho'], ['data', 'Data', 'date'], ['valor', 'Valor (R$)', 'moeda'], ['vinculo', 'Notas fiscais vinculadas', 'nfs']] },
+    notas: { rot: 'Notas fiscais', novo: '+ Adicionar nota fiscal', cols: [['numero', 'Nº da NF'], ['data', 'Emissão', 'date'], ['atesto', 'Atesto', 'date'], ['vencimento', 'Vencimento', 'date'], ['valor', 'Valor (R$)', 'moeda'], ['empenhoId', 'Empenho', 'empenho']] },
+    pagamentos: { rot: 'Pagamentos', novo: '+ Adicionar pagamento', cols: [['data', 'Data', 'date'], ['valor', 'Valor (R$)', 'moeda'], ['notaId', 'Nota fiscal paga', 'nota'], ['obs', 'Observação (OB, banco)']] }
+  };
+  function exLinha(tipo, it) {
+    const d = EX_COLS[tipo];
+    return '<div class="ex-linha ex-' + tipo + '" data-ex-id="' + esc(it.id) + '">' + d.cols.map(function (k) {
+      const v = it[k[0]] == null ? '' : it[k[0]];
+      let h;
+      if (k[2] === 'date') h = '<input type="date" data-c="' + k[0] + '" value="' + esc(v) + '" aria-label="' + k[1] + '">';
+      else if (k[2] === 'moeda') h = '<input inputmode="decimal" data-c="' + k[0] + '" value="' + esc(v === '' ? '' : String(v).replace('.', ',')) + '" placeholder="0,00" aria-label="' + k[1] + '">';
+      else if (k[2] === 'empenho' || k[2] === 'nota') h = '<select data-c="' + k[0] + '" data-sel="' + esc(v) + '" aria-label="' + k[1] + '"></select>';
+      else if (k[2] === 'nfs') h = '<details class="ms ex-nfs"><summary></summary><div class="ms-lista"></div></details>';
+      else h = '<input data-c="' + k[0] + '" value="' + esc(v) + '" aria-label="' + k[1] + '">';
+      return '<div class="ex-cel" data-rot="' + k[1] + '">' + h + '</div>';
+    }).join('') + '<button type="button" class="icone ex-tirar" data-ex-tirar aria-label="Remover linha" title="Remover">×</button></div>';
+  }
+  function exSecao(tipo, l) {
+    const d = EX_COLS[tipo];
+    return '<section class="ex-secao" data-ex="' + tipo + '"><header><h4>' + d.rot + '</h4><button type="button" class="btn mini" data-ex-add="' + tipo + '">' + d.novo + '</button></header>' +
+      '<div class="ex-linha ex-cab ex-' + tipo + '">' + d.cols.map(function (k) { return '<span>' + k[1] + '</span>'; }).join('') + '<span></span></div>' +
+      '<div class="ex-corpo">' + l.map(function (it) { return exLinha(tipo, it); }).join('') + '</div><p class="mini mudo ex-vazio"' + (l.length ? ' hidden' : '') + '>Nenhum registro. Use o botão acima para adicionar.</p></section>';
+  }
+  // Lê as linhas do formulário (antes de fechar a janela).
+  function exLer(form) {
+    const out = {};
+    Object.keys(EX_COLS).forEach(function (tipo) {
+      out[tipo] = Array.prototype.map.call(form.querySelectorAll('.ex-secao[data-ex=' + tipo + '] .ex-corpo .ex-linha'), function (ln) {
+        const it = { id: ln.dataset.exId };
+        EX_COLS[tipo].cols.forEach(function (k) { const i = ln.querySelector('[data-c=' + k[0] + ']'); if (!i) return; it[k[0]] = k[2] === 'moeda' ? (i.value.trim() ? Nucleo.lerNumeroBR(i.value) : null) : i.value.trim(); });
+        return it;
+      }).filter(function (it) { return Object.keys(it).some(function (k) { return k !== 'id' && it[k] !== '' && it[k] != null; }); });
+    });
+    return out;
+  }
+  // Mantém as listas de vínculo coerentes enquanto a janela está aberta.
+  function exSincronizar(form) {
+    const ler = exLer(form);
+    const fmtNum = function (n, pre) { return (pre || '') + (n.numero || '(sem número)'); };
+    form.querySelectorAll('.ex-notas select[data-c=empenhoId]').forEach(function (s) {
+      const atual = s.value || s.dataset.sel || '';
+      s.innerHTML = '<option value="">Sem empenho</option>' + ler.empenhos.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(fmtNum(m)) + '</option>'; }).join('');
+      s.value = ler.empenhos.some(function (m) { return m.id === atual; }) ? atual : ''; s.dataset.sel = s.value;
+    });
+    const ler2 = exLer(form);
+    form.querySelectorAll('.ex-pagamentos select[data-c=notaId]').forEach(function (s) {
+      const atual = s.value || s.dataset.sel || '';
+      s.innerHTML = '<option value="">Sem nota</option>' + ler2.notas.map(function (n) { return '<option value="' + esc(n.id) + '">' + esc(fmtNum(n, 'NF ')) + (n.valor ? ' · ' + moeda(n.valor) : '') + '</option>'; }).join('');
+      s.value = ler2.notas.some(function (n) { return n.id === atual; }) ? atual : ''; s.dataset.sel = s.value;
+    });
+    form.querySelectorAll('.ex-linha.ex-empenhos[data-ex-id]').forEach(function (ln) {
+      const id = ln.dataset.exId; const det = ln.querySelector('.ex-nfs'); if (!det) return;
+      const ligadas = ler2.notas.filter(function (n) { return n.empenhoId === id; });
+      det.querySelector('summary').textContent = ligadas.length ? ligadas.map(function (n) { return 'NF ' + (n.numero || '?'); }).join(', ') : 'Vincular notas';
+      const lista = det.querySelector('.ms-lista');
+      lista.innerHTML = ler2.notas.length ? ler2.notas.map(function (n) { return '<label><input type="checkbox" data-ex-nf="' + esc(n.id) + '"' + (n.empenhoId === id ? ' checked' : '') + '> <span>' + esc(fmtNum(n, 'NF ')) + (n.empenhoId && n.empenhoId !== id ? ' <small class="mudo">(em outro empenho)</small>' : '') + '</span></label>'; }).join('') : '<p class="mini mudo">Cadastre a nota fiscal abaixo para vincular.</p>';
+    });
+    form.querySelectorAll('.ex-secao').forEach(function (sec) { sec.querySelector('.ex-vazio').hidden = !!sec.querySelector('.ex-corpo .ex-linha'); });
   }
 
   async function editarExecucao(q, c) {
-    const x = c.execucao = c.execucao || { empenhos: [], notas: [], pagamentos: [] };
-    const cols = { Empenhos: [['numero', 'Nº empenho'], ['data', 'Data', 'data'], ['valor', 'Valor', 'moeda']], Notas: [['numero', 'Nº NF'], ['data', 'Emissão', 'data'], ['atesto', 'Atesto', 'data'], ['vencimento', 'Vencimento', 'data'], ['valor', 'Valor', 'moeda']], Pagamentos: [['data', 'Data', 'data'], ['valor', 'Valor', 'moeda'], ['ref', 'Ref. NF']] };
-    const chave = { Empenhos: 'empenhos', Notas: 'notas', Pagamentos: 'pagamentos' };
-    const linhas = function (nome) {
-      const l = x[chave[nome]];
-      return '<fieldset><legend>' + nome + '</legend><table class="tabela compacta"><thead><tr>' + cols[nome].map(function (k) { return '<th>' + k[1] + '</th>'; }).join('') + '</tr></thead><tbody>' +
-        l.concat([{}]).map(function (it, i) { return '<tr>' + cols[nome].map(function (k) { return '<td><input name="' + nome + '_' + k[0] + '_' + i + '" ' + (k[2] === 'data' ? 'type="date"' : k[2] === 'moeda' ? 'inputmode="decimal"' : '') + ' value="' + esc(it[k[0]] == null ? '' : k[2] === 'moeda' ? String(it[k[0]]).replace('.', ',') : it[k[0]]) + '"></td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></fieldset>';
-    };
+    const x = Execucao.normalizar(c.execucao = c.execucao || { empenhos: [], notas: [], pagamentos: [] });
+    let lido = null;
     const f = await modal({
       titulo: 'Execução: ' + c.titulo, largo: true,
-      corpo: '<div class="linha">' + campo('Nº contrato / ata', '<input name="numero" value="' + esc(x.numero || '') + '">') + campo('Valor do contrato', '<input name="valor" inputmode="decimal" value="' + esc(x.valor != null ? String(x.valor).replace('.', ',') : '') + '">') + campo('Assinatura', '<input type="date" name="assinatura" value="' + esc(x.assinatura || '') + '">') + campo('Fim da vigência', '<input type="date" name="vigenciaFim" value="' + esc(x.vigenciaFim || '') + '">') + '</div>' +
-        '<div class="linha">' + campo('Gestor / fiscal do contrato', '<input name="gestor" value="' + esc(x.gestor || '') + '">') + campo('Prazo de pagamento (dias após atesto)', '<input name="prazoPagamento" inputmode="numeric" value="' + esc(x.prazoPagamento || '30') + '">') + '</div>' +
-        linhas('Empenhos') + linhas('Notas') + linhas('Pagamentos') + '<p class="mini mudo">Linhas sem valor são descartadas. Para remover uma linha, apague o valor.</p>'
+      corpo: '<div class="ex-cab-contrato">' + campo('Nº contrato / ata', '<input name="numero" value="' + esc(x.numero || '') + '">') + campo('Valor do contrato (R$)', '<input name="valor" inputmode="decimal" value="' + esc(x.valor != null ? String(x.valor).replace('.', ',') : '') + '">') + campo('Assinatura', '<input type="date" name="assinatura" value="' + esc(x.assinatura || '') + '">') + campo('Fim da vigência', '<input type="date" name="vigenciaFim" value="' + esc(x.vigenciaFim || '') + '">') +
+        campo('Gestor / fiscal do contrato', '<input name="gestor" value="' + esc(x.gestor || '') + '">') + campo('Prazo de pagamento (dias após atesto)', '<input name="prazoPagamento" inputmode="numeric" value="' + esc(x.prazoPagamento || '30') + '">') + '</div>' +
+        exSecao('empenhos', x.empenhos) + exSecao('notas', x.notas) + exSecao('pagamentos', x.pagamentos) +
+        '<p class="mini mudo">Vincule cada nota fiscal ao empenho (na nota ou na coluna "Notas fiscais vinculadas" do empenho) e cada pagamento à nota paga. Vencimento em branco = atesto + prazo de pagamento.</p>',
+      aoAbrir: function (form) {
+        exSincronizar(form);
+        form.addEventListener('click', function (ev) {
+          const add = ev.target.closest('[data-ex-add]');
+          if (add) { const tipo = add.dataset.exAdd; const sec = form.querySelector('.ex-secao[data-ex=' + tipo + '] .ex-corpo'); sec.insertAdjacentHTML('beforeend', exLinha(tipo, { id: Execucao.novoId(tipo.slice(0, 2)) })); exSincronizar(form); const p = sec.lastElementChild.querySelector('input'); if (p) p.focus(); return; }
+          const tirar = ev.target.closest('[data-ex-tirar]');
+          if (tirar) { tirar.closest('.ex-linha').remove(); exSincronizar(form); }
+        });
+        form.addEventListener('change', function (ev) {
+          const nf = ev.target.closest('[data-ex-nf]');
+          if (nf) { const emp = ev.target.closest('.ex-linha').dataset.exId; const s = form.querySelector('.ex-linha.ex-notas[data-ex-id="' + nf.dataset.exNf + '"] select[data-c=empenhoId]'); if (s) { s.value = nf.checked ? emp : ''; s.dataset.sel = s.value; } }
+          if (ev.target.matches('select[data-c]')) ev.target.dataset.sel = ev.target.value;
+          exSincronizar(form);
+          if (nf) { const det = nf.closest('details'); if (det) det.open = true; }
+        });
+        form.addEventListener('input', function (ev) { if (ev.target.matches('[data-c=numero], [data-c=valor]')) { clearTimeout(form._exT); form._exT = setTimeout(function () { const ab = form.querySelector('details[open]'); exSincronizar(form); if (ab) ab.open = true; }, 300); } });
+      },
+      validar: function (fd, form) {
+        lido = exLer(form);
+        const semValor = ['empenhos', 'notas', 'pagamentos'].filter(function (t) { return lido[t].some(function (i) { return !i.valor; }); });
+        if (semValor.length) return 'Informe o valor em todas as linhas de ' + semValor.map(function (t) { return EX_COLS[t].rot.toLowerCase(); }).join(', ') + ' (ou remova a linha).';
+        return '';
+      }
     });
-    if (!f) return;
+    if (!f || !lido) return;
     x.numero = f.get('numero'); x.valor = f.get('valor') ? Nucleo.lerNumeroBR(f.get('valor')) : null; x.assinatura = f.get('assinatura'); x.vigenciaFim = f.get('vigenciaFim'); x.gestor = f.get('gestor'); x.prazoPagamento = Number(f.get('prazoPagamento')) || 30;
-    Object.keys(cols).forEach(function (nome) {
-      const out = [];
-      for (let i = 0; i <= x[chave[nome]].length; i++) { const it = {}; cols[nome].forEach(function (k) { const v = f.get(nome + '_' + k[0] + '_' + i); it[k[0]] = k[2] === 'moeda' ? (v ? Nucleo.lerNumeroBR(v) : null) : v; }); if (it.valor) out.push(it); }
-      x[chave[nome]] = out;
-    });
-    x.notas.forEach(function (n) { if (!n.vencimento && n.atesto) { const d = new Date(n.atesto + 'T12:00:00'); d.setDate(d.getDate() + x.prazoPagamento); n.vencimento = d.toISOString().slice(0, 10); } });
+    x.empenhos = lido.empenhos.map(function (m) { delete m.vinculo; return m; }); x.notas = lido.notas; x.pagamentos = lido.pagamentos;
+    x.notas.forEach(function (n) { if (!n.vencimento && n.atesto) n.vencimento = Execucao.vencimentoPadrao(n.atesto, x.prazoPagamento); n.empenho = (x.empenhos.find(function (m) { return m.id === n.empenhoId; }) || {}).numero || ''; });
+    x.pagamentos.forEach(function (p) { p.ref = (x.notas.find(function (n) { return n.id === p.notaId; }) || {}).numero || ''; });
     registrar(q, c, 'atualizou a execução do contrato');
   }
 
@@ -1131,7 +1210,7 @@
         if (c.prazo) { const ms = new Date(c.prazo) - Date.now(); const lemb = (Number(c.lembrete) || 0) * 60000; if (ms < 0 || (lemb && ms < lemb) || ms < 2 * DIA) out.push({ quadro: q, cartao: c, quando: c.prazo, tipo: ms < 0 ? 'atrasado' : 'proximo', texto: c.titulo }); }
         (c.checklists || []).forEach(function (cl) { cl.itens.forEach(function (i) { if (!i.feito && i.prazo && new Date(i.prazo + 'T23:59') - Date.now() < DIA) out.push({ quadro: q, cartao: c, quando: i.prazo, tipo: new Date(i.prazo + 'T23:59') < Date.now() ? 'atrasado' : 'proximo', texto: i.texto + ' — ' + c.titulo }); }); });
         const x = c.execucao;
-        if (x) (x.notas || []).forEach(function (n) { const pago = (x.pagamentos || []).filter(function (p) { return p.ref && String(p.ref) === String(n.numero); }).reduce(function (s, p) { return s + (p.valor || 0); }, 0); if (n.vencimento && pago + 0.01 < n.valor && new Date(n.vencimento + 'T23:59') < Date.now()) out.push({ quadro: q, cartao: c, quando: n.vencimento, tipo: 'atrasado', texto: 'Pagamento da NF ' + n.numero + ' em atraso (' + moeda(n.valor - pago) + ') — ' + c.titulo }); });
+        if (x) { Execucao.normalizar(x); } if (x) (x.notas || []).forEach(function (n) { const pago = Execucao.pagoDaNota(x, n); if (n.vencimento && pago + 0.01 < n.valor && new Date(n.vencimento + 'T23:59') < Date.now()) out.push({ quadro: q, cartao: c, quando: n.vencimento, tipo: 'atrasado', texto: 'Pagamento da NF ' + n.numero + ' em atraso (' + moeda(n.valor - pago) + ') — ' + c.titulo }); });
       });
     });
     return out.sort(function (a, b) { return new Date(a.quando) - new Date(b.quando); });
