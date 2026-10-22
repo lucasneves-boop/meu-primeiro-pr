@@ -45,6 +45,22 @@ const MIDIA = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-st
     await A.click('[data-rn=chat]'); ok(/planilha de disputa/.test(await A.locator('.rn-chat-l').innerText()), 'chat da chamada');
     await A.click('[data-rn=pessoas]'); ok(await A.locator('.rn-pessoas li').count() === 2, 'lista de pessoas');
     await foto('reuniao-chamada');
+    // atividades premium: enquete, perguntas, quadro branco e ata
+    await A.click('[data-rn=atividades]'); ok(await A.locator('.rn-ativ li').count() === 6, 'painel de atividades (quadro, enquetes, perguntas, legendas, gravação, ata)');
+    await A.click('[data-rn=ir-enquetes]'); await A.fill('#rn-enq-f [name=p]', 'Participamos do pregão 90021?'); await A.fill('#rn-enq-f [name=o1]', 'Sim'); await A.fill('#rn-enq-f [name=o2]', 'Não'); await A.click('#rn-enq-f .btn');
+    await B.click('[data-rn=atividades]'); await B.click('[data-rn=ir-enquetes]'); await B.waitForSelector('.rn-enq [data-voto="0"]', { timeout: 5000 }); await B.click('.rn-enq [data-voto="0"]');
+    await A.waitForFunction(() => /100%/.test((document.querySelector('.rn-enq [data-voto="0"]') || {}).textContent || ''), null, { timeout: 5000 }); ok(true, 'enquete: voto da Ana aparece no resultado do Lucas');
+    await B.click('[data-rn=atividades]'); await B.click('[data-rn=ir-perguntas]'); await B.fill('#rn-per-f [name=t]', 'Qual o prazo de entrega?'); await B.click('#rn-per-f .btn');
+    await A.click('[data-rn=atividades]'); await A.click('[data-rn=ir-perguntas]'); await A.waitForSelector('.rn-per', { timeout: 5000 }); await A.click('.rn-per [data-rn=per-votar]');
+    await B.waitForFunction(() => /▲ 1/.test((document.querySelector('.rn-per [data-rn=per-votar]') || {}).textContent || ''), null, { timeout: 5000 }); ok(true, 'perguntas e respostas com voto');
+    await A.click('[data-rn=atividades]'); await A.click('.rn-ativ [data-rn=quadro]'); await A.waitForSelector('.rn-quadro:not([hidden]) canvas');
+    const cv = await A.locator('.rn-quadro canvas').boundingBox(); await A.mouse.move(cv.x + 40, cv.y + 40); await A.mouse.down(); await A.mouse.move(cv.x + 200, cv.y + 120, { steps: 6 }); await A.mouse.up();
+    await B.waitForFunction(() => { const s = Telas.pleiade.api.arv().chamadas; return Object.values(s).some(x => x.quadro && Object.keys(x.quadro).length); }, null, { timeout: 5000 }); ok(true, 'traço do quadro branco chega ao outro participante');
+    await foto('reuniao-quadro');
+    await A.click('.rn-quadro-barra [data-rn=quadro]');
+    const [dl] = await Promise.all([A.waitForEvent('download'), A.evaluate(() => document.querySelector('[data-rn=atividades]').click()).then(() => A.click('.rn-ativ [data-rn=ata]'))]);
+    const ata = require('fs').readFileSync(await dl.path(), 'utf8'); ok(/Participamos do pregão 90021\? → Sim \(1\)/.test(ata) && /planilha de disputa/.test(ata), 'ata com enquete e chat');
+    await A.click('[data-rn=fechar-painel]');
     // fixar e sair para outra tela com barra flutuante
     await A.hover('.rn-tile:not(.eu)'); await A.click('.rn-tile:not(.eu) [data-rn=fixar]'); ok(await A.locator('.rn-tile.grande:not(.eu)').count() === 1, 'fixar participante em destaque');
     await A.goto(url + '#/agenda'); await A.waitForSelector('#rn-pill'); ok(/Voltar à chamada/.test(await A.locator('#rn-pill').innerText()), 'barra flutuante ao navegar pelo app');

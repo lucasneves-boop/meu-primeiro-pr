@@ -96,7 +96,7 @@
       const ps = s.participantes || {};
       Object.keys(ps).forEach(function (u) { const r = ps[u].reacao; if (r && r.em > (call.reacoesVistas[u] || 0) && Date.now() - r.em < 8000) { call.reacoesVistas[u] = r.em; flutuar(u, r.e); } });
       const nChat = Object.keys(s.chat || {}).length; if (nChat > call.chatVisto && call.painel !== 'chat') { const b = document.querySelector('[data-rn=chat] .rn-ponto'); if (b) b.hidden = false; }
-      desenharTiles(); desenharPainel();
+      desenharTiles(); desenharPainel(); desenharExtras();
     } finally { sincronizando = false; if (deNovo) { deNovo = false; agendarSync(); } }
   }
 
@@ -141,6 +141,8 @@
     if (!call) return;
     const c = call; call = null;
     clearInterval(c.batida); clearInterval(c.relogio);
+    if (c.legendas) { try { c.legendas.onend = null; c.legendas.stop(); } catch (e) { /* ok */ } }
+    if (c.gravador && c.gravador.state !== 'inactive') c.gravador.stop();
     const i = T().ouvintes.indexOf(c.ouvinte); if (i >= 0) T().ouvintes.splice(i, 1);
     Object.keys(c.pares).forEach(function (u) { try { c.pares[u].pc.close(); } catch (e) { /* ok */ } });
     pararStream(c.local); pararStream(c.tela);
@@ -152,6 +154,7 @@
     pilula();
   }
   window.addEventListener('beforeunload', function () { if (call) sair(); });
+  window.addEventListener('resize', function () { if (call && call.quadro) desenharQuadro(); });
 
   // ---------- controles ----------
   async function alternarMic() {
@@ -246,23 +249,120 @@
       const at = C.ativos(s);
       box.innerHTML = '<header><h3>Pessoas (' + at.length + ')</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header><button class="btn mini" data-rn="copiar">🔗 Copiar link da reunião</button><ul class="rn-pessoas">' + at.map(function (u) { const p = (s.participantes || {})[u] || {}; return '<li><span class="rn-av-p" style="background:' + esc(corDe(u)) + '">' + esc(iniciais(u)) + '</span><div><b>' + esc(nomeDe(u)) + (u === eu() ? ' (você)' : '') + '</b>' + (s.criador === u ? '<small>Organizador da reunião</small>' : '') + '</div><span>' + (p.mao ? '✋ ' : '') + (p.tela ? '🖥 ' : '') + (p.mic === false ? '🔇' : '🎤') + '</span></li>'; }).join('') + '</ul>';
     }
+    if (call.painel === 'atividades') box.innerHTML = painelAtividades();
+    if (call.painel === 'enquetes') { const f = box.querySelector('#rn-enq-f'); const rasc = f ? Array.from(f.elements).map(function (x) { return x.value; }) : null; const foco = f && f.contains(document.activeElement) ? document.activeElement.name : null; box.innerHTML = painelEnquetes(); const nf = box.querySelector('#rn-enq-f'); if (rasc) Array.from(nf.elements).forEach(function (x, i) { if (rasc[i] != null && x.name) x.value = rasc[i]; }); if (foco) nf.elements[foco].focus(); }
+    if (call.painel === 'perguntas') { const f = box.querySelector('#rn-per-f'); const rasc = f ? f.t.value : ''; const foco = f && document.activeElement === f.t; box.innerHTML = painelPerguntas(); const nf = box.querySelector('#rn-per-f'); nf.t.value = rasc; if (foco) nf.t.focus(); }
     if (call.painel === 'info') {
       box.innerHTML = '<header><h3>Detalhes da reunião</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header><p><b>' + esc(s.nome || 'Reunião') + '</b></p><p class="mini">Informações para participar</p><p class="rn-link">' + esc(linkSala(call.sid)) + '</p><button class="btn mini" data-rn="copiar">📋 Copiar informações</button><p class="mini mudo">Código: <b>' + esc(call.sid) + '</b>. Quem entra precisa estar na Plêiade da equipe (mesmo servidor).</p>';
     }
   }
 
+  // ---------- recursos premium: enquetes, perguntas, quadro branco, legendas, gravação e ata ----------
+  const CORES_QUADRO = ['#111111', '#e34948', '#2a78d6', '#1baf7a', '#a8792a', '#6250d6'];
+  function desenharExtras() {
+    if (!call) return; const s = sala(call.sid) || {}; const ps = s.participantes || {}; const at = C.ativos(s);
+    const rec = document.querySelector('.rn-rec'); if (rec) { const quem = at.filter(function (u) { return ps[u] && ps[u].gravando; }); rec.hidden = !quem.length; rec.textContent = '● Gravando · ' + quem.map(nomeDe).join(', '); }
+    const leg = document.querySelector('.rn-legendas');
+    if (leg) { const linhas = at.filter(function (u) { const p = ps[u] || {}; return p.legenda && Date.now() - (p.legEm || 0) < 7000; }).map(function (u) { return '<p><b>' + esc(u === eu() ? 'Você' : nomeDe(u)) + ':</b> ' + esc(ps[u].legenda) + '</p>'; }); leg.innerHTML = linhas.join(''); leg.hidden = !call.legendasVer || !linhas.length; }
+    const cc = document.querySelector('[data-rn=legendas]'); if (cc) { cc.classList.toggle('ativo', !!call.legendas); cc.setAttribute('aria-pressed', String(!!call.legendas)); }
+    if (call.quadro) desenharQuadro();
+  }
+  // Quadro branco: traços normalizados (0..1) em /quadro, para caber em qualquer tela.
+  function desenharQuadro() {
+    const cv = document.querySelector('.rn-quadro canvas'); if (!cv) return; const box = cv.parentElement.getBoundingClientRect();
+    const W = Math.max(1, Math.round(box.width)), H = Math.max(1, Math.round(box.height - 46));
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const g = cv.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H); g.lineCap = 'round'; g.lineJoin = 'round';
+    const tracos = Object.keys((sala(call.sid) || {}).quadro || {}).map(function (k) { return sala(call.sid).quadro[k]; }).sort(function (a, b) { return (a.em || 0) - (b.em || 0); });
+    if (call.traco) tracos.push(call.traco);
+    tracos.forEach(function (t) { const pts = t.pts || []; if (!pts.length) return; g.strokeStyle = t.cor; g.lineWidth = t.w || 3; g.beginPath(); g.moveTo(pts[0][0] * W, pts[0][1] * H); pts.forEach(function (p) { g.lineTo(p[0] * W, p[1] * H); }); if (pts.length === 1) g.lineTo(pts[0][0] * W + 0.1, pts[0][1] * H); g.stroke(); });
+  }
+  function ligarQuadro() {
+    const cv = document.querySelector('.rn-quadro canvas'); if (!cv || cv._ligado) return; cv._ligado = true;
+    const ponto = function (ev) { const r = cv.getBoundingClientRect(); return [Math.round((ev.clientX - r.left) / r.width * 1000) / 1000, Math.round((ev.clientY - r.top) / r.height * 1000) / 1000]; };
+    cv.addEventListener('pointerdown', function (ev) { cv.setPointerCapture(ev.pointerId); call.traco = { u: eu(), cor: call.corQuadro || CORES_QUADRO[0], w: call.corQuadro === '#ffffff' ? 22 : 3, pts: [ponto(ev)], em: Date.now() }; desenharQuadro(); });
+    cv.addEventListener('pointermove', function (ev) { if (!call || !call.traco) return; call.traco.pts.push(ponto(ev)); desenharQuadro(); });
+    const fim = function () { if (!call || !call.traco) return; const t = call.traco; call.traco = null; if (t.pts.length) T().set(caminho(call.sid, 'quadro/' + P.id()), t); };
+    cv.addEventListener('pointerup', fim); cv.addEventListener('pointercancel', fim);
+  }
+  function alternarQuadro() {
+    call.quadro = !call.quadro; const q = document.querySelector('.rn-quadro'); if (!q) return; q.hidden = !call.quadro;
+    document.querySelector('.rn-grade').hidden = !!call.quadro;
+    if (call.quadro) { ligarQuadro(); desenharQuadro(); }
+  }
+  // Legendas ao vivo (reconhecimento de voz do navegador, em português). A frase final vai para a transcrição.
+  function alternarLegendas() {
+    if (call.legendas) { call.legendasVer = false; try { call.legendas.onend = null; call.legendas.stop(); } catch (e) { /* já parou */ } call.legendas = null; T().patch(caminho(call.sid, 'participantes/' + eu()), { legenda: null }); desenharExtras(); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    call.legendasVer = true;
+    if (!SR) { aviso('Mostrando as legendas dos outros. Para gerar as suas, use o Chrome ou o Edge (reconhecimento de voz).', 'erro'); desenharExtras(); return; }
+    const r = new SR(); r.lang = 'pt-BR'; r.continuous = true; r.interimResults = true;
+    r.onresult = function (ev) {
+      if (!call) return; let parcial = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) { const t = ev.results[i][0].transcript.trim(); if (!t) continue; if (ev.results[i].isFinal) T().set(caminho(call.sid, 'transcricao/' + P.id()), { u: eu(), t: t, em: Date.now() }); else parcial += t + ' '; }
+      T().patch(caminho(call.sid, 'participantes/' + eu()), { legenda: parcial.trim() || null, legEm: Date.now() });
+    };
+    r.onerror = function (e) { if (e.error === 'not-allowed') { aviso('Permita o microfone para gerar legendas.', 'erro'); if (call) { call.legendas = null; desenharExtras(); } } };
+    r.onend = function () { if (call && call.legendas === r) try { r.start(); } catch (e) { /* reinicia sozinho */ } };
+    try { r.start(); call.legendas = r; } catch (e) { aviso('Não foi possível iniciar as legendas.', 'erro'); }
+    desenharExtras();
+  }
+  // Gravação local: grava a aba da reunião (vídeo + áudio de todos) e baixa um .webm. Todos veem o aviso "Gravando".
+  async function alternarGravacao() {
+    if (call.gravador) { call.gravador.stop(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) { aviso('Este navegador não grava a tela.', 'erro'); return; }
+    let tela; try { tela = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true, preferCurrentTab: true }); } catch (e) { return; }
+    const ctx = new AudioContext(); const destino = ctx.createMediaStreamDestination();
+    [tela, call.local].concat(Object.keys(call.pares).map(function (u) { return call.pares[u].stream; })).forEach(function (st) { if (st && st.getAudioTracks().length) try { ctx.createMediaStreamSource(st).connect(destino); } catch (e) { /* faixa sem áudio */ } });
+    const mix = new MediaStream(tela.getVideoTracks().concat(destino.stream.getAudioTracks()));
+    const tipo = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(function (t) { return MediaRecorder.isTypeSupported(t); }) || '';
+    const rec = new MediaRecorder(mix, tipo ? { mimeType: tipo } : {}); const partes = [];
+    rec.ondataavailable = function (e) { if (e.data && e.data.size) partes.push(e.data); };
+    rec.onstop = function () {
+      pararStream(tela); ctx.close();
+      const url = URL.createObjectURL(new Blob(partes, { type: 'video/webm' })); const a = document.createElement('a'); a.href = url; a.download = 'reuniao-' + (call ? call.sid : 'gravada') + '-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.webm'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+      if (call) { call.gravador = null; T().patch(caminho(call.sid, 'participantes/' + eu()), { gravando: false }); desenharPainel(); }
+      aviso('Gravação salva no seu computador (pasta de downloads).');
+    };
+    tela.getVideoTracks()[0].onended = function () { if (rec.state !== 'inactive') rec.stop(); };
+    rec.start(1000); call.gravador = rec; T().patch(caminho(call.sid, 'participantes/' + eu()), { gravando: true }); desenharPainel();
+    aviso('Gravando. Todos na reunião veem o aviso "Gravando".');
+  }
+  function baixarAta() { const s = sala(call.sid) || {}; UI.baixar('ata-' + call.sid + '.txt', C.ata(Object.assign({}, s, { nome: s.nome }), nomeDe), 'text/plain;charset=utf-8'); }
+
+  function painelAtividades() {
+    return '<header><h3>Atividades</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header><ul class="rn-ativ">' +
+      [['quadro', '🖊', 'Quadro branco', call.quadro ? 'Aberto para todos que ativarem' : 'Desenhe junto com a equipe'], ['enquetes', '📊', 'Enquetes', 'Pergunte e veja o resultado na hora'], ['perguntas', '❓', 'Perguntas e respostas', 'A equipe vota nas mais importantes'],
+        ['legendas', '💬', 'Legendas e transcrição', call.legendas ? 'Ligadas: o que você fala vira texto' : 'Ao vivo, em português'], ['gravar', call.gravador ? '⏹' : '⏺', call.gravador ? 'Parar gravação' : 'Gravar a reunião', 'Salva um vídeo no seu computador'], ['ata', '📝', 'Baixar ata', 'Transcrição, chat e enquetes em texto']]
+        .map(function (x) { return '<li><button type="button" data-rn="' + (x[0] === 'gravar' ? 'gravar' : x[0] === 'ata' ? 'ata' : x[0] === 'quadro' ? 'quadro' : x[0] === 'legendas' ? 'legendas' : 'ir-' + x[0]) + '"><span class="rn-ativ-ic">' + x[1] + '</span><span><b>' + x[2] + '</b><small>' + x[3] + '</small></span></button></li>'; }).join('') + '</ul>';
+  }
+  function painelEnquetes() {
+    const s = sala(call.sid) || {}; const l = Object.keys(s.enquetes || {}).map(function (k) { return Object.assign({ id: k }, s.enquetes[k]); }).sort(function (a, b) { return b.em - a.em; });
+    return '<header><h3>Enquetes</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header>' +
+      '<form id="rn-enq-f" class="rn-form"><input name="p" placeholder="Pergunta" required aria-label="Pergunta"><input name="o1" placeholder="Opção 1" required aria-label="Opção 1"><input name="o2" placeholder="Opção 2" required aria-label="Opção 2"><input name="o3" placeholder="Opção 3 (opcional)" aria-label="Opção 3"><input name="o4" placeholder="Opção 4 (opcional)" aria-label="Opção 4"><button class="btn primario">Lançar enquete</button></form>' +
+      l.map(function (q) { const r = C.resultadoEnquete(q); const meu = (q.votos || {})[eu()]; return '<div class="rn-enq" data-enq="' + esc(q.id) + '"><b>' + esc(q.pergunta) + '</b><small class="mudo">' + esc(nomeDe(q.autor)) + ' · ' + r.total + ' voto(s)' + (q.aberta === false ? ' · encerrada' : '') + '</small>' + r.opcoes.map(function (o, i) { return '<button type="button" class="rn-op' + (meu === i ? ' on' : '') + '" data-voto="' + i + '"' + (q.aberta === false ? ' disabled' : '') + '><span class="rn-op-b" style="width:' + Math.round(o.pct * 100) + '%"></span><span class="rn-op-t">' + esc(o.texto) + '</span><span class="rn-op-n">' + Math.round(o.pct * 100) + '%</span></button>'; }).join('') + (q.autor === eu() && q.aberta !== false ? '<button type="button" class="btn mini fantasma" data-rn="enq-fechar">Encerrar votação</button>' : '') + '</div>'; }).join('');
+  }
+  function painelPerguntas() {
+    const s = sala(call.sid) || {}; const l = C.ordenarPerguntas(s.perguntas);
+    return '<header><h3>Perguntas e respostas</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header>' +
+      '<form id="rn-per-f" class="rn-form"><textarea name="t" rows="2" placeholder="Faça uma pergunta" required aria-label="Pergunta"></textarea><button class="btn primario">Perguntar</button></form>' +
+      (l.length ? l.map(function (q) { const votei = (q.votos || {})[eu()]; return '<div class="rn-per' + (q.respondida ? ' feita' : '') + '" data-per="' + esc(q.id) + '"><p>' + esc(q.t) + '</p><small class="mudo">' + esc(nomeDe(q.u)) + (q.respondida ? ' · respondida' : '') + '</small><div class="grupo-botoes"><button type="button" class="btn mini' + (votei ? ' ativo' : ' fantasma') + '" data-rn="per-votar">▲ ' + q.n + '</button>' + ((s.criador === eu() || q.u === eu()) ? '<button type="button" class="btn mini fantasma" data-rn="per-ok">' + (q.respondida ? 'Reabrir' : 'Marcar como respondida') + '</button>' : '') + '</div></div>'; }).join('') : '<p class="mudo">Nenhuma pergunta ainda.</p>');
+  }
+
   function telaChamada(el) {
     const s = sala(call.sid) || {};
-    el.innerHTML = '<div class="rn"><div class="rn-palco"><div class="rn-grade"></div><div class="rn-maos" hidden></div></div><aside class="rn-painel" hidden></aside>' +
+    el.innerHTML = '<div class="rn"><div class="rn-palco"><div class="rn-grade"></div><div class="rn-quadro" hidden><div class="rn-quadro-barra">' + CORES_QUADRO.map(function (c) { return '<button type="button" class="rn-cor" data-cor="' + c + '" style="background:' + c + '" aria-label="Cor ' + c + '"></button>'; }).join('') + '<button type="button" class="btn mini" data-cor="#ffffff">Borracha</button><button type="button" class="btn mini fantasma" data-rn="quadro-limpar">Limpar</button><button type="button" class="btn mini" data-rn="quadro">Fechar quadro</button></div><canvas aria-label="Quadro branco compartilhado"></canvas></div><div class="rn-maos" hidden></div><div class="rn-rec" hidden></div><div class="rn-legendas" hidden aria-live="polite"></div></div><aside class="rn-painel" hidden></aside>' +
       '<footer class="rn-barra"><div class="rn-esq"><span class="rn-relogio">' + hhmm() + ' | ' + esc(call.sid) + '</span><span class="rn-nome-sala">' + esc(s.nome || '') + '</span></div>' +
       '<div class="rn-ctrl">' +
       '<button class="rn-b" data-rn="mic"><span class="rn-ic"></span></button><button class="rn-b" data-rn="cam"><span class="rn-ic"></span></button>' +
-      '<button class="rn-b" data-rn="reacao" title="Enviar uma reação"><span class="rn-ic">😀</span></button><button class="rn-b" data-rn="tela"><span class="rn-ic">🖥</span></button><button class="rn-b" data-rn="mao" title="Levantar a mão"><span class="rn-ic">✋</span></button>' +
+      '<button class="rn-b" data-rn="reacao" title="Enviar uma reação"><span class="rn-ic">😀</span></button><button class="rn-b" data-rn="tela"><span class="rn-ic">🖥</span></button><button class="rn-b" data-rn="mao" title="Levantar a mão"><span class="rn-ic">✋</span></button><button class="rn-b" data-rn="legendas" title="Legendas ao vivo" aria-pressed="false"><span class="rn-ic">CC</span></button>' +
       '<button class="rn-b rn-sair" data-rn="sair" title="Sair da chamada"><span class="rn-ic">📞</span></button></div>' +
-      '<div class="rn-dir"><button class="rn-b2" data-rn="info" title="Detalhes da reunião">ⓘ</button><button class="rn-b2" data-rn="pessoas" title="Pessoas">👥<span class="rn-n"></span></button><button class="rn-b2" data-rn="chat" title="Chat">💬<span class="rn-ponto" hidden></span></button></div></footer>' +
+      '<div class="rn-dir"><button class="rn-b2" data-rn="info" title="Detalhes da reunião">ⓘ</button><button class="rn-b2" data-rn="pessoas" title="Pessoas">👥<span class="rn-n"></span></button><button class="rn-b2" data-rn="chat" title="Chat">💬<span class="rn-ponto" hidden></span></button><button class="rn-b2" data-rn="atividades" title="Atividades: quadro branco, enquetes, perguntas, gravação">⊞</button></div></footer>' +
       '<div class="rn-reacoes" hidden>' + REACOES.map(function (e) { return '<button data-reacao="' + e + '">' + e + '</button>'; }).join('') + '</div></div>';
     desenharControles(); desenharTiles(); desenharPainel();
     el.onclick = async function (ev) {
+      const cor = ev.target.closest('[data-cor]'); if (cor && call) { call.corQuadro = cor.dataset.cor; el.querySelectorAll('[data-cor]').forEach(function (x) { x.classList.toggle('on', x === cor); }); return; }
+      const voto = ev.target.closest('[data-voto]'); if (voto && call) { const id = voto.closest('[data-enq]').dataset.enq; T().set(caminho(call.sid, 'enquetes/' + id + '/votos/' + eu()), Number(voto.dataset.voto)); return; }
       const r = ev.target.closest('[data-reacao]'); if (r) { reagir(r.dataset.reacao); el.querySelector('.rn-reacoes').hidden = true; return; }
       const b = ev.target.closest('[data-rn]'); if (!b || !call) return; const k = b.dataset.rn;
       if (k === 'mic') alternarMic();
@@ -271,10 +371,24 @@
       if (k === 'mao') alternarMao();
       if (k === 'reacao') { const box = el.querySelector('.rn-reacoes'); box.hidden = !box.hidden; }
       if (k === 'sair') { const sid = call.sid; await sair(); location.hash = '#/reuniao/' + sid + '/saiu'; }
-      if (k === 'chat' || k === 'pessoas' || k === 'info') { call.painel = call.painel === k ? null : k; desenharPainel(); desenharTiles(); }
+      if (k === 'legendas') alternarLegendas();
+      if (k === 'quadro') { alternarQuadro(); desenharPainel(); }
+      if (k === 'quadro-limpar') { T().set(caminho(call.sid, 'quadro'), null); }
+      if (k === 'gravar') alternarGravacao();
+      if (k === 'ata') baixarAta();
+      if (k.indexOf('ir-') === 0) { call.painel = k.slice(3); desenharPainel(); desenharTiles(); }
+      if (k === 'enq-fechar') { T().patch(caminho(call.sid, 'enquetes/' + b.closest('[data-enq]').dataset.enq), { aberta: false }); }
+      if (k === 'per-votar') { const id = b.closest('[data-per]').dataset.per; const q = ((sala(call.sid) || {}).perguntas || {})[id] || {}; T().set(caminho(call.sid, 'perguntas/' + id + '/votos/' + eu()), (q.votos || {})[eu()] ? null : 1); }
+      if (k === 'per-ok') { const id = b.closest('[data-per]').dataset.per; const q = ((sala(call.sid) || {}).perguntas || {})[id] || {}; T().patch(caminho(call.sid, 'perguntas/' + id), { respondida: !q.respondida }); }
+      if (k === 'chat' || k === 'pessoas' || k === 'info' || k === 'atividades') { call.painel = call.painel === k ? null : k; desenharPainel(); desenharTiles(); }
       if (k === 'fechar-painel') { call.painel = null; desenharPainel(); desenharTiles(); }
       if (k === 'fixar') { const u = b.closest('.rn-tile').dataset.uid; call.fixado = call.fixado === u ? null : u; desenharTiles(); }
       if (k === 'copiar') { const txt = (sala(call.sid) || {}).nome + '\n' + linkSala(call.sid); try { await navigator.clipboard.writeText(txt); aviso('Link copiado.'); } catch (e) { aviso(linkSala(call.sid)); } }
+    };
+    el.onsubmit = function (ev) {
+      const f = ev.target; if (!call) return;
+      if (f.id === 'rn-enq-f') { ev.preventDefault(); const ops = ['o1', 'o2', 'o3', 'o4'].map(function (k) { return f[k].value.trim(); }).filter(Boolean); if (ops.length < 2) { aviso('Informe ao menos duas opções.', 'erro'); return; } T().set(caminho(call.sid, 'enquetes/' + P.id()), { pergunta: f.p.value.trim(), opcoes: ops, autor: eu(), em: Date.now(), aberta: true, votos: {} }); f.reset(); }
+      if (f.id === 'rn-per-f') { ev.preventDefault(); const t = f.t.value.trim(); if (!t) return; T().set(caminho(call.sid, 'perguntas/' + P.id()), { t: t, u: eu(), em: Date.now(), votos: {} }); f.reset(); }
     };
     el.onkeydown = function (ev) { if (ev.target.closest('input,textarea')) return; if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'd') { ev.preventDefault(); alternarMic(); } if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'e') { ev.preventDefault(); alternarCam(); } };
   }

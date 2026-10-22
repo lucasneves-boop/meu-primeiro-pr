@@ -41,3 +41,15 @@ test('duração, sinais e nível de voz', () => {
   assert.equal(C.nivel(new Uint8Array(64).fill(128)), 0);
   assert.ok(C.nivel(Uint8Array.from({ length: 64 }, (_, i) => i % 2 ? 200 : 56)) > 0.9);
 });
+
+test('reunião: enquete, perguntas e ata', () => {
+  const C = require('../js/chamada.js');
+  const r = C.resultadoEnquete({ opcoes: ['Sim', 'Não', 'Talvez'], votos: { a: 0, b: 0, c: 1, d: 9 } });
+  assert.equal(r.total, 3); assert.equal(r.opcoes[0].votos, 2); assert.ok(Math.abs(r.opcoes[0].pct - 2 / 3) < 1e-9); assert.equal(r.opcoes[2].votos, 0);
+  assert.equal(C.resultadoEnquete({}).total, 0);
+  const q = C.ordenarPerguntas({ p1: { t: 'a', em: 1, votos: { x: 1 } }, p2: { t: 'b', em: 2, votos: { x: 1, y: 1 } }, p3: { t: 'c', em: 0, respondida: true, votos: { x: 1, y: 1, z: 1 } } });
+  assert.deepEqual(q.map(x => x.id), ['p2', 'p1', 'p3']);
+  const t = C.ata({ nome: 'Pregão 10', transcricao: { a: { u: 'u1', t: 'bom dia', em: Date.UTC(2026, 0, 1, 12, 0) } }, chat: { b: { u: 'u2', t: 'link do edital', em: Date.UTC(2026, 0, 1, 12, 1) } }, enquetes: { c: { pergunta: 'Participamos?', opcoes: ['Sim', 'Não'], votos: { u1: 0 }, em: Date.UTC(2026, 0, 1, 12, 2) } } }, u => ({ u1: 'Ana', u2: 'Beto' }[u]));
+  assert.ok(/Reunião: Pregão 10/.test(t) && /Ana: bom dia/.test(t) && /\(chat\) Beto: link do edital/.test(t) && /Participamos\? → Sim \(1\); Não \(0\)/.test(t));
+  assert.ok(t.indexOf('bom dia') < t.indexOf('link do edital'));
+});

@@ -63,5 +63,30 @@
     return Math.min(1, Math.sqrt(s / amostras.length) * 4);
   }
 
-  return { PRESENCA_MS: PRESENCA_MS, BATIMENTO_MS: BATIMENTO_MS, MAX_PARTICIPANTES: MAX_PARTICIPANTES, codigo: codigo, codigoValido: codigoValido, lerCodigo: lerCodigo, ativos: ativos, devoOfertar: devoOfertar, cheia: cheia, grade: grade, duracao: duracao, sinaisPara: sinaisPara, nivel: nivel };
+  // ---------- recursos da reunião (enquete, perguntas, transcrição) ----------
+  // Enquete: { pergunta, opcoes: [..], votos: { uid: índice } } → contagem e % por opção.
+  function resultadoEnquete(enq) {
+    const ops = (enq && enq.opcoes) || []; const votos = (enq && enq.votos) || {};
+    const cont = ops.map(function () { return 0; }); let total = 0;
+    Object.keys(votos).forEach(function (u) { const i = Number(votos[u]); if (i >= 0 && i < ops.length) { cont[i]++; total++; } });
+    return { total: total, opcoes: ops.map(function (t, i) { return { texto: t, votos: cont[i], pct: total ? cont[i] / total : 0 }; }) };
+  }
+  // Perguntas: não respondidas primeiro, depois as mais votadas, depois as mais antigas.
+  function ordenarPerguntas(mapa) {
+    return Object.keys(mapa || {}).map(function (k) { return Object.assign({ id: k, n: Object.keys(mapa[k].votos || {}).length }, mapa[k]); })
+      .sort(function (a, b) { return (a.respondida ? 1 : 0) - (b.respondida ? 1 : 0) || b.n - a.n || (a.em || 0) - (b.em || 0); });
+  }
+  // Ata em texto: transcrição + chat + enquetes, em ordem de tempo.
+  function ata(sala, nomeDe) {
+    sala = sala || {}; nomeDe = nomeDe || function (u) { return u; };
+    const hora = function (ms) { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+    const linhas = [];
+    Object.keys(sala.transcricao || {}).forEach(function (k) { const x = sala.transcricao[k]; linhas.push({ em: x.em, t: '[' + hora(x.em) + '] ' + nomeDe(x.u) + ': ' + x.t }); });
+    Object.keys(sala.chat || {}).forEach(function (k) { const x = sala.chat[k]; linhas.push({ em: x.em, t: '[' + hora(x.em) + '] (chat) ' + nomeDe(x.u) + ': ' + x.t }); });
+    Object.keys(sala.enquetes || {}).forEach(function (k) { const x = sala.enquetes[k]; const r = resultadoEnquete(x); linhas.push({ em: x.em, t: '[' + hora(x.em) + '] Enquete: ' + x.pergunta + ' → ' + r.opcoes.map(function (o) { return o.texto + ' (' + o.votos + ')'; }).join('; ') }); });
+    linhas.sort(function (a, b) { return a.em - b.em; });
+    return 'Reunião: ' + (sala.nome || '') + '\n' + linhas.map(function (l) { return l.t; }).join('\n') + '\n';
+  }
+
+  return { resultadoEnquete: resultadoEnquete, ordenarPerguntas: ordenarPerguntas, ata: ata, PRESENCA_MS: PRESENCA_MS, BATIMENTO_MS: BATIMENTO_MS, MAX_PARTICIPANTES: MAX_PARTICIPANTES, codigo: codigo, codigoValido: codigoValido, lerCodigo: lerCodigo, ativos: ativos, devoOfertar: devoOfertar, cheia: cheia, grade: grade, duracao: duracao, sinaisPara: sinaisPara, nivel: nivel };
 });
