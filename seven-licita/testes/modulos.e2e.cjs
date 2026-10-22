@@ -676,6 +676,41 @@ const testes = {
     ok(buf.slice(1, 4).toString() === 'PNG' && buf.readUInt32BE(16) === 1080 && buf.readUInt32BE(20) === 1080, 'PNG exportado em 1080×1080');
     ok(/\.png$/.test(dl.suggestedFilename()), 'nome do arquivo: ' + dl.suggestedFilename());
     await pg.goto(url + '#/design'); ok(await pg.locator('.ds-meu').count() === 1, 'design aparece em Seus designs');
+  },
+  async cadernos(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    const EDITAL = 'EDITAL DE PREGÃO ELETRÔNICO Nº 90021/2026\n\n1. DO OBJETO\n1.1. O objeto da presente licitação é a aquisição de material de expediente para as escolas municipais.\n\n2. DA SESSÃO\n2.1. A sessão pública será realizada no dia 15/11/2030, às 9h.\n2.2. O critério de julgamento será o de menor preço por item.\n2.3. O valor total estimado é de R$ 245.300,00.\n\n3. DA HABILITAÇÃO\n3.1. Será exigido balanço patrimonial dos dois últimos exercícios.\n3.2. Atestado de capacidade técnica compatível com o objeto.\n3.3. Prova de regularidade com o FGTS.\n\n4. DA ENTREGA\n4.1. O prazo de entrega será de 10 (dez) dias úteis contados do recebimento da nota de empenho.';
+    await pg.goto(url + '#/cadernos'); await pg.click('.cd-card.novo'); await pg.waitForSelector('.cd-sem');
+    await pg.click('.cd-sem [data-a=add-fonte]'); await pg.fill('.modal [name=nome]', 'Edital 90021'); await pg.fill('.modal [name=texto]', EDITAL);
+    await pg.setInputFiles('.modal [name=arqs]', { name: 'TR.txt', mimeType: 'text/plain', buffer: Buffer.from('TERMO DE REFERÊNCIA\nAs canetas devem ter tinta azul e ponta média de 1,0 mm. A garantia dos produtos será de 90 dias.') });
+    await submit(); await pg.waitForSelector('.cd-fontes li');
+    ok(await pg.locator('.cd-fontes li').count() === 2 && await pg.inputValue('#cd-tit') === 'Edital 90021', 'duas fontes adicionadas (texto colado e arquivo) e nome do caderno');
+    ok(await pg.locator('.cd-sug button:has-text("Qual é o objeto?")').count() === 1, 'perguntas sugeridas para edital');
+    await pg.fill('#cd-perg input', 'Qual o prazo de entrega?'); await pg.press('#cd-perg input', 'Enter'); await pg.waitForSelector('.cd-msg.ia');
+    ok(/10 \(dez\) dias úteis/.test(await pg.locator('.cd-msg.ia').last().innerText()) && await pg.locator('.cd-msg.ia .cd-cit').count() >= 1, 'resposta com citação');
+    await pg.fill('#cd-perg input', 'qual a cor da tinta das canetas?'); await pg.press('#cd-perg input', 'Enter'); await pg.waitForTimeout(200);
+    ok(/tinta azul/.test(await pg.locator('.cd-msg.ia').last().innerText()) && /TR\.txt/.test(await pg.locator('.cd-msg.ia').last().innerText()), 'resposta vinda da segunda fonte, citando-a');
+    await pg.fill('#cd-perg input', 'quem venceu a copa do mundo de futebol?'); await pg.press('#cd-perg input', 'Enter'); await pg.waitForTimeout(200);
+    ok(/Não encontrei/.test(await pg.locator('.cd-msg.ia').last().innerText()), 'recusa responder o que não está nas fontes');
+    await pg.locator('.cd-msg.ia .cd-cit').first().click(); await pg.waitForSelector('.cd-trecho-on');
+    ok(/prazo de entrega/.test(await pg.locator('.cd-trecho-on').innerText()), 'citação abre o trecho destacado na fonte');
+    await pg.click('[data-a=fechar-fonte]');
+    await pg.click('[data-gerar=edital]'); await pg.waitForSelector('.cd-ed');
+    const ed = await pg.locator('.cd-ed').innerText();
+    ok(/R\$ 245\.300,00/.test(ed) && /15\/11\/2030/.test(ed) && /menor preço por item/.test(ed), 'análise de edital: valor, data da sessão e critério');
+    await pg.click('[data-a=edital-agenda]'); ok(await pg.evaluate(() => (Dados.e.agenda.tarefas || []).some(t => t.data === '2030-11-15')), 'datas do edital viram lembretes na Agenda');
+    await foto('cadernos-edital');
+    await pg.click('[data-a=saida-nota]'); await pg.click('[data-aba=notas]'); ok(await pg.locator('.cd-nota').count() === 1, 'resultado salvo em nota');
+    await pg.click('[data-aba=estudio]'); await pg.click('[data-gerar=quiz]'); await pg.waitForSelector('#cd-saida');
+    if (await pg.locator('.cd-q').count()) { await pg.locator('.cd-q').first().locator('[data-resp]').first().click(); ok(await pg.locator('.cd-q').first().locator('.certa').count() === 1, 'quiz mostra a resposta certa'); }
+    await pg.click('[data-gerar=tempo]'); ok(/15\/11\/2030/.test(await pg.locator('.cd-tempo').innerText()), 'linha do tempo');
+    // desativar fonte do edital
+    await pg.locator('.cd-fontes li', { hasText: 'Edital 90021' }).locator('[data-ativa]').uncheck(); await pg.waitForTimeout(150);
+    await pg.fill('#cd-perg input', 'Qual o prazo de entrega?'); await pg.press('#cd-perg input', 'Enter'); await pg.waitForTimeout(200);
+    ok(/Não encontrei/.test(await pg.locator('.cd-msg.ia').last().innerText()), 'fonte desativada fica fora das respostas');
+    await foto('cadernos-chat');
+    await pg.goto(url + '#/cadernos'); ok(/2 fontes/.test(await pg.locator('.cd-card:not(.novo)').innerText()), 'caderno listado com 2 fontes');
+    await pg.click('.cd-card:not(.novo)'); await pg.waitForSelector('.cd-msg'); ok(await pg.locator('.cd-msg').count() === 8, 'conversa e fontes voltam ao reabrir');
   }
 };
 
