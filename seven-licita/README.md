@@ -41,7 +41,9 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Plêiade | Canais, mensagens diretas, threads, reações e arquivos para a equipe, em tempo real (Firebase); mensagens agendadas e lembretes de mensagem na Agenda | Slack |
 | Reuniões | Videochamada da equipe com código de sala, câmera, microfone, compartilhamento de tela, mão levantada, reações e chat (WebRTC, até 8 pessoas); enquetes, perguntas e respostas, quadro branco compartilhado, legendas ao vivo com transcrição, gravação local e ata | Google Meet |
 | Ágora | Rede social só de profissionais de licitação: feed, seguir, respostas, repostagens, citações, enquetes, tendências, denúncias e moderação | X |
-| Notas Fiscais | NF-e e NFS-e de saída, notas de entrada por XML, DANFE, retenções de órgão público e integração com Finanças | Bling |
+| Notas Fiscais | NF-e e NFS-e de saída, notas de entrada por XML, DANFE, retenções de órgão público e integração com Finanças. **Emissor guiado** em 8 etapas, com "?" em cada campo (o que é, para que serve, exemplo, erro comum, onde achar), fontes oficiais, pesquisa nos sites do governo e a aba Aprender com glossário | Bling + Sebrae |
+| Seven Sign | Contratos e termos para assinatura eletrônica: PDF próprio ou modelo da Seven (BPO, NDA, aditivo), signatários com papel e ordem, mensagem e prazo, link por WhatsApp/e-mail (texto revisado antes), assinatura remota ou presencial (digitada ou desenhada, com CPF e aceite), conferência do PDF por SHA-256, comprovante protegido (HMAC), trilha de auditoria, PDF final com página de registro e validador por arquivo ou código | Clicksign |
+| Aparência | Temas automático, claro, escuro e dourado com preto, pelo botão do topo ou em Configurações | — |
 | Minhas Finanças | Controle financeiro pessoal, da empresa e de clientes assessorados: contas, cartões, orçamento, metas e perfis com PIN; no modelo Conta Azul, fluxo de caixa projetado (30/60/90 dias, faturas incluídas), previsto × realizado, clientes e fornecedores com inadimplência por faixa, conciliação bancária, centro de custo e competência | minhasfinancas.app.br + Conta Azul |
 | Nuvem | Pastas e arquivos no navegador (IndexedDB) | Google Drive |
 | Seven Academy | Área de membros com cursos, mentorias e dicas | Kiwify |
@@ -63,6 +65,9 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 - **CAPAG sem importação.** O site do Tesouro não permite consulta direta pelo app; baixe a planilha em
   https://www.tesourotransparente.gov.br/temas/estados-e-municipios/capacidade-de-pagamento-capag e importe em CAPAG.
 - **Portais fora do PNCP** (SISLOG-GO, por exemplo) só aparecem se o órgão publicar no PNCP, como a lei exige.
+- **Seven Sign sem servidor.** O signatário abre o link, confere o PDF e devolve um comprovante, que você registra.
+  Para que o link funcione no celular de terceiros, a plataforma precisa estar publicada num endereço público.
+  Não substitui certificado ICP-Brasil ou gov.br quando o órgão exigir.
 - **Dados compartilhados entre a equipe em tempo real.** Plêiade, Reuniões e Ágora já são em tempo real (Firebase).
   Os demais módulos ficam em cada navegador (backup/importação para levar de um a outro); um servidor com login
   resolve isso numa próxima etapa.
@@ -76,4 +81,5 @@ node testes/modulos.e2e.cjs   # demais módulos no navegador
 node testes/sevenai.e2e.cjs   # Seven.ia com o SDK da Anthropic simulado (não gasta créditos)
 node testes/pleiade.e2e.cjs; node testes/agora.e2e.cjs; node testes/reuniao.e2e.cjs   # tempo real com Firebase simulado
 node testes/avisos.e2e.cjs; node testes/planilha.e2e.cjs; node testes/financas.e2e.cjs; node testes/execucao.e2e.cjs; node testes/premium.e2e.cjs
+node testes/tema.e2e.cjs; node testes/nf.e2e.cjs; node testes/contratos.e2e.cjs
 ```

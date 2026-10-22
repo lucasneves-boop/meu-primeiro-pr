@@ -29,6 +29,7 @@
     try { tela.render(el, r.sub, r.param); }
     catch (e) { console.error(e); el.innerHTML = '<div class="vazio"><h3>Erro ao abrir a tela</h3><p>' + esc(e.message) + '</p></div>'; }
     document.body.classList.remove('menu-aberto');
+    document.body.classList.toggle('modo-publico', r.tela === 'assinar');
     if (r.tela !== 'notas') { const aj = document.getElementById('nf-ajuda'); if (aj) aj.remove(); document.body.classList.remove('com-ajuda-nf'); }
     $('#abrir-menu').setAttribute('aria-expanded', 'false');
   }
