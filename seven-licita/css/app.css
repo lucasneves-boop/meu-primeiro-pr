@@ -2272,3 +2272,7 @@ tr.f-atual td { background: var(--ouro-claro); }
 .pl-aj-bandas input { writing-mode: vertical-lr; direction: rtl; width: 22px; flex: 1; accent-color: var(--ouro); }
 .pl-aj-bandas small { font-size: 10px; color: var(--mudo); }
 .pl-aj-norm { margin-top: 10px; }
+/* Plêiade: agendadas */
+.pl-agendadas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 16px 6px; padding: 6px 10px; border: 1px dashed var(--borda); border-radius: 8px; font-size: 12px; }
+.pl-ag-it { display: inline-flex; align-items: center; gap: 4px; color: var(--mudo); }
+.pl-horas { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }

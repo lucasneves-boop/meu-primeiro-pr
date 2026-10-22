@@ -40,6 +40,15 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await B.click('[data-pl=fechar-painel]'); await B.locator('.pl-main .pl-comp textarea').fill('rascunho'); await B.locator('.pl-main .pl-comp textarea').type('!');
     await A.waitForSelector('.pl-dig:has-text("Ana está digitando")', { timeout: 5000 }); ok(true, 'indicador "está digitando…"');
     await B.locator('.pl-main .pl-comp textarea').fill('');
+    // mensagem agendada e lembrete
+    await B.locator('.pl-main .pl-comp textarea').fill('Lembrete: sessão do pregão amanhã às 9h');
+    await B.click('.pl-main [data-pl=agendar]'); await B.click('.modal [data-h="1h"]'); await B.click('.modal [type=submit]');
+    await B.waitForSelector('.pl-agendadas', { timeout: 5000 }); ok(/1 mensagem/.test(await B.textContent('.pl-agendadas')), 'mensagem agendada aparece acima do campo');
+    await B.evaluate(async () => { Dados.e.pleiadeCfg.agendadas[0].quando = Date.now() - 1000; await Telas.pleiade.enviarAgendadas(); });
+    await A.waitForSelector('.pl-msg:has-text("sessão do pregão amanhã")', { timeout: 5000 }); ok(true, 'mensagem agendada enviada na hora marcada');
+    await A.hover('.pl-msg:has-text("sessão do pregão amanhã")'); await A.click('.pl-msg:has-text("sessão do pregão amanhã") [data-pl=mais]');
+    await A.click('.pl-menu [data-op=lembrar]'); await A.click('.modal [data-h="amanha"]'); await A.click('.modal [type=submit]');
+    ok(await A.evaluate(() => (Dados.e.agenda || {}).tarefas && Dados.e.agenda.tarefas.some(t => /Responder: Lembrete/.test(t.titulo) && t.hora === '09:00')), 'lembrete criado na Agenda para amanhã às 9h');
     // mensagem direta
     await B.click('.pl-nav a:has-text("Pessoas")'); await B.click('.pl-pessoa:has-text("Lucas") [data-dm]'); await B.waitForSelector('.pl-topo h2:has-text("Lucas Neves")');
     await enviar(B, 'Oi Lucas, qual o preço do papel A4 que fechamos?');

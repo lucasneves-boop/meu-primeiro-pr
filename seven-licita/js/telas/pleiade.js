@@ -165,13 +165,49 @@
       '</div>' + (m.sistema || editando ? '' : '<div class="pl-acoes">' + P.REACOES_RAPIDAS.slice(0, 3).map(function (e) { return '<button data-reac="' + e + '" title="Reagir">' + e + '</button>'; }).join('') + '<button data-pl="emoji" title="Mais reações">☺</button>' + (opc.naThread ? '' : '<button data-pl="thread" title="Responder em thread">💬</button>') + '<button data-pl="salvar" title="' + (salvo ? 'Remover dos salvos' : 'Salvar') + '">' + (salvo ? '🔖' : '🏷️') + '</button><button data-pl="mais" title="Mais ações">⋯</button></div>') + (salvo ? '<span class="pl-salvo-tag">🔖</span>' : '') + '</div>';
   }
 
+  // ---------- mensagens agendadas e lembretes (recursos do Slack pago) ----------
+  function agendadas() { const c = cfg(); c.agendadas = c.agendadas || []; return c.agendadas; }
+  function proximoHorario(op) {
+    const d = new Date(); const fmt = function (x) { return new Date(x - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+    if (op === '20m') return fmt(new Date(Date.now() + 20 * 60000)); if (op === '1h') return fmt(new Date(Date.now() + 3600000)); if (op === '3h') return fmt(new Date(Date.now() + 3 * 3600000));
+    const a = new Date(d); a.setDate(a.getDate() + 1); a.setHours(9, 0, 0, 0); if (op === 'amanha') return fmt(a);
+    const s = new Date(d); s.setDate(s.getDate() + ((8 - s.getDay()) % 7 || 7)); s.setHours(9, 0, 0, 0); return fmt(s);
+  }
+  async function escolherHorario(titulo, botao) {
+    const f = await modal({ titulo: titulo, botao: botao, corpo: '<div class="pl-horas">' + [['20m', 'Em 20 minutos'], ['1h', 'Em 1 hora'], ['3h', 'Em 3 horas'], ['amanha', 'Amanhã às 9h'], ['segunda', 'Segunda às 9h']].map(function (x) { return '<button type="button" class="btn mini" data-h="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' + campo('Data e hora', '<input type="datetime-local" name="quando" required value="' + proximoHorario('amanha') + '">'),
+      aoAbrir: function (form) { form.addEventListener('click', function (ev) { const b = ev.target.closest('[data-h]'); if (b) form.quando.value = proximoHorario(b.dataset.h); }); },
+      validar: function (fd) { return new Date(fd.get('quando')) > new Date() ? '' : 'Escolha um horário no futuro.'; } });
+    return f ? new Date(f.get('quando')).getTime() : null;
+  }
+  async function agendarMensagem(cid, pai, texto) {
+    const quando = await escolherHorario('Agendar mensagem', 'Agendar'); if (!quando) return;
+    agendadas().push({ id: P.id(), cid: cid, pai: pai, texto: texto, quando: quando }); delete est.rascunho[pai ? cid + '/' + pai : cid]; Dados.salvar();
+    aviso('Mensagem agendada para ' + new Date(quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '. É enviada com a Plataforma 7 aberta neste navegador.');
+    App.redesenhar();
+  }
+  // Envia as agendadas que venceram (enquanto o app está aberto).
+  async function enviarAgendadas() {
+    if (!Dados.e.pleiadeCfg || !agendadas().length) return; if (!T.iniciado) T.iniciar(); const agora = Date.now(); const prontas = agendadas().filter(function (x) { return x.quando <= agora; });
+    for (const x of prontas) { cfg().agendadas = agendadas().filter(function (y) { return y.id !== x.id; }); Dados.salvar(); try { await enviar(x.cid, x.texto, { pai: x.pai || undefined }); } catch (e) { cfg().agendadas.push(x); Dados.salvar(); } }
+    if (prontas.length && App.rota().tela === 'pleiade') App.redesenhar();
+  }
+  setInterval(function () { enviarAgendadas(); }, 30000);
+  async function lembrar(cid, m) {
+    const quando = await escolherHorario('Lembrar desta mensagem', 'Criar lembrete'); if (!quando) return;
+    const d = new Date(quando); const dia = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const hora = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const t = Telas.agenda.criar('Responder: ' + P.textoPuro(m.t, ctx()).slice(0, 120), { data: dia, hora: hora, tags: ['pleiade'] });
+    if (t) { t.hora = hora; t.data = dia; t.lembrete = 0; t.notas = 'Mensagem de ' + membro(m.u).nome + ' em ' + prefixo(canais()[cid]) + nomeCanal(cid) + ' · #/pleiade/c/' + cid; Dados.salvar(); aviso('⏰ Lembrete criado na Agenda para ' + d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '.'); }
+  }
+
   function compositor(cid, pai) {
     const chave = pai ? cid + '/' + pai : cid; const c = canais()[cid];
     const dig = pai ? [] : Object.keys(((arv().digitando || {})[cid]) || {}).filter(function (u) { return u !== eu() && Date.now() - arv().digitando[cid][u] < 6000; });
-    return '<form class="pl-comp" data-comp="' + esc(chave) + '"><div class="pl-ferr"><button type="button" data-fmt="*" title="Negrito"><b>B</b></button><button type="button" data-fmt="_" title="Itálico"><i>I</i></button><button type="button" data-fmt="~" title="Riscado"><s>S</s></button><button type="button" data-fmt="`" title="Código">&lt;/&gt;</button><button type="button" data-fmt="- " title="Lista">☰</button><button type="button" data-fmt="&gt; " title="Citação">❝</button></div>' +
+    const ag = agendadas().filter(function (x) { return x.cid === cid && (x.pai || '') === (pai || ''); });
+    return (ag.length ? '<div class="pl-agendadas"><b>🕒 ' + ag.length + ' mensagem(ns) agendada(s)</b>' + ag.map(function (x) { return '<span class="pl-ag-it">' + esc(new Date(x.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) + ' · ' + esc(String(x.texto).slice(0, 60)) + ' <button type="button" class="icone" data-pl="cancelar-ag" data-ag="' + esc(x.id) + '" aria-label="Cancelar agendamento" title="Cancelar">×</button></span>'; }).join('') + '</div>' : '') +
+      '<form class="pl-comp" data-comp="' + esc(chave) + '"><div class="pl-ferr"><button type="button" data-fmt="*" title="Negrito"><b>B</b></button><button type="button" data-fmt="_" title="Itálico"><i>I</i></button><button type="button" data-fmt="~" title="Riscado"><s>S</s></button><button type="button" data-fmt="`" title="Código">&lt;/&gt;</button><button type="button" data-fmt="- " title="Lista">☰</button><button type="button" data-fmt="&gt; " title="Citação">❝</button></div>' +
       '<textarea rows="1" placeholder="' + esc(pai ? 'Responder…' : 'Mensagem para ' + (c ? prefixo(c) + nomeCanal(cid) : '')) + '" aria-label="Mensagem">' + esc(est.rascunho[chave] || '') + '</textarea>' +
       (pai ? '<label class="pl-tambem"><input type="checkbox" name="tambem"> Também enviar para ' + esc(prefixo(c) + nomeCanal(cid)) + '</label>' : '') +
-      '<div class="pl-comp-pe"><span><button type="button" class="icone" data-pl="anexar" title="Anexar arquivo" aria-label="Anexar">📎</button><button type="button" class="icone" data-pl="emoji-comp" title="Emoji" aria-label="Emoji">☺</button><button type="button" class="icone" data-pl="mencionar" title="Mencionar" aria-label="Mencionar">@</button></span><small class="pl-dig">' + (dig.length ? esc(dig.map(function (u) { return membro(u).nome.split(' ')[0]; }).join(', ')) + (dig.length > 1 ? ' estão' : ' está') + ' digitando…' : '<span class="mudo">Enter envia · Shift+Enter quebra linha · /tarefa cria tarefa na Agenda</span>') + '</small><button class="btn mini primario pl-enviar" aria-label="Enviar">➤</button></div><div class="pl-auto" hidden></div></form>';
+      '<div class="pl-comp-pe"><span><button type="button" class="icone" data-pl="anexar" title="Anexar arquivo" aria-label="Anexar">📎</button><button type="button" class="icone" data-pl="emoji-comp" title="Emoji" aria-label="Emoji">☺</button><button type="button" class="icone" data-pl="mencionar" title="Mencionar" aria-label="Mencionar">@</button><button type="button" class="icone" data-pl="agendar" title="Agendar envio" aria-label="Agendar envio">🕒</button></span><small class="pl-dig">' + (dig.length ? esc(dig.map(function (u) { return membro(u).nome.split(' ')[0]; }).join(', ')) + (dig.length > 1 ? ' estão' : ' está') + ' digitando…' : '<span class="mudo">Enter envia · Shift+Enter quebra linha · /tarefa cria tarefa na Agenda</span>') + '</small><button class="btn mini primario pl-enviar" aria-label="Enviar">➤</button></div><div class="pl-auto" hidden></div></form>';
   }
 
   function telaCanal(cid) {
@@ -329,6 +365,8 @@
       if (k === 'emoji') { const e = await escolherEmoji(a); if (e) reagir(cid, mid, e); }
       if (k === 'emoji-comp') { const ta = a.closest('.pl-comp').querySelector('textarea'); const e = await escolherEmoji(a); if (e) { ta.setRangeText(e, ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); ta.dispatchEvent(new Event('input', { bubbles: true })); } }
       if (k === 'mencionar') { const ta = a.closest('.pl-comp').querySelector('textarea'); ta.setRangeText((ta.value && !/\s$/.test(ta.value.slice(0, ta.selectionStart)) ? ' ' : '') + '@', ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); ta.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (k === 'agendar') { const comp = a.closest('.pl-comp'); const ta = comp.querySelector('textarea'); const p = comp.dataset.comp.split('/'); if (!ta.value.trim()) { aviso('Escreva a mensagem antes de agendar.', 'erro'); return; } await agendarMensagem(p[0], p[1] || '', ta.value.trim()); return; }
+      if (k === 'cancelar-ag') { cfg().agendadas = agendadas().filter(function (x) { return x.id !== a.dataset.ag; }); Dados.salvar(); App.redesenhar(); aviso('Agendamento cancelado.'); return; }
       if (k === 'anexar') { const p = a.closest('.pl-comp').dataset.comp.split('/'); est.anexarEm = { c: p[0], p: p[1] }; el.querySelector('#pl-arquivo').click(); }
       if (k === 'salvar') { const ch = cid + '/' + mid; if (cfg().salvos[ch]) delete cfg().salvos[ch]; else cfg().salvos[ch] = Date.now(); Dados.salvar(); App.redesenhar(); }
       if (k === 'mais') menuMensagem(cid, mid, a);
@@ -351,7 +389,7 @@
   async function menuMensagem(cid, mid, alvo) {
     const m = msgs(cid)[mid]; const minha = m.u === eu();
     const pop = document.createElement('div'); pop.className = 'pl-menu';
-    pop.innerHTML = [minha ? ['editar', '✎ Editar mensagem'] : null, ['fixar', m.fixado ? '📌 Desafixar' : '📌 Fixar no canal'], ['copiar', '⧉ Copiar texto'], ['naolida', '◉ Marcar como não lida'], Telas.agenda ? ['tarefa', '☑ Criar tarefa na Agenda'] : null, minha ? ['excluir', '🗑 Excluir mensagem'] : null].filter(Boolean).map(function (x) { return '<button data-op="' + x[0] + '"' + (x[0] === 'excluir' ? ' class="perigo"' : '') + '>' + x[1] + '</button>'; }).join('');
+    pop.innerHTML = [minha ? ['editar', '✎ Editar mensagem'] : null, ['fixar', m.fixado ? '📌 Desafixar' : '📌 Fixar no canal'], ['copiar', '⧉ Copiar texto'], ['naolida', '◉ Marcar como não lida'], Telas.agenda ? ['tarefa', '☑ Criar tarefa na Agenda'] : null, Telas.agenda ? ['lembrar', '⏰ Lembrar desta mensagem'] : null, minha ? ['excluir', '🗑 Excluir mensagem'] : null].filter(Boolean).map(function (x) { return '<button data-op="' + x[0] + '"' + (x[0] === 'excluir' ? ' class="perigo"' : '') + '>' + x[1] + '</button>'; }).join('');
     document.body.appendChild(pop); const r = alvo.getBoundingClientRect(); pop.style.top = Math.min(window.innerHeight - pop.offsetHeight - 8, r.bottom + 4) + 'px'; pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
     const fechar = function () { pop.remove(); document.removeEventListener('mousedown', fora, true); }; const fora = function (ev) { if (!pop.contains(ev.target)) fechar(); };
     setTimeout(function () { document.addEventListener('mousedown', fora, true); }, 0);
@@ -361,6 +399,7 @@
       if (op === 'fixar') { T.set('mensagens/' + cid + '/' + mid + '/fixado', m.fixado ? null : Date.now()); }
       if (op === 'copiar') navigator.clipboard.writeText(P.textoPuro(m.t, ctx())).then(function () { aviso('Texto copiado.'); }, function () {});
       if (op === 'naolida') { cfg().lidos[cid] = m.em - 1; est.novasDe[cid] = m.em - 1; est.segurarLido = cid; Dados.salvar(); atualizarSelo(); App.redesenhar(); aviso('Marcada como não lida.'); }
+      if (op === 'lembrar') { await lembrar(cid, m); return; }
       if (op === 'tarefa') { const x = Telas.agenda.criar(P.textoPuro(m.t, ctx()).slice(0, 140)); if (x) { x.notas = 'Da Plêiade · ' + prefixo(canais()[cid]) + nomeCanal(cid) + ' · ' + membro(m.u).nome; Dados.salvar(); aviso('☑ Tarefa criada na Agenda.'); } }
       if (op === 'excluir' && await confirmar('Excluir mensagem', 'Excluir esta mensagem? Não dá para desfazer.', 'Excluir')) { if (m.pai) { const pai = msgs(cid)[m.pai]; if (pai) T.patch('mensagens/' + cid + '/' + m.pai, { nResp: Math.max(0, (pai.nResp || 1) - 1) }); } P.respostas(msgs(cid), mid).forEach(function (r) { T.set('mensagens/' + cid + '/' + r.id, null); }); T.set('mensagens/' + cid + '/' + mid, null); if (est.thread && est.thread.m === mid) est.thread = null; }
     };
@@ -423,5 +462,5 @@
   setTimeout(function () { if (Dados.e.pleiadeCfg && Dados.e.pleiadeCfg.eu) { T.iniciar(); atualizarSelo(); } }, 800);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^#\/pleiade/.test(location.hash)) App.redesenhar(); });
 
-  Telas.pleiade = { titulo: 'Plêiade', render: render, _t: T, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso } };
+  Telas.pleiade = { titulo: 'Plêiade', render: render, _t: T, enviarAgendadas: enviarAgendadas, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso } };
 })();
