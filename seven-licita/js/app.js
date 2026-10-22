@@ -35,7 +35,7 @@
     anotacoes: 'Notas com texto, caneta, checklists, áudio e imagens, organizadas em pastas e com opção de trancar com senha.',
     semanas: 'Planeje e execute metas pelo método 1 Ano em 12 Semanas: visão, táticas por semana, pontuação semanal e blocos na agenda.',
     pleiade: 'Comunicação interna da equipe em tempo real: canais, mensagens diretas, conversas em thread, arquivos e lembretes.',
-    reuniao: 'Videochamadas da equipe com tela compartilhada, chat, enquetes, quadro branco, legendas e ata da reunião.',
+    reuniao: 'Chamada direta 1 a 1 com qualquer pessoa e videochamadas da equipe com tela compartilhada, chat, enquetes, quadro branco, legendas e ata da reunião.',
     agora: 'Rede social dos profissionais de licitação: publique, siga colegas, comente e acompanhe as discussões do setor.',
     notas: 'Emita NF-e e NFS-e com orientação passo a passo, registre notas de entrada pelo XML e lance as parcelas no Seven Financeiro.',
     contratos: 'Envie contratos e termos para assinatura eletrônica, acompanhe quem já assinou e baixe o PDF com o registro das assinaturas.',

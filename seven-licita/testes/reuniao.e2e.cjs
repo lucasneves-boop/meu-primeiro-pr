@@ -58,7 +58,7 @@ const MIDIA = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-st
     await B.waitForFunction(() => { const s = Telas.pleiade.api.arv().chamadas; return Object.values(s).some(x => x.quadro && Object.keys(x.quadro).length); }, null, { timeout: 5000 }); ok(true, 'traço do quadro branco chega ao outro participante');
     await foto('reuniao-quadro');
     await A.click('.rn-quadro-barra [data-rn=quadro]');
-    const [dl] = await Promise.all([A.waitForEvent('download'), A.evaluate(() => document.querySelector('[data-rn=atividades]').click()).then(() => A.click('.rn-ativ [data-rn=ata]'))]);
+    const [dl] = await Promise.all([A.waitForEvent('download'), A.evaluate(() => { if (document.querySelector('.rn-painel').hidden) document.querySelector('[data-rn=atividades]').click(); }).then(() => A.click('.rn-ativ [data-rn=ata]'))]);
     const ata = require('fs').readFileSync(await dl.path(), 'utf8'); ok(/Participamos do pregão 90021\? → Sim \(1\)/.test(ata) && /planilha de disputa/.test(ata), 'ata com enquete e chat');
     await A.click('[data-rn=fechar-painel]');
     // fixar e sair para outra tela com barra flutuante

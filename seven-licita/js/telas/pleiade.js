@@ -359,7 +359,7 @@
       const tirar = ev.target.closest('[data-tirar]'); if (tirar) { T.set('canais/' + est.canal + '/membros/' + tirar.dataset.tirar, null); mensagemSistema(est.canal, '<@' + eu() + '> removeu <@' + tirar.dataset.tirar + '> do canal.'); return; }
       const a = ev.target.closest('[data-pl]'); if (!a) { const men = ev.target.closest('.pl-men[data-u]'); if (men && men.dataset.u !== eu()) abrirDM([men.dataset.u]); return; }
       const k = a.dataset.pl; const mEl = a.closest('[data-m]'); const cid = mEl ? mEl.dataset.c : est.canal; const mid = mEl && mEl.dataset.m;
-      if (k === 'chamada') { if (!T.remoto()) { aviso('Videochamada precisa do modo equipe (servidor configurado em Configurações do Seven Chat).', 'erro'); return; } const sid = Telas.reuniao.criar({ canal: est.canal, nome: '' + (canais()[est.canal].dm ? 'Chamada' : 'Reunião em #' + canais()[est.canal].nome) }); location.hash = '#/reuniao/' + sid; return; }
+      if (k === 'chamada') { if (!T.remoto()) { const cn = canais()[est.canal]; Telas.direta.preparar(cn.dm ? { nome: nomeCanal(est.canal).replace(/ \(você\)$/, '') } : null); location.hash = '#/reuniao/direta'; return; } const sid = Telas.reuniao.criar({ canal: est.canal, nome: '' + (canais()[est.canal].dm ? 'Chamada' : 'Reunião em #' + canais()[est.canal].nome) }); location.hash = '#/reuniao/' + sid; return; }
       if (k === 'thread') { est.thread = { c: cid, m: mid }; est.painel = null; est.focoThread = true; if (cid !== est.canal || est.vista) location.hash = '#/pleiade/c/' + cid; else App.redesenhar(); }
       if (k === 'fechar-painel') { est.thread = null; est.painel = null; est.focoThread = false; App.redesenhar(); }
       if (k === 'emoji') { const e = await escolherEmoji(a); if (e) reagir(cid, mid, e); }

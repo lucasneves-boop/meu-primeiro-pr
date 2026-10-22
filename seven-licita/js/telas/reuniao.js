@@ -431,7 +431,7 @@
     const recentes = lista.filter(function (s) { return !C.ativos(s).length && Date.now() - s.criadaEm < 7 * 864e5; }).sort(function (a, b) { return b.criadaEm - a.criadaEm; }).slice(0, 8);
     const c = cfgRede();
     el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas para a equipe Seven</h1><p class="mudo">Reúna a equipe em segundos, direto no Seven Chat: vídeo, áudio, apresentação de tela e chat.</p>' +
-      '<div class="rn-home-ac"><button class="btn primario" data-h="nova">📹 Nova reunião</button><form id="rn-cod" class="rn-cod"><input name="c" placeholder="Digite um código ou link" aria-label="Código da reunião"><button class="btn fantasma">Participar</button></form></div>' +
+      '<div class="rn-home-ac"><button class="btn primario" data-h="nova">📹 Nova reunião</button><a class="btn" href="#/reuniao/direta">📞 Chamada direta (1 a 1)</a><form id="rn-cod" class="rn-cod"><input name="c" placeholder="Digite um código ou link" aria-label="Código da reunião"><button class="btn fantasma">Participar</button></form></div>' +
       (call ? '<p class="rn-ao-vivo">Você está numa chamada. <a href="#/reuniao/' + esc(call.sid) + '">Voltar para a chamada</a></p>' : '') +
       '<h3>Acontecendo agora</h3>' + (vivas.length ? vivas.map(function (s) { const at = C.ativos(s); return '<a class="rn-item" href="#/reuniao/' + esc(s.id) + '"><span class="rn-item-ic ao-vivo">●</span><div><b>' + esc(s.nome || 'Reunião') + '</b><small>' + at.length + ' na chamada · ' + at.map(function (u) { return esc(nomeDe(u).split(' ')[0]); }).join(', ') + (s.canal ? ' · #' + esc(api().nomeCanal(s.canal)) : '') + '</small></div><span class="btn mini primario">Participar</span></a>'; }).join('') : '<p class="mudo mini">Nenhuma chamada ativa.</p>') +
       (recentes.length ? '<h3>Recentes</h3>' + recentes.map(function (s) { return '<a class="rn-item" href="#/reuniao/' + esc(s.id) + '"><span class="rn-item-ic">📹</span><div><b>' + esc(s.nome || 'Reunião') + '</b><small>' + new Date(s.criadaEm).toLocaleString('pt-BR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' · ' + esc(s.id) + '</small></div></a>'; }).join('') : '') +
@@ -463,10 +463,11 @@
     atual: function () { return call && call.sid; },
     sair: sair,
     render: function (el, sub, param) {
+      if (sub === 'direta') { Telas.direta.render(el, param); return; }
       const pl = Telas.pleiade;
       if (!pl._t.iniciado) pl._t.iniciar();
       const cfgP = pl.api.cfg();
-      if (!(cfgP.modo === 'firebase' && cfgP.url)) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas da equipe</h1><p>As chamadas usam o servidor da equipe configurado no Seven Chat (modo equipe), que faz a ponte entre os computadores.</p><a class="btn primario" href="#/pleiade">Configurar o Seven Chat</a></div></div>'; return; }
+      if (!(cfgP.modo === 'firebase' && cfgP.url)) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas</h1><p class="mudo">Fale por vídeo com uma pessoa agora, sem configurar nada: crie a chamada direta e envie o convite.</p><div class="rn-home-ac"><a class="btn primario" href="#/reuniao/direta">📞 Chamada direta (1 a 1)</a></div><h3>Reuniões em grupo</h3><p class="mini mudo">Salas para a equipe toda (até ' + C.MAX_PARTICIPANTES + ' pessoas), com quadro branco, enquetes e gravação, usam o servidor da equipe do Seven Chat (modo equipe).</p><a class="btn fantasma" href="#/pleiade">Configurar o modo equipe</a></div><div class="rn-home-r" aria-hidden="true"><div class="rn-ilus"><span>📞</span></div></div></div>'; return; }
       if (!eu()) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas da equipe</h1><p>Entre no Seven Chat primeiro para ter seu perfil na equipe.</p><a class="btn primario" href="#/pleiade">Abrir o Seven Chat</a></div></div>'; return; }
       if (!pl._t.conectado && !Object.keys(pl.api.arv()).length) { el.innerHTML = '<div class="rn-home"><p class="mudo">Conectando ao servidor da equipe…</p></div>'; const tentar = function () { if (/^#\/reuniao/.test(location.hash)) App.redesenhar(); }; pl._t.ouvintes.push(function f() { pl._t.ouvintes.splice(pl._t.ouvintes.indexOf(f), 1); setTimeout(tentar, 50); }); return; }
       if (sub && C.codigoValido(sub)) {
