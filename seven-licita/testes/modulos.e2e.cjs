@@ -638,6 +638,7 @@ const testes = {
     ok(await pg.locator('.ds-modelo').count() === 6, '6 modelos Seven na vitrine');
     await foto('design-inicio');
     await pg.click('.ds-modelo[data-m="post-licitacao"]'); await pg.waitForSelector('.ds-pg');
+    await pg.waitForFunction(() => document.querySelectorAll('.ds-paginas .ds-pg .ds-el').length >= 7, null, { timeout: 5000 }).catch(() => {});
     ok(await pg.locator('.ds-paginas .ds-pg .ds-el').count() === 7, 'modelo aberto no editor com 7 elementos');
     // adicionar retângulo e mover
     await pg.click('[data-aba=elementos]'); await pg.click('[data-add=ret]');

@@ -13,6 +13,9 @@
     { id: 'impugnacao', t: 'Impugnação ao edital', prazo: 'Até 3 dias úteis antes da abertura do certame (art. 164 da Lei 14.133/2021). Resposta em até 3 dias úteis, limitada ao último dia útil anterior à abertura.',
       campos: [['clausula', 'Cláusula / item impugnado'], ['fatos', 'O que o edital exige e por que é irregular'], ['fundamento', 'Fundamentação (artigos, princípios, jurisprudência)'], ['pedido', 'O que se pede (alterar, excluir, republicar)']],
       texto: CAB + 'IMPUGNAÇÃO AO EDITAL\n\n{empresa}, inscrita no CNPJ sob o nº {cnpj}, por seu representante legal, com fundamento no art. 164 da Lei nº 14.133/2021, vem, tempestivamente, apresentar IMPUGNAÇÃO ao edital em referência, pelos motivos a seguir.\n\nI — DA TEMPESTIVIDADE\nA presente impugnação é apresentada dentro do prazo de 3 (três) dias úteis anteriores à data de abertura do certame.\n\nII — DO ITEM IMPUGNADO\n{clausula}\n\nIII — DOS FATOS\n{fatos}\n\nIV — DO DIREITO\n{fundamento}\n\nA exigência restringe a competitividade, contrariando os princípios do art. 5º da Lei nº 14.133/2021, em especial os da competitividade, da isonomia e da razoabilidade.\n\nV — DO PEDIDO\nDiante do exposto, requer:\na) o recebimento e o provimento desta impugnação;\nb) {pedido};\nc) a republicação do edital com a reabertura do prazo, se a alteração afetar a formulação das propostas (art. 55, § 1º).' + ASS },
+    { id: 'intencao', t: 'Intenção de recurso', prazo: 'Imediatamente após o ato (julgamento das propostas ou habilitação), na própria sessão, no prazo aberto pelo agente de contratação, sob pena de preclusão (art. 165, § 1º, I, da Lei 14.133/2021). No portal, o campo costuma aceitar texto curto: use a motivação sucinta.',
+      campos: [['item', 'Item / lote'], ['decisao', 'Decisão contestada (aceitação, habilitação ou inabilitação de quem)'], ['motivo', 'Motivo em uma ou duas frases']],
+      texto: 'INTENÇÃO DE RECURSO — {modalidade} nº {numero} — item/lote {item}\n\n{empresa}, CNPJ {cnpj}, manifesta intenção de recorrer contra a decisão que {decisao}, com fundamento no art. 165, I, da Lei nº 14.133/2021.\n\nMotivação sucinta: {motivo}\n\nAs razões serão apresentadas no prazo de 3 (três) dias úteis.' },
     { id: 'recurso', t: 'Recurso administrativo (razões)', prazo: '3 dias úteis da intimação ou da lavratura da ata (art. 165, I, da Lei 14.133/2021), após manifestar a intenção de recorrer de imediato, sob pena de preclusão (art. 165, § 1º, I).',
       campos: [['decisao', 'Decisão recorrida (habilitação, julgamento, item/lote)'], ['recorrida', 'Empresa beneficiada pela decisão'], ['fatos', 'Fatos'], ['fundamento', 'Fundamentação'], ['pedido', 'O que se pede']],
       texto: CAB + 'RECURSO ADMINISTRATIVO\n\n{empresa}, inscrita no CNPJ sob o nº {cnpj}, por seu representante legal, tendo manifestado a intenção de recorrer na sessão pública, vem, com fundamento no art. 165, I, da Lei nº 14.133/2021, apresentar as RAZÕES DE RECURSO contra a decisão que {decisao}, em favor de {recorrida}.\n\nI — DA TEMPESTIVIDADE\nO recurso é apresentado no prazo de 3 (três) dias úteis contado da intimação / lavratura da ata.\n\nII — DOS FATOS\n{fatos}\n\nIII — DAS RAZÕES\n{fundamento}\n\nA decisão afronta o princípio da vinculação ao edital (art. 5º da Lei nº 14.133/2021) e o julgamento objetivo.\n\nIV — DO PEDIDO\nRequer:\na) o conhecimento e o provimento do recurso;\nb) {pedido};\nc) caso a decisão não seja reconsiderada em 3 dias úteis, o encaminhamento à autoridade superior (art. 165, § 2º).' + ASS },
@@ -26,6 +29,11 @@
       campos: [['contrato', 'Contrato / empenho nº'], ['notas', 'Notas fiscais em aberto (nº, emissão, valor)'], ['total', 'Valor total em atraso']],
       texto: '{cidade}, {data}.\n\nAo(À) {orgao}\nSetor financeiro / Gestor do contrato\nRef.: Contrato / Empenho nº {contrato}\n\nCOBRANÇA DE PAGAMENTO\n\n{empresa}, inscrita no CNPJ sob o nº {cnpj}, informa que os seguintes documentos fiscais, referentes a fornecimentos entregues e atestados, permanecem sem pagamento:\n\n{notas}\n\nValor total em atraso: {total}.\n\nRequer o pagamento, observada a ordem cronológica de pagamentos (art. 141 da Lei nº 14.133/2021), com atualização monetária e juros previstos no contrato, e informa que o atraso superior a 2 (dois) meses autoriza o pedido de extinção contratual (art. 137, § 2º, IV).' + ASS }
   ];
+
+  // Categorias do menu Jurídico (a peça herda a categoria do modelo).
+  const CATEGORIAS = [{ id: 'impugnacao', t: 'Impugnação', modelos: ['impugnacao'] }, { id: 'esclarecimento', t: 'Esclarecimento', modelos: ['esclarecimento'] }, { id: 'intencao', t: 'Intenção de recurso', modelos: ['intencao'] }, { id: 'recurso', t: 'Recurso', modelos: ['recurso'] }, { id: 'contrarrazoes', t: 'Contrarrazões', modelos: ['contrarrazoes'] }, { id: 'execucao', t: 'Execução do contrato', modelos: ['reequilibrio', 'pagamento'] }];
+  function categoriaDe(modelo) { const c = CATEGORIAS.find(function (x) { return x.modelos.indexOf(modelo) >= 0; }); return c ? c.id : 'execucao'; }
+  let filtro = { cat: '', q: '' };
 
   function e() { const d = Dados.e; d.pecas = d.pecas || []; return d; }
 
@@ -45,11 +53,12 @@
     return texto.replace(/\{duvidas_numeradas\}/g, dn || '1) ').replace(/\{(\w+)\}/g, function (_, k) { return v[k] != null && v[k] !== '' ? v[k] : '[' + k.toUpperCase() + ']'; });
   }
 
-  async function nova(ref) {
+  async function nova(ref, cat) {
     const ctx = contexto(ref);
+    const cMod = CATEGORIAS.find(function (x) { return x.id === cat; });
     const f = await modal({
       titulo: 'Nova peça', largo: true,
-      corpo: campo('Modelo', '<select name="modelo" id="pc-modelo">' + opcoes(MODELOS.map(function (m) { return { v: m.id, t: m.t }; })) + '</select>') + '<p class="mini alerta" id="pc-prazo"></p>' +
+      corpo: campo('Modelo', '<select name="modelo" id="pc-modelo">' + opcoes(MODELOS.map(function (m) { return { v: m.id, t: m.t }; }), cMod ? cMod.modelos[0] : '') + '</select>') + '<p class="mini alerta" id="pc-prazo"></p>' +
         '<div class="linha">' + ['orgao', 'modalidade', 'numero', 'processo'].map(function (k) { return campo({ orgao: 'Órgão', modalidade: 'Modalidade', numero: 'Nº', processo: 'Processo' }[k], '<input name="' + k + '" value="' + esc(ctx[k]) + '">'); }).join('') + '</div>' +
         campo('Objeto', '<input name="objeto" value="' + esc(ctx.objeto) + '">') + '<div id="pc-campos"></div>',
       botao: 'Gerar peça',
@@ -62,16 +71,29 @@
     if (!f) { location.hash = '#/pecas'; return; }
     const m = MODELOS.find(function (x) { return x.id === f.get('modelo'); });
     const v = Object.assign({}, ctx); f.forEach(function (val, k) { v[k] = val; });
-    const peca = { id: Dados.id('pc'), modelo: m.id, titulo: m.t + ' · ' + (v.orgao || '') + ' ' + (v.numero || ''), texto: preencher(m.texto, v), criadaEm: new Date().toISOString(), ref: ref || '', empresaId: Dados.e.empresaAtiva };
+    const peca = { id: Dados.id('pc'), modelo: m.id, titulo: [m.t, [v.orgao, v.numero].filter(Boolean).join(' ')].filter(Boolean).join(' · '), texto: preencher(m.texto, v), criadaEm: new Date().toISOString(), ref: ref || '', empresaId: Dados.e.empresaAtiva };
     e().pecas.unshift(peca); Dados.salvar(); location.hash = '#/pecas/editar/' + peca.id;
   }
 
   function telaLista(el) {
-    const l = e().pecas;
+    const todas = e().pecas;
+    const conta = {}; todas.forEach(function (p) { const c = categoriaDe(p.modelo); conta[c] = (conta[c] || 0) + 1; });
+    const q = Nucleo.normalizar(filtro.q);
+    const l = todas.filter(function (p) { return (!filtro.cat || categoriaDe(p.modelo) === filtro.cat) && (!q || Nucleo.normalizar(p.titulo + ' ' + p.texto).indexOf(q) >= 0); });
+    const cat = CATEGORIAS.find(function (x) { return x.id === filtro.cat; });
+    const nomeModelo = function (id) { const m = MODELOS.find(function (x) { return x.id === id; }); return m ? m.t : ''; };
     el.innerHTML = '<div class="nota-importante">Modelos de apoio, para revisar antes de protocolar: confira prazos, artigos e exigências no edital e na regulamentação do órgão. Os trechos entre [COLCHETES] ficaram sem preencher.</div>' +
-      '<div class="barra-acoes"><div class="mini">' + MODELOS.map(function (m) { return esc(m.t); }).join(' · ') + '</div><button class="btn primario" data-a="nova">+ Nova peça</button></div>' +
-      (l.length ? '<ul class="lista-links">' + l.map(function (p) { return '<li><a href="#/pecas/editar/' + p.id + '">' + esc(p.titulo) + '</a> <span class="mudo">· ' + dataHora(p.criadaEm) + '</span></li>'; }).join('') + '</ul>' : UI.vazio('Nenhuma peça', 'Gere a partir de um cartão do Quadro, de um recurso no Monitorar, ou aqui.'));
-    el.onclick = function (ev) { if (ev.target.closest('[data-a=nova]')) nova(''); };
+      '<div class="pc-cats" role="tablist" aria-label="Categorias de peças">' + [{ id: '', t: 'Todas' }].concat(CATEGORIAS).map(function (c) { const n = c.id ? conta[c.id] || 0 : todas.length; return '<button type="button" role="tab" class="pc-cat' + (filtro.cat === c.id ? ' on' : '') + '" aria-selected="' + (filtro.cat === c.id) + '" data-cat="' + c.id + '">' + esc(c.t) + ' <span class="pc-n">' + n + '</span></button>'; }).join('') + '</div>' +
+      '<div class="barra-acoes"><input type="search" id="pc-busca" placeholder="Buscar por órgão, número ou texto" value="' + esc(filtro.q) + '" aria-label="Buscar peças"><button class="btn primario" data-a="nova">+ Nova peça' + (cat ? ': ' + esc(cat.t.toLowerCase()) : '') + '</button></div>' +
+      (l.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Peça</th><th>Categoria</th><th>Modelo</th><th>Criada em</th></tr></thead><tbody>' + l.map(function (p) { const c = CATEGORIAS.find(function (x) { return x.id === categoriaDe(p.modelo); }); return '<tr class="clicavel" data-id="' + p.id + '"><td><a href="#/pecas/editar/' + p.id + '">' + esc(p.titulo) + '</a></td><td><span class="tag pc-tag-' + c.id + '">' + esc(c.t) + '</span></td><td class="mudo">' + esc(nomeModelo(p.modelo)) + '</td><td>' + dataHora(p.criadaEm) + '</td></tr>'; }).join('') + '</tbody></table></div>' :
+        UI.vazio(todas.length ? 'Nenhuma peça nesta categoria' : 'Nenhuma peça', todas.length ? 'Troque a categoria ou a busca, ou crie uma nova peça.' : 'Gere a partir de um cartão do Quadro, de um recurso no Monitorar, ou aqui.'));
+    el.onclick = function (ev) {
+      const c = ev.target.closest('[data-cat]'); if (c) { filtro.cat = c.dataset.cat; telaLista(el); return; }
+      if (ev.target.closest('[data-a=nova]')) { nova('', filtro.cat); return; }
+      const tr = ev.target.closest('tr[data-id]'); if (tr && !ev.target.closest('a')) location.hash = '#/pecas/editar/' + tr.dataset.id;
+    };
+    const busca = el.querySelector('#pc-busca');
+    busca.oninput = function () { filtro.q = busca.value; clearTimeout(busca._t); busca._t = setTimeout(function () { telaLista(el); const b = el.querySelector('#pc-busca'); b.focus(); b.setSelectionRange(b.value.length, b.value.length); }, 250); };
   }
 
   function telaEditar(el, id) {
@@ -96,10 +118,11 @@
     titulo: 'Peças Jurídicas',
     render: function (el, sub, param) {
       el.onclick = null;
-      if (sub === 'nova') { telaLista(el); nova(param); }
+      if (sub === 'categoria') { filtro.cat = param || ''; telaLista(el); }
+      else if (sub === 'nova') { telaLista(el); nova(param); }
       else if (sub === 'editar') telaEditar(el, param);
       else telaLista(el);
     },
-    MODELOS: MODELOS, preencher: preencher
+    MODELOS: MODELOS, CATEGORIAS: CATEGORIAS, categoriaDe: categoriaDe, preencher: preencher
   };
 })();

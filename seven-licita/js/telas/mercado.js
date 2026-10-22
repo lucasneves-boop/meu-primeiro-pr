@@ -3,7 +3,7 @@
   'use strict';
   self.Telas = self.Telas || {};
   const { esc, moeda, num, pct, data, campo, opcoes, modal, aviso, abas, progresso, barras } = UI;
-  let atual = null;
+  let atual = null; let preTermo = '';
 
   function e() { return Dados.e; }
   function hojeMenos(dias) { const d = new Date(Date.now() - dias * 86400000); return d.toISOString().slice(0, 10); }
@@ -62,7 +62,7 @@
   }
 
   function telaAnalise(el) {
-    const q = atual ? atual.q : { termo: '', excluir: '', ufs: Dados.empresaAtiva() ? [Dados.empresaAtiva().uf] : ['GO'], modalidades: [6, 8], inicio: hojeMenos(90), fim: hojeMenos(0), esferas: [], maxDetalhe: 40 };
+    const q = atual ? atual.q : { termo: preTermo, excluir: '', ufs: Dados.empresaAtiva() ? [Dados.empresaAtiva().uf] : ['GO'], modalidades: [6, 8], inicio: hojeMenos(90), fim: hojeMenos(0), esferas: [], maxDetalhe: 40 };
     el.innerHTML = '<form class="cartao form-busca" id="fm"><div class="linha">' + campo('O que pesquisar *', '<input name="termo" required value="' + esc(q.termo) + '" placeholder="ex.: papel a4, material de limpeza">', 'Sinônimos separados por vírgula.') + campo('Excluir termos', '<input name="excluir" value="' + esc(q.excluir) + '" placeholder="ex.: locação, serviço">') +
       campo('De', '<input type="date" name="inicio" value="' + esc(q.inicio) + '">') + campo('Até', '<input type="date" name="fim" value="' + esc(q.fim) + '">') + campo('Licitações detalhadas por item', '<select name="maxDetalhe">' + opcoes([20, 40, 80, 150], q.maxDetalhe) + '</select>') + '</div>' +
       '<fieldset><legend>Estados *</legend><div class="grade-checks">' + PNCP.UFS.map(function (u) { return '<label><input type="checkbox" name="uf" value="' + u + '"' + (q.ufs.indexOf(u) >= 0 ? ' checked' : '') + '> ' + u + '</label>'; }).join('') + '</div></fieldset>' +
@@ -239,6 +239,7 @@
   Telas.mercado = {
     titulo: 'Análise de Mercado',
     coletar: rodar, // usado pelo estudo de mercado da área Comercial
+    pesquisar: function (termo) { preTermo = termo || ''; atual = null; location.hash = '#/mercado/analise'; App.redesenhar(); aviso('Termo do item preenchido. Confira estados e período e clique em Gerar relatório.'); },
     render: function (el, sub) {
       sub = sub || 'analise';
       el.innerHTML = abas([{ id: 'analise', t: 'Análise de Mercado' }, { id: 'concorrentes', t: 'Concorrentes' }, { id: 'capag', t: 'CAPAG' }], sub, 'mercado') + '<div id="aba"></div>';

@@ -129,6 +129,7 @@
       '<button class="btn fantasma" data-a="imprimir">Imprimir proposta</button><button class="btn fantasma" data-a="readequar">Proposta atualizada (pós-lances)</button>' +
       '<button class="btn fantasma" data-a="monitorar">Adicionar ao Monitorar</button><button class="btn fantasma" data-a="quadro">Criar cartão no Quadro</button><button class="btn fantasma perigo" data-a="excluir">Excluir proposta</button></div></section></div>';
 
+    el.insertAdjacentHTML('beforeend', Telas.oport.secao(Telas.oport.chaveProposta(p), 'cadastrar'));
     el.querySelector('#cab').oninput = function () { const fd = new FormData(this); p.portal = fd.get('portal'); p.validade = fd.get('validade'); p.prazoEntrega = fd.get('prazoEntrega'); p.impostos = Nucleo.lerNumeroBR(fd.get('impostos')) || 0; p.margem = Nucleo.lerNumeroBR(fd.get('margem')) || 0; Dados.salvar(); };
     const decl = el.querySelector('#decl'); decl.onchange = function () { const fd = new FormData(decl); p.declaracoes = {}; Array.prototype.forEach.call(decl.elements, function (x) { p.declaracoes[x.name] = !!fd.get(x.name); }); Dados.salvar(); };
     const fdocs = el.querySelector('#docs'); if (fdocs) fdocs.onchange = function () { p.documentos = new FormData(fdocs).getAll('doc'); Dados.salvar(); };

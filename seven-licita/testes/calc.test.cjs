@@ -95,3 +95,12 @@ test('tags ID3v2.3 do MP3 e nome de arquivo', () => {
   assert.deepEqual([r.titulo, r.artista, r.album], ['Concentração', 'Seven Band', 'Licitações']);
   assert.deepEqual(P.doNome('Artista Bom - Música Boa.mp3'), { artista: 'Artista Bom', titulo: 'Música Boa' });
 });
+
+test('custo de viagem: ida e volta, pedágio nos dois sentidos, paradas e tempo', () => {
+  const r = C.viagem({ km: 250, idaVolta: true, extraKm: 20, consumo: 10, preco: 6, pedagios: 20, estacionamento: 30, diarias: 1, valorDiaria: 180, pessoas: 2, velocidade: 80, tanque: 40 });
+  assert.equal(r.km, 520); perto(r.litros, 52); perto(r.combustivel, 312); assert.equal(r.pedagios, 40); assert.equal(r.hospedagem, 180);
+  perto(r.total, 562); perto(r.porPessoa, 281); perto(r.horas, 6.5);
+  assert.equal(r.autonomia, 340); assert.equal(r.paradas, 1);
+  assert.equal(C.viagem({ km: 0, consumo: 10 }), null);
+  assert.equal(C.viagem({ km: 100, consumo: 10, preco: 5 }).paradas, null);
+});

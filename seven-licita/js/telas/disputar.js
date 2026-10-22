@@ -114,6 +114,7 @@
       '<section class="cartao"><h3>Checklist antes da sessão</h3><form id="ck">' + CHECKLIST.map(function (t, k) { return '<label class="check"><input type="checkbox" name="c' + k + '"' + (d.checklist[k] ? ' checked' : '') + '> ' + esc(t) + '</label>'; }).join('') + '</form></section>' +
       '<section class="cartao" id="simulador"><h3>Simulador</h3><p class="mudo">Escolha um item e clique em <b>Ensaiar</b>. Concorrentes fictícios disputam contra a sua configuração, em tempo acelerado.</p></section>' +
       '<p><button class="btn fantasma perigo" data-a="excluir">Excluir disputa</button></p>';
+    el.insertAdjacentHTML('beforeend', Telas.oport.secao(Telas.oport.chaveDisputa(d), 'disputar'));
     el.querySelector('#cfg').onchange = function () { d.config = lerConfig(new FormData(this), d.config); Dados.salvar(); App.redesenhar(); };
     el.querySelector('#ck').onchange = function () { const fd = new FormData(this); CHECKLIST.forEach(function (_, k) { d.checklist[k] = !!fd.get('c' + k); }); Dados.salvar(); };
     el.querySelector('#itens-disp').onchange = function (ev) {

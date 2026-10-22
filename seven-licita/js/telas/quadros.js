@@ -593,7 +593,7 @@
     jan.innerHTML = capa + '<button class="icone kj-fechar" data-k="fechar" aria-label="Fechar">×</button>' +
       '<header class="kj-cab"><textarea class="kj-titulo" data-campo="titulo" rows="1" spellcheck="false">' + esc(c.titulo) + '</textarea>' +
       '<p class="mini">na lista <select data-campo="lista">' + opcoes(q.listas.filter(function (x) { return !x.arquivada; }).map(function (x) { return { v: x.id, t: x.nome }; }), c.lista) + '</select>' + (q.config.numeros && c.num ? ' · <b>#' + c.num + '</b>' : '') + (c.seguindo ? ' · 👁 seguindo' : '') + (c.arquivado ? ' · <span class="tag vermelho">Arquivado</span>' : '') + (c.modelo ? ' · <span class="tag ouro">Modelo</span>' : '') +
-      (c.avisoId && Dados.e.avisos[c.avisoId] ? ' · <a href="' + esc(Dados.e.avisos[c.avisoId].edital) + '" target="_blank" rel="noopener">edital no PNCP ↗</a>' : '') + '</p></header>' +
+      (c.avisoId && Dados.e.avisos[c.avisoId] ? ' · <a href="' + esc(Dados.e.avisos[c.avisoId].edital) + '" target="_blank" rel="noopener">edital no PNCP ↗</a> · <button type="button" class="link-btn" data-op-abrir="' + esc(c.avisoId) + '">✎ Anotações da oportunidade (' + Telas.oport.quantas(c.avisoId) + ')</button>' : '') + '</p></header>' +
       '<div class="kj-corpo"><div class="kj-principal">' +
       (a.painel ? '<section class="kj-painel">' + painelCartao(a.painel) + '</section>' : '') +
       '<div class="kj-badges">' +

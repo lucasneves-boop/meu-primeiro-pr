@@ -412,6 +412,8 @@
 
   Telas.ia = {
     titulo: 'Seven.ia',
+    // Abre uma conversa nova com a pergunta já escrita (o usuário revisa, anexa o edital e envia).
+    perguntar: function (texto) { mem.id = null; mem.msgs = []; mem.anexos = []; mem.rascunho = texto || ''; location.hash = '#/ia'; App.redesenhar(); },
     render: function (el, sub, param) {
       mem.lateral = false;
       if (sub === 'c' && param) return telaConversa(el, param);

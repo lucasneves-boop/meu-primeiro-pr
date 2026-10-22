@@ -192,5 +192,24 @@
   }
   function base(valor, de, para) { const n = parseInt(String(valor).trim(), de); if (isNaN(n)) return null; return n.toString(para).toUpperCase(); }
 
-  return { avaliar: avaliar, fatorial: fatorial, pascoa: pascoa, feriados: feriados, ehUtil: ehUtil, diferenca: diferenca, somar: somar, idade: idade, jurosCompostos: jurosCompostos, jurosSimples: jurosSimples, taxaEquivalente: taxaEquivalente, price: price, sac: sac, mdc: mdc, mmc: mmc, fatorar: fatorar, ehPrimo: ehPrimo, fracao: fracao, opFracao: opFracao, decimalParaFracao: decimalParaFracao, romano: romano, deRomano: deRomano, bhaskara: bhaskara, estatistica: estatistica, horasParaMin: horasParaMin, minParaHoras: minParaHoras, UNIDADES: UNIDADES, converter: converter, base: base, iso: iso };
+  // Custo de viagem de carro. o = { km (só ida), idaVolta, extraKm, consumo (km/L), preco (R$/L), pedagios (só ida),
+  //   estacionamento, diarias, valorDiaria, pessoas, velocidade (km/h), tanque (L), reserva (fração do tanque guardada) }
+  function viagem(o) {
+    const voltas = o.idaVolta ? 2 : 1;
+    const km = (Number(o.km) || 0) * voltas + (Number(o.extraKm) || 0);
+    const consumo = Number(o.consumo) || 0;
+    if (!km || !consumo) return null;
+    const litros = km / consumo;
+    const combustivel = litros * (Number(o.preco) || 0);
+    const pedagios = (Number(o.pedagios) || 0) * voltas;
+    const hospedagem = (Number(o.diarias) || 0) * (Number(o.valorDiaria) || 0);
+    const total = combustivel + pedagios + (Number(o.estacionamento) || 0) + hospedagem;
+    const pessoas = Math.max(1, Math.floor(Number(o.pessoas) || 1));
+    const autonomia = (Number(o.tanque) || 0) * consumo * (1 - (o.reserva == null ? 0.15 : Number(o.reserva)));
+    const paradas = autonomia > 0 ? Math.max(0, Math.ceil(km / autonomia) - 1) : null;
+    const horas = Number(o.velocidade) > 0 ? km / Number(o.velocidade) : null;
+    return { km: km, litros: litros, combustivel: combustivel, pedagios: pedagios, hospedagem: hospedagem, total: total, porPessoa: total / pessoas, porKm: total / km, autonomia: autonomia || null, paradas: paradas, horas: horas };
+  }
+
+  return { viagem: viagem, avaliar: avaliar, fatorial: fatorial, pascoa: pascoa, feriados: feriados, ehUtil: ehUtil, diferenca: diferenca, somar: somar, idade: idade, jurosCompostos: jurosCompostos, jurosSimples: jurosSimples, taxaEquivalente: taxaEquivalente, price: price, sac: sac, mdc: mdc, mmc: mmc, fatorar: fatorar, ehPrimo: ehPrimo, fracao: fracao, opFracao: opFracao, decimalParaFracao: decimalParaFracao, romano: romano, deRomano: deRomano, bhaskara: bhaskara, estatistica: estatistica, horasParaMin: horasParaMin, minParaHoras: minParaHoras, UNIDADES: UNIDADES, converter: converter, base: base, iso: iso };
 });

@@ -51,7 +51,7 @@
   function resumoCompra(c) {
     return {
       id: idCompra(c), cnpj: c.orgaoEntidade.cnpj, ano: c.anoCompra, seq: c.sequencialCompra,
-      orgao: c.orgaoEntidade.razaoSocial, esfera: c.orgaoEntidade.esferaId, unidade: c.unidadeOrgao && c.unidadeOrgao.nomeUnidade,
+      orgao: c.orgaoEntidade.razaoSocial, esfera: c.orgaoEntidade.esferaId, unidade: c.unidadeOrgao && c.unidadeOrgao.nomeUnidade, uasg: c.unidadeOrgao && c.unidadeOrgao.codigoUnidade,
       municipio: c.unidadeOrgao && c.unidadeOrgao.municipioNome, uf: c.unidadeOrgao && c.unidadeOrgao.ufSigla,
       ibge: c.unidadeOrgao && c.unidadeOrgao.codigoIbge,
       objeto: c.objetoCompra, info: c.informacaoComplementar, modalidadeId: c.modalidadeId, modalidade: c.modalidadeNome,
@@ -146,7 +146,8 @@
     return todos.map(function (i) {
       return {
         numero: i.numeroItem, descricao: i.descricao, quantidade: i.quantidade, unidade: i.unidadeMedida,
-        refUnitaria: i.orcamentoSigiloso ? null : i.valorUnitarioEstimado, sigiloso: !!i.orcamentoSigiloso,
+        refUnitaria: i.orcamentoSigiloso ? null : i.valorUnitarioEstimado, total: i.orcamentoSigiloso ? null : i.valorTotal, sigiloso: !!i.orcamentoSigiloso,
+        grupo: i.numeroGrupo != null ? i.numeroGrupo : i.grupo != null ? i.grupo : null,
         tipo: i.materialOuServicoNome, criterio: i.criterioJulgamentoNome, beneficio: i.tipoBeneficioNome,
         meEpp: i.tipoBeneficio === 1 ? 'Exclusivo ME/EPP' : i.tipoBeneficio === 2 || i.tipoBeneficio === 3 ? 'Parcial ME/EPP' : '',
         margem: !!(i.aplicabilidadeMargemPreferenciaNormal || i.aplicabilidadeMargemPreferenciaAdicional),
