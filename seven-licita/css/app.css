@@ -2276,3 +2276,40 @@ tr.f-atual td { background: var(--ouro-claro); }
 .pl-agendadas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 16px 6px; padding: 6px 10px; border: 1px dashed var(--borda); border-radius: 8px; font-size: 12px; }
 .pl-ag-it { display: inline-flex; align-items: center; gap: 4px; color: var(--mudo); }
 .pl-horas { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+/* Tema claro / escuro */
+.botao-tema { margin-left: auto; width: 38px; height: 38px; font-size: 18px; border: 1px solid var(--borda); border-radius: 50%; background: var(--superficie); color: var(--texto); display: grid; place-items: center; cursor: pointer; flex: none; }
+.botao-tema:hover { border-color: var(--ouro); }
+.botao-tema + .seletor-empresa { margin-left: 0; }
+.tema-opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.tema-op { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 2px solid var(--borda); border-radius: 10px; cursor: pointer; }
+.tema-op:has(input:checked) { border-color: var(--ouro); }
+.tema-op input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.tema-op input:focus-visible ~ .tema-amostra { outline: 2px solid var(--ouro); outline-offset: 2px; }
+.tema-amostra { display: grid; grid-template-columns: 1fr 2fr; height: 56px; border-radius: 6px; overflow: hidden; border: 1px solid var(--borda); }
+.tema-claro .tema-amostra i:first-child { background: #050505; } .tema-claro .tema-amostra i:last-child { background: #f6f5f2; }
+.tema-escuro .tema-amostra i:first-child { background: #050505; } .tema-escuro .tema-amostra i:last-child { background: #111111; }
+.tema-auto .tema-amostra i:first-child { background: #050505; } .tema-auto .tema-amostra i:last-child { background: linear-gradient(90deg, #f6f5f2 50%, #111111 50%); }
+.tema-op small { color: var(--mudo); font-size: 12px; }
+.tema-op b { display: flex; align-items: center; gap: 6px; }
+.linha > button, .linha > .btn { justify-self: start; }
+
+/* Tema "Dourado e preto" (identidade Seven): fundo preto, superfícies grafite e destaques em dourado. */
+:root[data-theme="gold"] {
+  --fundo: #000000; --superficie: #0c0a06; --superficie-2: #16120a; --borda: #3a2e17; --texto: #f5ecdb; --mudo: #c2ad84;
+  --marca: #d4ad66; --marca-forte: #f5ecdb; --marca-claro: #2a2112; --ouro: #c9a25a; --ouro-claro: #2a2112;
+  --primario: #c9a25a; --primario-hover: #dcb873; --primario-texto: #050505;
+  --perigo: #ff7a6e; --perigo-claro: #3a1414; --alerta: #f5a35c; --ok: #4bce97; --azul: #7fb2ff;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .6), 0 0 0 1px rgba(201, 162, 90, .06); color-scheme: dark;
+  --gf-1: #c9a25a; --gf-2: #3987e5; --gf-3: #e66767; --gf-4: #199e70; --gf-5: #9085e9; --gf-6: #d55181; --gf-outros: #77736b; --gf-grade: #2a2214; --gf-eixo: #c2ad84;
+}
+:root[data-theme="gold"] h1, :root[data-theme="gold"] h2, :root[data-theme="gold"] h3 { color: var(--marca); }
+:root[data-theme="gold"] .topo { background: #000; border-bottom-color: var(--ouro); }
+:root[data-theme="gold"] .cartao, :root[data-theme="gold"] .aviso, :root[data-theme="gold"] .pp-card, :root[data-theme="gold"] .ma { border-color: var(--borda); }
+:root[data-theme="gold"] .btn { border-color: #4a3b1d; }
+:root[data-theme="gold"] .btn:hover { border-color: var(--ouro); }
+:root[data-theme="gold"] .abas a.ativa, :root[data-theme="gold"] .ma-aba.on { color: var(--marca); }
+:root[data-theme="gold"] input, :root[data-theme="gold"] select, :root[data-theme="gold"] textarea { background: #0f0c07; border-color: #3a2e17; }
+:root[data-theme="gold"] input:focus, :root[data-theme="gold"] select:focus, :root[data-theme="gold"] textarea:focus { border-color: var(--ouro); outline-color: var(--ouro); }
+:root[data-theme="gold"] .ia-app { --ia-fundo: #070604; --ia-lat: #000; --ia-bolha: #1c1609; --ia-comp: #0f0c07; }
+.tema-dourado .tema-amostra i:first-child { background: #000; } .tema-dourado .tema-amostra i:last-child { background: linear-gradient(135deg, #0c0a06 60%, #c9a25a 60%); }

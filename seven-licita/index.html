@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/app.css">
+  <script>try { var t = localStorage.getItem('seven-tema'); var m = { claro: 'light', escuro: 'dark', dourado: 'gold' }; if (m[t]) document.documentElement.setAttribute('data-theme', m[t]); } catch (e) {}</script>
 </head>
 <body>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
@@ -70,6 +71,7 @@
       <header class="topo">
         <button class="icone abrir-menu" id="abrir-menu" aria-label="Abrir menu" aria-controls="lateral" aria-expanded="false">☰</button>
         <h1 id="titulo-tela">Painel</h1>
+        <button class="icone botao-tema" id="botao-tema" type="button"></button>
         <label class="seletor-empresa"><span>Cliente</span><select id="empresa-ativa" aria-label="Cliente ativo"></select></label>
       </header>
       <main id="conteudo" tabindex="-1"></main>
