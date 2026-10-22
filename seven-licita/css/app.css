@@ -1912,3 +1912,23 @@ main#conteudo { flex: 1; }
   .mu-res-d { display: none; } .mu-res-ac { grid-column: 2; flex-wrap: wrap; }
   .mu-ext { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- Comercial: proporções ---------- */
+.cm-kpis { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+.cm-cols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); align-items: start; }
+.cm-funil > div { grid-template-columns: minmax(110px, 160px) minmax(60px, 1fr) 34px 110px; }
+.cm-contas { min-width: 760px; } .cm-contas td small { white-space: nowrap; }
+.cm-atvs li > div b { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .cm-atvs li { flex-wrap: wrap; row-gap: 2px; }
+  .cm-atvs li > span { width: auto; order: 1; }
+  .cm-atvs li > input { order: 0; }
+  .cm-atvs li > div { order: 3; flex-basis: calc(100% - 28px); margin-left: 26px; }
+  .cm-atvs li > button, .cm-atvs li > .btn { order: 2; margin-left: auto; }
+}
+.cm-imp-res { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; } .cm-imp-res span { padding: 4px 10px; border-radius: 999px; background: var(--superficie-2); font-weight: 600; font-size: 13px; } .cm-imp-res .ok { background: var(--ouro-claro); color: var(--marca); } .cm-imp-res .erro { background: var(--perigo-claro); color: var(--perigo); }
+.cm-imp-prev { max-height: 40vh; overflow: auto; } .cm-imp-prev tr.erro td { color: var(--perigo); }
+.cm-imp-mapa { margin: 8px 0; } .cm-imp-mapa summary { cursor: pointer; font-weight: 600; }
+.cm-imp-campos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 6px 12px; margin-top: 8px; } .cm-imp-campos label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--mudo); } .cm-imp-campos select { font-size: 13px; }
+.cm-imp-op { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; }
+.cm-imp-prev td:nth-child(3) { white-space: nowrap; }

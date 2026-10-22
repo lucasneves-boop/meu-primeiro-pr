@@ -154,5 +154,106 @@
     return { meses: meses, numeros: { certames: compras.length, homologados: homolog.length, totalHomologado: totHom, totalEstimado: totEst, ticket: ticket, mercadoAnual: mercadoAnual, certamesAno: certamesAno, abertas: ab.length, abertasValor: abertasValor, amostras: am.length, orgaos: orgaos.length, fornecedores: conc.length }, orgaos: orgaos, ufs: ufs, modalidades: modalidades, esferas: esferas, meses_: mesesMap, concorrentes: conc, top3: top3, desagio: desagio, meppShare: meppShare, cliente: cli, estimativa: { topDown: td, bottomUp: bu, faixa: faixa, divergencia: div, sensibilidade: sens, premissas: premissas }, confianca: confianca, decisao: decisao, condicoes: condicoes };
   }
 
-  return { ETAPAS: ETAPAS, MOTIVOS_PERDA: MOTIVOS_PERDA, valorNegocio: valorNegocio, etapa: etapa, probabilidade: probabilidade, metricas: metricas, ICP: ICP, icp: icp, CADENCIAS: CADENCIAS, gerarCadencia: gerarCadencia, somarUteis: somarUteis, preencher: preencher, roi: roi, palavrasChave: palavrasChave, lerCartaoCNPJ: lerCartaoCNPJ, ranking: ranking, curvaABC: curvaABC, mediana: mediana, analisarEstudo: analisarEstudo, normalizar: normalizar, dias: dias };
+  // ---------- importar e exportar contas (leads e clientes) ----------
+  // Cabeçalhos reconhecidos (já normalizados: sem acento, minúsculos). A ordem decide o empate.
+  const CAMPOS_IMPORT = [
+    { k: 'razao', t: 'Razão social', re: [/^razao/, /^empresa$/, /nome da empresa/, /^cliente$/, /^conta$/, /^lead$/, /organiza/, /^company/, /^empresa\b/] },
+    { k: 'fantasia', t: 'Nome fantasia', re: [/fantasia/] },
+    { k: 'cnpj', t: 'CNPJ', re: [/cnpj/, /^documento$/] },
+    { k: 'municipio', t: 'Cidade', re: [/^cidade/, /municipio/] },
+    { k: 'uf', t: 'UF', re: [/^uf$/, /^estado$/, /^estado uf/] },
+    { k: 'porte', t: 'Porte', re: [/^porte/] },
+    { k: 'segmento', t: 'Segmento', re: [/segmento/, /^ramo/, /^setor/, /^atividade/, /cnae/] },
+    { k: 'site', t: 'Site', re: [/^site/, /website/, /^url$/] },
+    { k: 'origem', t: 'Origem', re: [/^origem/, /^fonte/, /^canal/] },
+    { k: 'tipo', t: 'Tipo (Lead/Cliente)', re: [/^tipo$/, /^categoria$/, /^classificacao$/] },
+    { k: 'etapa', t: 'Etapa do funil', re: [/^etapa/, /^fase/, /^status/, /^estagio/] },
+    { k: 'mensalidade', t: 'Mensalidade', re: [/mensalidade/, /valor mensal/, /^mrr$/, /^valor$/] },
+    { k: 'meses', t: 'Meses de contrato', re: [/^meses/, /^prazo/] },
+    { k: 'implantacao', t: 'Implantação', re: [/implantacao/, /^setup/] },
+    { k: 'contato', t: 'Contato', re: [/^contato$/, /nome do contato/, /^responsavel/, /^decisor/, /^nome$/] },
+    { k: 'cargo', t: 'Cargo', re: [/^cargo/, /^funcao/] },
+    { k: 'papel', t: 'Papel na decisão', re: [/^papel/] },
+    { k: 'email', t: 'E-mail', re: [/e ?mail/] },
+    { k: 'telefone', t: 'Telefone', re: [/^telefone/, /^fone/, /^tel$/] },
+    { k: 'whatsapp', t: 'WhatsApp', re: [/whats/, /^celular/, /^zap/] },
+    { k: 'observacoes', t: 'Observações', re: [/observ/, /^notas?$/, /coment/] }
+  ];
+  function mapearColunas(cabecalho) {
+    const cab = (cabecalho || []).map(normalizar); const usados = {}; const mapa = {};
+    CAMPOS_IMPORT.forEach(function (c) {
+      for (const re of c.re) { const i = cab.findIndex(function (h, k) { return h && !usados[k] && re.test(h); }); if (i >= 0) { mapa[c.k] = i; usados[i] = 1; break; } }
+    });
+    // "Nome" sozinho é a empresa quando não há outra coluna de empresa
+    if (mapa.razao == null && mapa.contato != null && cab[mapa.contato] === 'nome') { mapa.razao = mapa.contato; delete mapa.contato; }
+    return mapa;
+  }
+  function numeroBR(v) { if (typeof v === 'number') return v; let t = String(v == null ? '' : v).replace(/[R$\s]/g, ''); if (!t) return null; if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.'); const n = Number(t); return isFinite(n) ? n : null; }
+  function cnpjValido(c) {
+    const d = String(c || '').replace(/\D/g, ''); if (d.length !== 14 || /^(\d)\1+$/.test(d)) return false;
+    const dv = function (n) { const pesos = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]; const s = pesos.reduce(function (t, p, i) { return t + p * Number(d[i]); }, 0) % 11; return s < 2 ? 0 : 11 - s; };
+    return dv(12) === Number(d[12]) && dv(13) === Number(d[13]);
+  }
+  // Texto livre da etapa → id. "Cliente" no tipo vira "ganho".
+  function etapaDeTexto(etapaTxt, tipoTxt) {
+    const t = normalizar(etapaTxt); const tipo = normalizar(tipoTxt);
+    if (t) {
+      const direto = ETAPAS.find(function (e) { return normalizar(e.nome) === t || e.id === t; }); if (direto) return direto.id;
+      if (/ganh|fechad|cliente|ativo|assinad/.test(t)) return 'ganho';
+      if (/perd|descart|cancel|inativ/.test(t)) return 'perdido';
+      if (/negoci/.test(t)) return 'negociacao';
+      if (/propost/.test(t)) return 'proposta';
+      if (/estudo|apresenta/.test(t)) return 'estudo';
+      if (/diagn|reuniao|qualific/.test(t)) return 'diagnostico';
+      if (/contat|conversa|abordad/.test(t)) return 'contato';
+      if (/lead|novo|prospect/.test(t)) return 'lead';
+    }
+    if (/cliente/.test(tipo)) return 'ganho';
+    return 'lead';
+  }
+  function chaveConta(c) { const d = String(c.cnpj || '').replace(/\D/g, ''); return d.length === 14 ? 'cnpj:' + d : 'nome:' + normalizar(c.razao || c.fantasia) + '|' + String(c.uf || '').toUpperCase(); }
+  // linhas = matriz (1ª linha = cabeçalho). Devolve o que será criado, atualizado e o que tem problema, sem gravar nada.
+  function prepararImportacao(linhas, contasExistentes, mapa) {
+    linhas = (linhas || []).filter(function (l) { return l && l.some(function (c) { return String(c == null ? '' : c).trim(); }); });
+    if (!linhas.length) return { mapa: {}, itens: [], novos: 0, atualizar: 0, erros: 0 };
+    mapa = mapa || mapearColunas(linhas[0]);
+    const idx = {}; (contasExistentes || []).forEach(function (c) { idx[chaveConta(c)] = c; });
+    const vistos = {}; const itens = [];
+    linhas.slice(1).forEach(function (l, i) {
+      const v = function (k) { return mapa[k] == null ? '' : String(l[mapa[k]] == null ? '' : l[mapa[k]]).trim(); };
+      const conta = { razao: v('razao') || v('fantasia'), fantasia: v('fantasia'), cnpj: v('cnpj').replace(/\D/g, ''), municipio: v('municipio'), uf: v('uf').toUpperCase().slice(0, 2), porte: v('porte'), segmento: v('segmento'), site: v('site'), origem: v('origem') };
+      const contato = { nome: v('contato'), cargo: v('cargo'), papel: v('papel') || 'Decisor', email: v('email'), telefone: v('telefone'), whatsapp: v('whatsapp') };
+      const negocio = { etapa: etapaDeTexto(v('etapa'), v('tipo')), mensalidade: numeroBR(v('mensalidade')), meses: numeroBR(v('meses')) || null, implantacao: numeroBR(v('implantacao')) };
+      const item = { linha: i + 2, conta: conta, contato: contato.nome || contato.email || contato.telefone || contato.whatsapp ? contato : null, negocio: negocio, observacoes: v('observacoes'), problemas: [] };
+      if (!conta.razao) item.erro = 'sem nome da empresa';
+      else {
+        if (conta.cnpj && !cnpjValido(conta.cnpj)) { item.problemas.push('CNPJ inválido (importado sem CNPJ)'); conta.cnpj = ''; }
+        if (contato.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contato.email)) { item.problemas.push('e-mail inválido'); contato.email = ''; }
+        const k = chaveConta(conta);
+        if (vistos[k]) item.erro = 'repetida na planilha (linha ' + vistos[k] + ')';
+        else { vistos[k] = item.linha; item.existente = idx[k] ? idx[k].id : null; }
+      }
+      itens.push(item);
+    });
+    return { mapa: mapa, itens: itens, novos: itens.filter(function (x) { return !x.erro && !x.existente; }).length, atualizar: itens.filter(function (x) { return !x.erro && x.existente; }).length, erros: itens.filter(function (x) { return x.erro; }).length };
+  }
+  const COLUNAS_EXPORT = ['Tipo', 'Razão social', 'Nome fantasia', 'CNPJ', 'Cidade', 'UF', 'Porte', 'Segmento', 'Site', 'Origem', 'Etapa', 'Mensalidade', 'Meses', 'Implantação', 'Valor do contrato', 'Contato', 'Cargo', 'Papel', 'E-mail', 'Telefone', 'WhatsApp', 'ICP', 'Criada em'];
+  function tipoConta(etapaId) { return etapaId === 'ganho' ? 'Cliente' : etapaId === 'perdido' ? 'Perdido' : 'Lead'; }
+  function cnpjFormatado(d) { d = String(d || '').replace(/\D/g, ''); return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : d; }
+  // Uma linha por conta, com o negócio mais avançado e o contato decisor; quem reimporta o arquivo recupera tudo isso.
+  function linhasExportacao(contas, negocios, filtro) {
+    const ordem = ETAPAS.map(function (e) { return e.id; });
+    const out = [COLUNAS_EXPORT.slice()];
+    (contas || []).forEach(function (c) {
+      const ns = (negocios || []).filter(function (n) { return n.contaId === c.id; }).sort(function (a, b) { return (a.etapa === 'perdido') - (b.etapa === 'perdido') || ordem.indexOf(b.etapa) - ordem.indexOf(a.etapa); });
+      const n = ns[0] || {}; const tipo = tipoConta(n.etapa || 'lead');
+      if (filtro && filtro !== 'todos' && normalizar(filtro) !== normalizar(tipo)) return;
+      const ct = (c.contatos || []).find(function (x) { return x.papel === 'Decisor'; }) || (c.contatos || [])[0] || {};
+      out.push([tipo, c.razao || '', c.fantasia || '', cnpjFormatado(c.cnpj), c.municipio || '', c.uf || '', c.porte || '', c.segmento || '', c.site || '', c.origem || '', n.etapa ? etapa(n.etapa).nome : '', n.mensalidade != null ? Number(n.mensalidade) : '', n.meses || '', n.implantacao != null ? Number(n.implantacao) : '', n.id ? valorNegocio(n) : '', ct.nome || '', ct.cargo || '', ct.papel || '', ct.email || '', ct.telefone || '', ct.whatsapp || '', icp(c).faixa, String(c.criadoEm || '').slice(0, 10)]);
+    });
+    return out;
+  }
+
+  return { CAMPOS_IMPORT: CAMPOS_IMPORT, mapearColunas: mapearColunas, numeroBR: numeroBR, cnpjValido: cnpjValido, etapaDeTexto: etapaDeTexto, chaveConta: chaveConta, prepararImportacao: prepararImportacao, COLUNAS_EXPORT: COLUNAS_EXPORT, tipoConta: tipoConta, linhasExportacao: linhasExportacao,
+    ETAPAS: ETAPAS, MOTIVOS_PERDA: MOTIVOS_PERDA, valorNegocio: valorNegocio, etapa: etapa, probabilidade: probabilidade, metricas: metricas, ICP: ICP, icp: icp, CADENCIAS: CADENCIAS, gerarCadencia: gerarCadencia, somarUteis: somarUteis, preencher: preencher, roi: roi, palavrasChave: palavrasChave, lerCartaoCNPJ: lerCartaoCNPJ, ranking: ranking, curvaABC: curvaABC, mediana: mediana, analisarEstudo: analisarEstudo, normalizar: normalizar, dias: dias };
 });

@@ -107,8 +107,8 @@
   function telaPainel(el) {
     const m = C.metricas(e().negocios, hoje()); const metas = e().metas; const atrasadas = e().atividades.filter(function (a) { return !a.feita && a.data < hoje(); }), hojeA = e().atividades.filter(function (a) { return !a.feita && a.data === hoje(); });
     const max = Math.max.apply(null, m.porEtapa.map(function (x) { return x.qtd; }).concat([1]));
-    el.innerHTML = abas('painel') + '<div class="kpis"><div><span>Pipeline aberto</span><b>' + moeda(m.pipeline) + '</b><small class="mudo">' + m.abertos + ' negócio(s)</small></div><div><span>Previsão ponderada</span><b>' + moeda(m.ponderado) + '</b><small class="mudo">valor × probabilidade da etapa</small></div><div><span>Taxa de ganho</span><b>' + pct(m.win) + '</b><small class="mudo">' + m.ganhos + ' ganhos · ' + m.perdidos + ' perdidos</small></div><div><span>Ciclo médio</span><b>' + (m.ciclo == null ? '—' : Math.round(m.ciclo) + ' dias') + '</b></div><div><span>Ticket médio (contrato)</span><b>' + (m.ticket ? moeda(m.ticket) : '—') + '</b></div><div><span>Velocidade de vendas</span><b>' + (m.velocidade ? moeda(m.velocidade) + '/dia' : '—') + '</b><small class="mudo">oport. × ganho × ticket ÷ ciclo</small></div><div><span>Novos clientes no mês</span><b>' + m.ganhosMes + ' / ' + (metas.novosClientes || '—') + '</b><div class="barra"><i style="width:' + Math.min(100, metas.novosClientes ? m.ganhosMes / metas.novosClientes * 100 : 0) + '%"></i></div></div><div><span>Mensalidade nova no mês</span><b>' + moeda(m.receitaMes) + '</b>' + (metas.mrr ? '<div class="barra"><i style="width:' + Math.min(100, m.receitaMes / metas.mrr * 100) + '%"></i></div><small class="mudo">meta ' + moeda(metas.mrr) + '</small>' : '') + '</div></div>' +
-      '<div class="cartoes"><section class="cartao"><h3>Funil por etapa</h3><div class="cm-funil">' + m.porEtapa.filter(function (x) { return x.id !== 'perdido'; }).map(function (x) { return '<div><span>' + esc(x.nome) + '</span><i style="width:' + Math.max(4, x.qtd / max * 100) + '%"></i><b>' + x.qtd + '</b><small>' + moeda(x.valor) + '</small></div>'; }).join('') + '</div><h4>Conversão entre etapas</h4><table class="tabela">' + m.conversao.map(function (x) { return '<tr><td>' + esc(x.de) + ' → ' + esc(x.para) + '</td><td class="n">' + (x.entraram ? pct(x.taxa) : '—') + '</td></tr>'; }).join('') + '</table><p class="mini mudo">A etapa com menor conversão é o gargalo: é ali que o processo precisa de ajuste (script, estudo, proposta ou follow-up).</p></section>' +
+    el.innerHTML = abas('painel') + '<div class="kpis cm-kpis"><div><span>Pipeline aberto</span><b>' + moeda(m.pipeline) + '</b><small class="mudo">' + m.abertos + ' negócio(s)</small></div><div><span>Previsão ponderada</span><b>' + moeda(m.ponderado) + '</b><small class="mudo">valor × probabilidade da etapa</small></div><div><span>Taxa de ganho</span><b>' + pct(m.win) + '</b><small class="mudo">' + m.ganhos + ' ganhos · ' + m.perdidos + ' perdidos</small></div><div><span>Ciclo médio</span><b>' + (m.ciclo == null ? '—' : Math.round(m.ciclo) + ' dias') + '</b></div><div><span>Ticket médio (contrato)</span><b>' + (m.ticket ? moeda(m.ticket) : '—') + '</b></div><div><span>Velocidade de vendas</span><b>' + (m.velocidade ? moeda(m.velocidade) + '/dia' : '—') + '</b><small class="mudo">oport. × ganho × ticket ÷ ciclo</small></div><div><span>Novos clientes no mês</span><b>' + m.ganhosMes + ' / ' + (metas.novosClientes || '—') + '</b><div class="barra"><i style="width:' + Math.min(100, metas.novosClientes ? m.ganhosMes / metas.novosClientes * 100 : 0) + '%"></i></div></div><div><span>Mensalidade nova no mês</span><b>' + moeda(m.receitaMes) + '</b>' + (metas.mrr ? '<div class="barra"><i style="width:' + Math.min(100, m.receitaMes / metas.mrr * 100) + '%"></i></div><small class="mudo">meta ' + moeda(metas.mrr) + '</small>' : '') + '</div></div>' +
+      '<div class="cartoes cm-cols"><section class="cartao"><h3>Funil por etapa</h3><div class="cm-funil">' + m.porEtapa.filter(function (x) { return x.id !== 'perdido'; }).map(function (x) { return '<div><span>' + esc(x.nome) + '</span><i style="width:' + Math.max(4, x.qtd / max * 100) + '%"></i><b>' + x.qtd + '</b><small>' + moeda(x.valor) + '</small></div>'; }).join('') + '</div><h4>Conversão entre etapas</h4><table class="tabela">' + m.conversao.map(function (x) { return '<tr><td>' + esc(x.de) + ' → ' + esc(x.para) + '</td><td class="n">' + (x.entraram ? pct(x.taxa) : '—') + '</td></tr>'; }).join('') + '</table><p class="mini mudo">A etapa com menor conversão é o gargalo: é ali que o processo precisa de ajuste (script, estudo, proposta ou follow-up).</p></section>' +
       '<section class="cartao"><h3>Hoje</h3>' + (atrasadas.length ? '<p class="cm-atras">⚠ ' + atrasadas.length + ' atividade(s) atrasada(s)</p>' : '') + listaAtividades(atrasadas.concat(hojeA).slice(0, 12)) + '<h3>Negócios parados (+14 dias)</h3>' + (m.parados.length ? '<ul class="lista-notas">' + m.parados.map(function (n) { return '<li><a href="#/comercial/conta/' + n.contaId + '">' + esc(nomeConta(conta(n.contaId))) + '</a> · ' + esc(C.etapa(n.etapa).nome) + ' · desde ' + data(n.atualizadoEm) + '</li>'; }).join('') + '</ul>' : '<p class="mudo">Nenhum.</p>') + '<h3>Motivos de perda</h3>' + (Object.keys(m.motivos).length ? '<table class="tabela">' + Object.keys(m.motivos).map(function (k) { return '<tr><td>' + esc(k) + '</td><td class="n">' + m.motivos[k] + '</td></tr>'; }).join('') + '</table>' : '<p class="mudo">Sem perdas registradas.</p>') + '</section></div>';
     ligarAtividades(el);
   }
@@ -134,16 +134,91 @@
 
   function telaContas(el) {
     const q = C.normalizar(est.busca); const L = e().contas.filter(function (c) { return !q || C.normalizar([c.razao, c.fantasia, c.cnpj, c.municipio, c.segmento].join(' ')).indexOf(q) >= 0; });
-    el.innerHTML = abas('contas') + '<div class="barra-acoes"><div class="filtros" style="margin:0;flex:1"><input type="search" id="cm-busca" placeholder="Buscar conta, CNPJ, cidade, segmento" value="' + esc(est.busca) + '"></div><button class="btn primario" data-a="nova">+ Nova conta</button></div>' +
-      (L.length ? '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Conta</th><th>Cidade</th><th>Segmento</th><th>ICP</th><th>Etapa</th><th class="n">Valor</th><th>Estudo</th><th>Origem</th></tr></thead><tbody>' + L.map(function (c) { const n = negociosDe(c.id).filter(function (x) { return x.etapa !== 'perdido'; })[0] || negociosDe(c.id)[0]; const ic = C.icp(c); return '<tr class="clicavel" data-ver="' + c.id + '"><td><b>' + esc(nomeConta(c)) + '</b><br><small class="mudo">' + esc(c.cnpj ? cnpj(c.cnpj) : '') + '</small></td><td>' + esc([c.municipio, c.uf].filter(Boolean).join('-')) + '</td><td>' + esc(String(c.segmento || '').slice(0, 60)) + '</td><td><span class="tag ' + (ic.faixa === 'A' ? 'verde' : ic.faixa === 'B' ? 'ouro' : 'claro') + '">' + ic.faixa + ' · ' + ic.pontos + '</span></td><td>' + (n ? esc(C.etapa(n.etapa).nome) : '—') + '</td><td class="n">' + (n && C.valorNegocio(n) ? moeda(C.valorNegocio(n)) : '—') + '</td><td>' + ((c.estudos || []).length ? '✓ ' + data(c.estudos[0].criadoEm) : '—') + '</td><td>' + esc(c.origem || '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : UI.vazio('Nenhuma conta', 'Cadastre leads com o CNPJ (os dados vêm da Receita) ou anexe o cartão CNPJ. Cada conta ganha diagnóstico, estudo de mercado, proposta e cadência de follow-up.', '<button class="btn primario" data-a="nova">+ Nova conta</button>'));
+    el.innerHTML = abas('contas') + '<div class="barra-acoes"><div class="filtros" style="margin:0;flex:1"><input type="search" id="cm-busca" placeholder="Buscar conta, CNPJ, cidade, segmento" value="' + esc(est.busca) + '"></div><button class="btn" data-a="importar">⬆ Importar</button><button class="btn" data-a="exportar">⬇ Exportar</button><button class="btn primario" data-a="nova">+ Nova conta</button></div>' +
+      (L.length ? '<div class="tabela-rolagem"><table class="tabela cm-contas"><thead><tr><th>Conta</th><th>Cidade</th><th>Segmento</th><th>ICP</th><th>Etapa</th><th class="n">Valor</th><th>Estudo</th><th>Origem</th></tr></thead><tbody>' + L.map(function (c) { const n = negociosDe(c.id).filter(function (x) { return x.etapa !== 'perdido'; })[0] || negociosDe(c.id)[0]; const ic = C.icp(c); return '<tr class="clicavel" data-ver="' + c.id + '"><td><b>' + esc(nomeConta(c)) + '</b><br><small class="mudo">' + esc(c.cnpj ? cnpj(c.cnpj) : '') + '</small></td><td>' + esc([c.municipio, c.uf].filter(Boolean).join('-')) + '</td><td>' + esc(String(c.segmento || '').slice(0, 60)) + '</td><td><span class="tag ' + (ic.faixa === 'A' ? 'verde' : ic.faixa === 'B' ? 'ouro' : 'claro') + '">' + ic.faixa + ' · ' + ic.pontos + '</span></td><td>' + (n ? esc(C.etapa(n.etapa).nome) : '—') + '</td><td class="n">' + (n && C.valorNegocio(n) ? moeda(C.valorNegocio(n)) : '—') + '</td><td>' + ((c.estudos || []).length ? '✓ ' + data(c.estudos[0].criadoEm) : '—') + '</td><td>' + esc(c.origem || '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : UI.vazio('Nenhuma conta', 'Cadastre leads com o CNPJ (os dados vêm da Receita) ou anexe o cartão CNPJ. Cada conta ganha diagnóstico, estudo de mercado, proposta e cadência de follow-up.', '<button class="btn primario" data-a="nova">+ Nova conta</button>'));
     const b = el.querySelector('#cm-busca'); b.oninput = function () { est.busca = b.value; clearTimeout(b._t); b._t = setTimeout(function () { App.redesenhar(); const i = document.getElementById('cm-busca'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
-    el.onclick = async function (ev) { if (ev.target.closest('[data-a=nova]')) { const c = await editarConta(); if (c) { novoNegocio(c); location.hash = '#/comercial/conta/' + c.id; } return; } const r = ev.target.closest('[data-ver]'); if (r) location.hash = '#/comercial/conta/' + r.dataset.ver; };
+    el.onclick = async function (ev) { if (ev.target.closest('[data-a=importar]')) { importarContas(); return; } if (ev.target.closest('[data-a=exportar]')) { exportar(); return; } if (ev.target.closest('[data-a=nova]')) { const c = await editarConta(); if (c) { novoNegocio(c); location.hash = '#/comercial/conta/' + c.id; } return; } const r = ev.target.closest('[data-ver]'); if (r) location.hash = '#/comercial/conta/' + r.dataset.ver; };
+  }
+
+  // ---------- importar e exportar ----------
+  const XLSX_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  let xlsxP = null;
+  function carregarXLSX() { if (self.XLSX) return Promise.resolve(self.XLSX); return xlsxP = xlsxP || new Promise(function (ok, erro) { const s = document.createElement('script'); s.src = XLSX_CDN; s.onload = function () { ok(self.XLSX); }; s.onerror = function () { xlsxP = null; erro(new Error('Não consegui carregar o leitor de Excel. Salve a planilha como CSV e tente de novo.')); }; document.head.appendChild(s); }); }
+  async function lerPlanilha(f) {
+    if (/\.(xlsx|xls|ods)$/i.test(f.name)) {
+      const X = await carregarXLSX(); const wb = X.read(await f.arrayBuffer(), { type: 'array' });
+      let melhor = []; wb.SheetNames.forEach(function (n) { const l = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' }); if (l.length > melhor.length) melhor = l; });
+      return melhor;
+    }
+    return Nucleo.lerCSV(await UI.lerArquivoTexto(f));
+  }
+  function resumoImportacao(p) {
+    return '<div class="cm-imp-res"><span class="ok">＋ ' + p.novos + ' nova(s)</span><span>↻ ' + p.atualizar + ' já cadastrada(s)</span><span class="' + (p.erros ? 'erro' : '') + '">⚠ ' + p.erros + ' com erro</span></div>' +
+      '<div class="tabela-rolagem cm-imp-prev"><table class="tabela compacta"><thead><tr><th>Linha</th><th>Empresa</th><th>CNPJ</th><th>Cidade/UF</th><th>Etapa</th><th>Contato</th><th>Situação</th></tr></thead><tbody>' +
+      p.itens.slice(0, 200).map(function (x) { return '<tr class="' + (x.erro ? 'erro' : '') + '"><td>' + x.linha + '</td><td>' + esc(x.conta.razao || '—') + '</td><td>' + esc(x.conta.cnpj ? cnpj(x.conta.cnpj) : '') + '</td><td>' + esc([x.conta.municipio, x.conta.uf].filter(Boolean).join('/')) + '</td><td>' + esc(C.etapa(x.negocio.etapa).nome) + '</td><td>' + esc(x.contato ? x.contato.nome || x.contato.email || '' : '') + '</td><td>' + (x.erro ? '<b>' + esc(x.erro) + '</b>' : (x.existente ? 'atualizar' : 'nova') + (x.problemas.length ? ' · <small>' + esc(x.problemas.join('; ')) + '</small>' : '')) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' + (p.itens.length > 200 ? '<p class="mini mudo">Mostrando 200 de ' + p.itens.length + ' linhas.</p>' : '');
+  }
+  async function importarContas() {
+    const f = await UI.escolherArquivo('.csv,.xlsx,.xls,.ods,text/csv'); if (!f) return;
+    let linhas; try { linhas = await lerPlanilha(f); } catch (x) { aviso(x.message, 'erro'); return; }
+    if (!linhas || linhas.length < 2) { aviso('A planilha está vazia ou só tem o cabeçalho.', 'erro'); return; }
+    const cab = linhas[0].map(function (h) { return String(h || '').trim(); });
+    let prep = C.prepararImportacao(linhas, e().contas);
+    const seletor = function (k) { return '<select data-campo="' + k + '"><option value="">— não importar</option>' + cab.map(function (h, i) { return '<option value="' + i + '"' + (prep.mapa[k] === i ? ' selected' : '') + '>' + esc(h || 'Coluna ' + (i + 1)) + '</option>'; }).join('') + '</select>'; };
+    const r = await modal({ titulo: 'Importar contas: ' + f.name, largo: true, botao: 'Importar',
+      corpo: '<p class="mini mudo">' + (linhas.length - 1) + ' linha(s). Confira de qual coluna vem cada informação; o sistema reconheceu os cabeçalhos mais comuns. Contas já cadastradas são identificadas pelo CNPJ (ou pelo nome + UF).</p>' +
+        '<details class="cm-imp-mapa"' + (prep.mapa.razao == null ? ' open' : '') + '><summary>Colunas (' + Object.keys(prep.mapa).length + ' reconhecidas)</summary><div class="cm-imp-campos">' + C.CAMPOS_IMPORT.map(function (c) { return '<label><span>' + esc(c.t) + '</span>' + seletor(c.k) + '</label>'; }).join('') + '</div></details>' +
+        '<label class="cm-imp-op"><input type="checkbox" name="atualizar" checked> Atualizar as contas que já existem (só os campos preenchidos na planilha)</label>' +
+        '<div id="cm-imp-res">' + resumoImportacao(prep) + '</div>',
+      aoAbrir: function (fm) { fm.addEventListener('change', function (ev) { if (!ev.target.dataset.campo) return; const mapa = {}; fm.querySelectorAll('[data-campo]').forEach(function (s) { if (s.value !== '') mapa[s.dataset.campo] = Number(s.value); }); prep = C.prepararImportacao(linhas, e().contas, mapa); fm.querySelector('#cm-imp-res').innerHTML = resumoImportacao(prep); }); },
+      validar: function () { return prep.novos + prep.atualizar ? '' : 'Nenhuma linha válida para importar. Indique a coluna da empresa.'; } });
+    if (!r) return;
+    const atualizar = r.get('atualizar') === 'on'; const temEtapa = prep.mapa.etapa != null || prep.mapa.tipo != null; let novos = 0, atual = 0;
+    prep.itens.forEach(function (x) {
+      if (x.erro) return;
+      const extras = { mensalidade: x.negocio.mensalidade, implantacao: x.negocio.implantacao }; if (x.negocio.meses) extras.meses = x.negocio.meses;
+      if (!x.existente) {
+        const c = Object.assign({ id: Dados.id('cta'), contatos: [], icp: {}, timeline: [], anexos: [], estudos: [], criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString() }, x.conta);
+        c.origem = c.origem || 'Base antiga';
+        if (x.contato) c.contatos.push(Object.assign({ id: Dados.id('ct') }, x.contato));
+        linhaTempo(c, 'nota', 'Conta importada de ' + f.name + ' (linha ' + x.linha + ').'); if (x.observacoes) linhaTempo(c, 'nota', x.observacoes);
+        e().contas.unshift(c);
+        const n = novoNegocio(c, Object.assign({ etapa: x.negocio.etapa }, extras)); if (n.etapa === 'ganho') n.fechadoEm = hoje();
+        novos++; return;
+      }
+      if (!atualizar) return;
+      const c = conta(x.existente);
+      Object.keys(x.conta).forEach(function (k) { if (x.conta[k]) c[k] = x.conta[k]; });
+      if (x.contato) { const ja = (c.contatos || []).find(function (p) { return (x.contato.email && p.email === x.contato.email) || (x.contato.nome && p.nome === x.contato.nome); }); if (ja) Object.keys(x.contato).forEach(function (k) { if (x.contato[k]) ja[k] = x.contato[k]; }); else { c.contatos = c.contatos || []; c.contatos.push(Object.assign({ id: Dados.id('ct') }, x.contato)); } }
+      const n = negociosDe(c.id).filter(function (y) { return y.etapa !== 'perdido'; })[0] || negociosDe(c.id)[0];
+      if (!n) novoNegocio(c, Object.assign({ etapa: x.negocio.etapa }, extras));
+      else { Object.keys(extras).forEach(function (k) { if (extras[k] != null) n[k] = extras[k]; }); if (temEtapa && n.etapa !== x.negocio.etapa) { (n.historicoEtapas = n.historicoEtapas || []).push({ etapa: n.etapa, em: hoje() }); n.etapa = x.negocio.etapa; if (n.etapa === 'ganho') n.fechadoEm = hoje(); } n.atualizadoEm = hoje(); }
+      if (x.observacoes) linhaTempo(c, 'nota', x.observacoes);
+      c.atualizadoEm = new Date().toISOString(); linhaTempo(c, 'nota', 'Dados atualizados por importação (' + f.name + ').'); atual++;
+    });
+    salvar(); aviso(novos + ' conta(s) nova(s) e ' + atual + ' atualizada(s).' + (prep.erros ? ' ' + prep.erros + ' linha(s) com erro ficaram de fora.' : '')); App.redesenhar();
+  }
+  async function exportar() {
+    const r = await modal({ titulo: 'Exportar', botao: 'Baixar',
+      corpo: campo('O que exportar', '<select name="o">' + opcoes([{ v: 'contas', t: 'Contas (leads e clientes)' }, { v: 'atividades', t: 'Atividades' }, { v: 'modelo', t: 'Modelo vazio para preencher e importar' }], 'contas') + '</select>') +
+        campo('Quais contas', '<select name="t">' + opcoes([{ v: 'todos', t: 'Todas (' + e().contas.length + ')' }, { v: 'Lead', t: 'Só leads' }, { v: 'Cliente', t: 'Só clientes' }, { v: 'Perdido', t: 'Só perdidos' }], 'todos') + '</select>') +
+        campo('Formato', '<select name="f">' + opcoes([{ v: 'xlsx', t: 'Excel (.xlsx)' }, { v: 'csv', t: 'CSV (abre no Excel)' }], 'xlsx') + '</select>') });
+    if (!r) return;
+    const o = r.get('o'); let linhas, nome;
+    if (o === 'atividades') { linhas = [['Data', 'Tipo', 'Atividade', 'Conta', 'Feita', 'Resultado']].concat(e().atividades.slice().sort(function (a, b) { return String(a.data).localeCompare(String(b.data)); }).map(function (a) { return [a.data, (ATV[a.tipo] || a.tipo).replace(/^\S+\s/, ''), a.titulo, nomeConta(conta(a.contaId)), a.feita ? 'Sim' : 'Não', a.resultado || '']; })); nome = 'atividades-comerciais'; }
+    else if (o === 'modelo') { linhas = [C.COLUNAS_EXPORT.slice(0, 21), ['Lead', 'Empresa Exemplo LTDA', 'Exemplo', '11.222.333/0001-81', 'Catalão', 'GO', 'ME', 'Material hospitalar', '', 'Indicação', 'Lead', 2500, 12, 3000, '', 'Nome do decisor', 'Diretor', 'Decisor', 'contato@exemplo.com.br', '(64) 3441-0000', '(64) 99999-0000']]; nome = 'modelo-importacao-contas'; }
+    else { linhas = C.linhasExportacao(e().contas, e().negocios, r.get('t')); nome = 'contas-' + (r.get('t') === 'todos' ? 'todas' : r.get('t').toLowerCase() + 's'); }
+    nome += '-' + hoje();
+    if (r.get('f') === 'csv') { UI.baixar(nome + '.csv', '﻿' + Nucleo.paraCSV(linhas), 'text/csv;charset=utf-8'); return; }
+    try { const X = await carregarXLSX(); const wb = X.utils.book_new(); const ws = X.utils.aoa_to_sheet(linhas); ws['!cols'] = linhas[0].map(function (h, i) { return { wch: Math.min(40, Math.max(10, String(h).length + 2, ...linhas.slice(1, 50).map(function (l) { return String(l[i] == null ? '' : l[i]).length + 1; }))) }; }); X.utils.book_append_sheet(wb, ws, o === 'atividades' ? 'Atividades' : 'Contas'); UI.baixar(nome + '.xlsx', new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); }
+    catch (x) { aviso(x.message + ' Baixando em CSV.', 'erro'); UI.baixar(nome + '.csv', '﻿' + Nucleo.paraCSV(linhas), 'text/csv;charset=utf-8'); }
+    if (linhas.length < 2 && o !== 'modelo') aviso('Nenhum registro para exportar com esse filtro.');
   }
 
   function telaAtividades(el) {
     const L = e().atividades.slice().sort(function (a, b) { return (a.feita - b.feita) || a.data.localeCompare(b.data); });
     const pend = L.filter(function (a) { return !a.feita; });
-    el.innerHTML = abas('atividades') + '<div class="cartoes"><section class="cartao"><h3>Pendentes (' + pend.length + ')</h3>' + listaAtividades(pend) + '</section><section class="cartao"><h3>Feitas recentemente</h3>' + listaAtividades(L.filter(function (a) { return a.feita; }).sort(function (a, b) { return String(b.feitaEm).localeCompare(String(a.feitaEm)); }).slice(0, 20)) + '</section></div>';
+    el.innerHTML = abas('atividades') + '<div class="cartoes cm-cols"><section class="cartao"><h3>Pendentes (' + pend.length + ')</h3>' + listaAtividades(pend) + '</section><section class="cartao"><h3>Feitas recentemente</h3>' + listaAtividades(L.filter(function (a) { return a.feita; }).sort(function (a, b) { return String(b.feitaEm).localeCompare(String(a.feitaEm)); }).slice(0, 20)) + '</section></div>';
     ligarAtividades(el);
   }
 

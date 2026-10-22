@@ -80,3 +80,49 @@ test('estudo de mercado: números, concorrentes, ABC, deságio, duas estimativas
   const pequeno = C.analisarEstudo({ compras: compras.slice(0, 3), amostras: am.slice(0, 2), abertas: [], meses: 12 });
   assert.equal(pequeno.confianca, 'Baixa'); assert.match(pequeno.decisao, /Entrar com foco em órgãos|Não priorizar/);
 });
+
+test('importação: reconhece cabeçalhos variados (CRM, planilha própria, RD/Pipedrive)', () => {
+  const m = C.mapearColunas(['Empresa', 'CNPJ', 'Cidade', 'Estado', 'Status', 'Valor mensal', 'Nome do contato', 'E-mail', 'Celular', 'Observações']);
+  assert.deepEqual(m, { razao: 0, cnpj: 1, municipio: 2, uf: 3, etapa: 4, mensalidade: 5, contato: 6, email: 7, whatsapp: 8, observacoes: 9 });
+  const so = C.mapearColunas(['Nome', 'Telefone']); assert.equal(so.razao, 0); assert.equal(so.contato, undefined);
+  assert.equal(C.mapearColunas(['Razão Social', 'Nome fantasia', 'Contato']).contato, 2);
+});
+
+test('importação: etapa por texto livre, tipo Cliente, números em real e CNPJ com dígito verificador', () => {
+  assert.equal(C.etapaDeTexto('Proposta enviada'), 'proposta'); assert.equal(C.etapaDeTexto('Fechado'), 'ganho'); assert.equal(C.etapaDeTexto('Reunião marcada'), 'diagnostico');
+  assert.equal(C.etapaDeTexto('', 'Cliente'), 'ganho'); assert.equal(C.etapaDeTexto('', 'Lead'), 'lead'); assert.equal(C.etapaDeTexto('xyz'), 'lead');
+  assert.equal(C.numeroBR('R$ 2.500,50'), 2500.5); assert.equal(C.numeroBR(''), null); assert.equal(C.numeroBR(3000), 3000);
+  assert.equal(C.cnpjValido('11.222.333/0001-81'), true); assert.equal(C.cnpjValido('11.222.333/0001-82'), false); assert.equal(C.cnpjValido('00000000000000'), false);
+});
+
+test('importação: novos, atualizações, repetidos, erros e problemas por linha', () => {
+  const existentes = [{ id: 'c1', razao: 'Alfa LTDA', cnpj: '11222333000181' }, { id: 'c2', razao: 'Beta Serviços', uf: 'GO' }];
+  const r = C.prepararImportacao([
+    ['Razão social', 'CNPJ', 'UF', 'Tipo', 'Mensalidade', 'Contato', 'E-mail'],
+    ['Alfa Comércio', '11.222.333/0001-81', 'GO', 'Cliente', '3.000,00', 'Ana', 'ana@alfa.com.br'],
+    ['Beta Serviços', '', 'go', 'Lead', '', '', ''],
+    ['Gama', '12.345.678/0001-00', 'DF', '', '', 'Rui', 'rui@'],
+    ['', '', '', '', '', 'Sem empresa', ''],
+    ['Gama', '', 'DF', '', '', '', ''],
+    ['', '', '', '', '', '', '']
+  ], existentes);
+  assert.deepEqual([r.novos, r.atualizar, r.erros], [1, 2, 2]);
+  const [alfa, beta, gama, vazio, rep] = r.itens;
+  assert.equal(alfa.existente, 'c1'); assert.equal(alfa.negocio.etapa, 'ganho'); assert.equal(alfa.negocio.mensalidade, 3000); assert.equal(alfa.contato.nome, 'Ana');
+  assert.equal(beta.existente, 'c2'); assert.equal(beta.contato, null);
+  assert.equal(gama.existente, null); assert.equal(gama.conta.cnpj, ''); assert.deepEqual(gama.problemas, ['CNPJ inválido (importado sem CNPJ)', 'e-mail inválido']);
+  assert.equal(vazio.erro, 'sem nome da empresa'); assert.equal(vazio.linha, 5);
+  assert.match(rep.erro, /repetida na planilha \(linha 4\)/);
+});
+
+test('exportação: uma linha por conta, tipo pelo negócio mais avançado, filtro e ida e volta', () => {
+  const contas = [{ id: 'a', razao: 'Alfa LTDA', cnpj: '11222333000181', uf: 'GO', contatos: [{ nome: 'Ana', papel: 'Decisor', email: 'ana@alfa.com.br' }], criadoEm: '2026-05-01T10:00:00Z' }, { id: 'b', razao: 'Beta', contatos: [] }];
+  const negocios = [{ id: 'n1', contaId: 'a', etapa: 'perdido' }, { id: 'n2', contaId: 'a', etapa: 'ganho', mensalidade: 3000, meses: 12, implantacao: 1000 }, { id: 'n3', contaId: 'b', etapa: 'proposta' }];
+  const l = C.linhasExportacao(contas, negocios);
+  assert.deepEqual(l[0], C.COLUNAS_EXPORT);
+  assert.deepEqual(l[1].slice(0, 6), ['Cliente', 'Alfa LTDA', '', '11.222.333/0001-81', '', 'GO']); assert.equal(l[1][14], 37000); assert.equal(l[1][15], 'Ana'); assert.equal(l[1][22], '2026-05-01');
+  assert.equal(l[2][0], 'Lead'); assert.equal(l[2][10], 'Proposta enviada');
+  assert.equal(C.linhasExportacao(contas, negocios, 'Cliente').length, 2);
+  const volta = C.prepararImportacao(l, []);
+  assert.equal(volta.novos, 2); assert.equal(volta.itens[0].negocio.etapa, 'ganho'); assert.equal(volta.itens[0].negocio.mensalidade, 3000); assert.equal(volta.itens[1].negocio.etapa, 'proposta'); assert.equal(volta.itens[0].contato.email, 'ana@alfa.com.br');
+});
