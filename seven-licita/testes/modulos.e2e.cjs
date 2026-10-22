@@ -541,7 +541,7 @@ const testes = {
     await pg.goto(url + '#/jogos/quiz'); await pg.waitForSelector('.jg-op');
     for (let i = 0; i < 10; i++) {
       const certa = await pg.evaluate(() => { const p = document.querySelector('.jg-quiz h3').textContent; const q = Jogos.QUESTOES.find(x => x.p === p); return q.o[q.c]; });
-      await pg.locator('.jg-op', { hasText: certa }).first().click(); await pg.waitForSelector('.jg-op.certa');
+      await pg.evaluate((c) => [...document.querySelectorAll('.jg-op')].find(b => b.lastChild.textContent === c).click(), certa); await pg.waitForSelector('.jg-op.certa');
       if (i === 0) await foto('jogos-quiz');
       await pg.click('[data-j=prox]');
     }
@@ -711,6 +711,50 @@ const testes = {
     await foto('cadernos-chat');
     await pg.goto(url + '#/cadernos'); ok(/2 fontes/.test(await pg.locator('.cd-card:not(.novo)').innerText()), 'caderno listado com 2 fontes');
     await pg.click('.cd-card:not(.novo)'); await pg.waitForSelector('.cd-msg'); ok(await pg.locator('.cd-msg').count() === 8, 'conversa e fontes voltam ao reabrir');
+  },
+  async semanas(t) {
+    const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]');
+    await pg.goto(url + '#/semanas'); await pg.click('[data-a=novo]'); await pg.waitForSelector('#sm-form');
+    // etapa 1: início numa quarta → ajusta para segunda
+    const quarta = await pg.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - 30); while (d.getDay() !== 3) d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); });
+    await pg.fill('#sm-form [name=titulo]', 'Ciclo Seven Q4'); await pg.fill('#sm-form [name=inicio]', quarta); await pg.check('#sm-form [name=foco][value="Trabalho e dinheiro"]');
+    await pg.click('#sm-form .btn.primario'); await pg.waitForSelector('[name=longo]');
+    ok(await pg.evaluate(() => { const c = Dados.e.semanas.ciclos[0]; return new Date(c.inicio + 'T12:00:00Z').getUTCDay() === 1 && c.foco[0] === 'Trabalho e dinheiro'; }), 'etapa 1: início ajustado para segunda e área de foco');
+    await pg.fill('[name=longo]', 'A Seven atendendo 50 empresas em 3 estados'); await pg.fill('[name=porque]', 'Liberdade e impacto nas empresas da região'); await pg.fill('[name=tres]', '20 clientes e equipe de 6');
+    await pg.click('#sm-form .btn.primario'); await pg.waitForSelector('[name=mtexto]');
+    await pg.fill('[name=mtexto]', 'Clientes ativos de BPO'); await pg.fill('[name=mde]', '2'); await pg.fill('[name=mpara]', '6'); await pg.fill('[name=munid]', 'clientes');
+    await pg.click('#sm-form .btn.primario'); await pg.waitForSelector('.sm-meta-t');
+    // conta de trás para frente
+    await pg.click('[data-a=regressiva]'); await pg.fill('.modal [name=meta]', '30000'); await pg.fill('.modal [name=ticket]', '1500'); await pg.fill('.modal [name=conv]', '25'); await submit();
+    ok(await pg.inputValue('.sm-linha-t >> nth=0 >> [name=ttexto]') === 'Enviar 7 propostas por semana', 'conta de trás para frente: 20 vendas → 80 propostas → 7 por semana');
+    await pg.click('[data-a=add-tatica]'); const ult = pg.locator('.sm-linha-t').last(); await ult.locator('[name=ttexto]').fill('Montar lista com 40 empresas que vendem ao governo'); await ult.locator('[name=ttipo]').selectOption('unica'); await ult.locator('[name=tde]').fill('1'); await ult.locator('[name=thoras]').fill('3');
+    await pg.locator('.sm-linha-t >> nth=0 >> [name=thoras]').fill('4');
+    await pg.click('#sm-form .btn.primario'); await pg.waitForSelector('#sm-inds');
+    ok(await pg.evaluate(() => Dados.e.semanas.ciclos[0].taticas.length === 3), 'táticas salvas (inclui medir a taxa real)');
+    ok(await pg.locator('.sm-linha-i').count() === 2, 'indicadores propostos: resultado e antecedência');
+    await pg.fill('[name=horasDisponiveis]', '10'); await pg.check('[name=agenda]');
+    await pg.click('#sm-form .btn.primario'); await pg.waitForSelector('.sm-check');
+    ok(await pg.evaluate(() => Dados.e.agenda.tarefas.some(t => /Bloco estratégico/.test(t.titulo) && t.recorrencia)), 'blocos criados na Agenda como recorrentes');
+    await pg.fill('[name=custos]', 'Séries à noite'); await pg.fill('[name=parceiro]', 'Sócio'); await pg.fill('[name=rsr]', 'Segunda 8h');
+    await foto('semanas-checagem');
+    await pg.click('#sm-form .btn.primario'); await pg.waitForSelector('.sm-doc');
+    ok(/Meu Ano em 12 Semanas/.test(await pg.locator('.sm-doc h1').innerText()) && /Enviar 7 propostas por semana ⭐/.test(await pg.locator('.sm-doc').innerText()), 'plano no formato do método');
+    await pg.goto(url + '#/semanas'); await pg.waitForSelector('.sm-hero');
+    ok(/Semana \d+ de 12/.test(await pg.locator('.sm-sem b').innerText()), 'painel mostra a semana atual');
+    // semana 1: pontuar
+    const id = await pg.evaluate(() => Dados.e.semanas.ciclos[0].id);
+    await pg.goto(url + '#/semanas/semana/' + id + '/1'); await pg.waitForSelector('.sm-placar');
+    const n = await pg.locator('[data-feito]').count(); await pg.locator('[data-feito]').first().check(); await pg.waitForTimeout(100);
+    ok(new RegExp('1 de ' + n).test(await pg.locator('.sm-placar').innerText()), 'pontuação honesta da semana');
+    await pg.click('[data-a=pontuar]'); await pg.fill('[data-ind] >> nth=0', '3'); await pg.locator('[data-ind] >> nth=0').dispatchEvent('change');
+    ok(await pg.evaluate(() => { const c = Dados.e.semanas.ciclos[0]; return c.pontuadas[1] && Object.values(c.valores[1] || {}).includes(3); }), 'semana pontuada e indicador registrado');
+    ok(/Problema de execução|No caminho|sorte|Aguarde/.test(await pg.locator('.sm-semana').innerText()), 'diagnóstico exibido');
+    await foto('semanas-semana');
+    await pg.goto(url + '#/semanas/revisao/' + id); await pg.fill('[name=q0]', 'Comecei em 50% e subi'); await pg.click('#sm-rev .btn.primario');
+    await pg.click('[data-a=proximo]'); await pg.waitForSelector('[name=longo]');
+    ok(await pg.evaluate(() => Dados.e.semanas.ciclos.length === 2 && Dados.e.semanas.ciclos[1].visao.longo === Dados.e.semanas.ciclos[0].visao.longo), 'próximo ciclo parte da visão anterior');
+    await pg.goto(url + '#/semanas/ciclos'); ok(await pg.locator('.sm-ciclo').count() === 2, 'lista de ciclos');
+    await pg.click('.sm-ciclo:not(.ativo) [data-a=ativar]'); await pg.waitForSelector('.sm-hero'); await foto('semanas-painel');
   }
 };
 
