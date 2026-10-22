@@ -170,5 +170,80 @@
   }
   function norm2(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
 
-  return { CATEGORIAS_PADRAO: CATEGORIAS_PADRAO, addMeses: addMeses, addDias: addDias, mesDe: mesDe, mesFatura: mesFatura, fatura: fatura, limiteUsado: limiteUsado, saldoConta: saldoConta, gerarSerie: gerarSerie, doMes: doMes, resumo: resumo, porCategoria: porCategoria, orcamentos: orcamentos, dre: dre, analise: analise, lerOFX: lerOFX, lerExtratoCSV: lerExtratoCSV, sugerirCategoria: sugerirCategoria };
+
+  // ---------- gestão financeira (modelo Conta Azul) ----------
+  // Efeito no caixa de um lançamento (só os que passam por conta; cartão entra no pagamento da fatura).
+  function efeitoCaixa(l) {
+    const v = Number(l.valor) || 0;
+    if (l.tipo === 'receita' && !l.cartao) return v;
+    if (l.tipo === 'despesa' && !l.cartao) return -v;
+    if (l.tipo === 'pagamento-fatura') return -v;
+    if (l.tipo === 'ajuste') return v;
+    return 0;
+  }
+  // Fluxo de caixa diário projetado: saldo de hoje (efetivado) + previstos de cada dia. Atrasados entram no 1º dia.
+  function fluxoDiario(lancs, contas, inicio, dias) {
+    const ontem = addDias(inicio, -1);
+    let saldo = r2((contas || []).reduce(function (s, c) { return s + saldoConta(c, lancs, ontem); }, 0));
+    const abertoAntes = lancs.filter(function (l) { return !l.pago && l.data < inicio; });
+    const atrasadoEntrada = r2(abertoAntes.reduce(function (s, l) { const e = efeitoCaixa(l); return s + (e > 0 ? e : 0); }, 0));
+    const atrasadoSaida = r2(abertoAntes.reduce(function (s, l) { const e = efeitoCaixa(l); return s + (e < 0 ? -e : 0); }, 0));
+    const saldoInicial = saldo; const out = []; let minimo = null;
+    for (let i = 0; i < dias; i++) {
+      const d = addDias(inicio, i);
+      let ent = 0, sai = 0;
+      lancs.forEach(function (l) { if (l.data !== d) return; const e = efeitoCaixa(l); if (e > 0) ent += e; else sai -= e; });
+      if (i === 0) { ent += atrasadoEntrada; sai += atrasadoSaida; }
+      saldo = r2(saldo + ent - sai);
+      out.push({ data: d, entradas: r2(ent), saidas: r2(sai), saldo: saldo });
+      if (minimo == null || saldo < minimo.saldo) minimo = { data: d, saldo: saldo };
+    }
+    return { saldoInicial: saldoInicial, dias: out, minimo: minimo, primeiroNegativo: (out.find(function (x) { return x.saldo < 0; }) || null), atrasadoEntrada: atrasadoEntrada, atrasadoSaida: atrasadoSaida };
+  }
+  // Previsto × realizado por mês (regime de caixa).
+  function fluxoMensal(lancs, meses) {
+    return meses.map(function (m) {
+      const o = { mes: m, previstoEntradas: 0, previstoSaidas: 0, realizadoEntradas: 0, realizadoSaidas: 0 };
+      lancs.forEach(function (l) { if (mesDe(l.data) !== m) return; const e = efeitoCaixa(l); if (!e) return; if (e > 0) { o.previstoEntradas += e; if (l.pago) o.realizadoEntradas += e; } else { o.previstoSaidas -= e; if (l.pago) o.realizadoSaidas -= e; } });
+      Object.keys(o).forEach(function (k) { if (k !== 'mes') o[k] = r2(o[k]); });
+      o.previstoResultado = r2(o.previstoEntradas - o.previstoSaidas); o.realizadoResultado = r2(o.realizadoEntradas - o.realizadoSaidas);
+      return o;
+    });
+  }
+  // Contas em aberto por cliente/fornecedor, com faixas de atraso (aging).
+  function aging(lancs, hoje, tipo) {
+    const m = {};
+    lancs.forEach(function (l) {
+      if (l.pago || l.tipo !== tipo || l.cartao) return;
+      const k = l.contato || 'Sem contato';
+      const o = m[k] = m[k] || { contato: k, aVencer: 0, d30: 0, d60: 0, d90: 0, mais90: 0, total: 0, atrasado: 0, qtd: 0, maisAntigo: null };
+      const v = Number(l.valor) || 0; const atraso = Math.floor((new Date(hoje + 'T12:00:00') - new Date(l.data + 'T12:00:00')) / 864e5);
+      if (atraso <= 0) o.aVencer += v; else if (atraso <= 30) o.d30 += v; else if (atraso <= 60) o.d60 += v; else if (atraso <= 90) o.d90 += v; else o.mais90 += v;
+      if (atraso > 0) { o.atrasado += v; if (!o.maisAntigo || l.data < o.maisAntigo) o.maisAntigo = l.data; }
+      o.total += v; o.qtd++;
+    });
+    return Object.keys(m).map(function (k) { const o = m[k]; ['aVencer', 'd30', 'd60', 'd90', 'mais90', 'total', 'atrasado'].forEach(function (x) { o[x] = r2(o[x]); }); return o; }).sort(function (a, b) { return b.atrasado - a.atrasado || b.total - a.total; });
+  }
+  // Conciliação: para cada linha do extrato, o lançamento em aberto mais provável (mesmo sentido, mesmo valor, até `tolDias` de distância).
+  function conciliar(extrato, abertos, tolDias) {
+    tolDias = tolDias == null ? 5 : tolDias; const usados = {};
+    return extrato.map(function (x) {
+      let melhor = null, dist = Infinity;
+      abertos.forEach(function (l) {
+        if (usados[l.id] || l.tipo !== x.tipo || Math.abs((Number(l.valor) || 0) - x.valor) > 0.009) return;
+        const d = Math.abs((new Date(l.data + 'T12:00:00') - new Date(x.data + 'T12:00:00')) / 864e5);
+        if (d <= tolDias && d < dist) { melhor = l; dist = d; }
+      });
+      if (melhor) usados[melhor.id] = 1;
+      return { linha: x, lancamento: melhor, dias: melhor ? dist : null };
+    });
+  }
+  // DRE por centro de custo (ou por qualquer campo do lançamento).
+  function porCampo(lancs, campo) {
+    const m = {};
+    lancs.forEach(function (l) { if (l.tipo !== 'receita' && l.tipo !== 'despesa') return; const k = l[campo] || ''; const o = m[k] = m[k] || { chave: k, receitas: 0, despesas: 0 }; if (l.tipo === 'receita') o.receitas += Number(l.valor) || 0; else o.despesas += Number(l.valor) || 0; });
+    return Object.keys(m).map(function (k) { const o = m[k]; o.receitas = r2(o.receitas); o.despesas = r2(o.despesas); o.resultado = r2(o.receitas - o.despesas); return o; }).sort(function (a, b) { return b.receitas + b.despesas - a.receitas - a.despesas; });
+  }
+
+  return { efeitoCaixa: efeitoCaixa, fluxoDiario: fluxoDiario, fluxoMensal: fluxoMensal, aging: aging, conciliar: conciliar, porCampo: porCampo, CATEGORIAS_PADRAO: CATEGORIAS_PADRAO, addMeses: addMeses, addDias: addDias, mesDe: mesDe, mesFatura: mesFatura, fatura: fatura, limiteUsado: limiteUsado, saldoConta: saldoConta, gerarSerie: gerarSerie, doMes: doMes, resumo: resumo, porCategoria: porCategoria, orcamentos: orcamentos, dre: dre, analise: analise, lerOFX: lerOFX, lerExtratoCSV: lerExtratoCSV, sugerirCategoria: sugerirCategoria };
 });

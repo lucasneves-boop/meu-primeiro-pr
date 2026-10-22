@@ -76,3 +76,35 @@ test('importa extrato OFX e CSV', () => {
   assert.deepEqual(c.map(x => [x.data, x.valor, x.tipo]), [['2026-10-05', 123.45, 'despesa'], ['2026-10-06', 3000, 'receita']]);
   assert.equal(F.sugerirCategoria('PADARIA DO BAIRRO', [{ descricao: 'Padaria pão quente', categoria: 'ali' }]), 'ali');
 });
+
+test('modelo Conta Azul: fluxo de caixa, previsto × realizado, aging, conciliação e centros de custo', () => {
+  const F = require('../js/financas.js');
+  const contas = [{ id: 'c1', saldoInicial: 1000 }];
+  const L = [
+    { id: 'a', tipo: 'receita', valor: 500, data: '2026-10-01', conta: 'c1', pago: true, contato: 'Prefeitura A', centroCusto: 'BPO' },
+    { id: 'b', tipo: 'despesa', valor: 300, data: '2026-10-15', conta: 'c1', pago: false, contato: 'Fornecedor X', centroCusto: 'BPO' },            // atrasada em 22/10
+    { id: 'c', tipo: 'receita', valor: 2000, data: '2026-10-25', conta: 'c1', pago: false, contato: 'Prefeitura A', centroCusto: 'Licitações' },
+    { id: 'd', tipo: 'despesa', valor: 2500, data: '2026-10-23', conta: 'c1', pago: false, contato: 'Fornecedor Y' },
+    { id: 'e', tipo: 'receita', valor: 800, data: '2026-07-01', conta: 'c1', pago: false, contato: 'Prefeitura B' },                            // 113 dias de atraso
+    { id: 'f', tipo: 'despesa', valor: 99, data: '2026-10-20', cartao: 'k1', pago: false }                                                        // cartão: fora do caixa
+  ];
+  const fx = F.fluxoDiario(L, contas, '2026-10-22', 10);
+  assert.equal(fx.saldoInicial, 1500);
+  assert.equal(fx.atrasadoEntrada, 800); assert.equal(fx.atrasadoSaida, 300);
+  assert.equal(fx.dias[0].saldo, 2000);              // 1500 + 800 − 300
+  assert.equal(fx.dias[1].saldo, -500);              // − 2500 em 23/10
+  assert.equal(fx.primeiroNegativo.data, '2026-10-23'); assert.equal(fx.minimo.saldo, -500);
+  assert.equal(fx.dias[3].saldo, 1500);              // + 2000 em 25/10
+  const m = F.fluxoMensal(L, ['2026-10']);
+  assert.equal(m[0].previstoEntradas, 2500); assert.equal(m[0].realizadoEntradas, 500); assert.equal(m[0].previstoSaidas, 2800); assert.equal(m[0].realizadoSaidas, 0);
+  const ag = F.aging(L, '2026-10-22', 'receita');
+  const b = ag.find(x => x.contato === 'Prefeitura B'); assert.equal(b.mais90, 800); assert.equal(b.atrasado, 800);
+  const a = ag.find(x => x.contato === 'Prefeitura A'); assert.equal(a.aVencer, 2000); assert.equal(a.atrasado, 0);
+  assert.equal(ag[0].contato, 'Prefeitura B');
+  const cz = F.conciliar([{ tipo: 'despesa', valor: 300, data: '2026-10-17' }, { tipo: 'receita', valor: 2000, data: '2026-11-10' }, { tipo: 'despesa', valor: 300, data: '2026-10-16' }], L.filter(l => !l.pago));
+  assert.equal(cz[0].lancamento.id, 'b'); assert.equal(cz[0].dias, 2);
+  assert.equal(cz[1].lancamento, null);  // fora da tolerância de 5 dias
+  assert.equal(cz[2].lancamento, null);  // 'b' já usado
+  const cc = F.porCampo(L, 'centroCusto');
+  assert.equal(cc.find(x => x.chave === 'BPO').resultado, 200);
+});

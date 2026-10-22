@@ -2201,3 +2201,15 @@ main#conteudo { flex: 1; }
 .pp-tab td.acoes .btn, .pp-tab td.acoes .icone { vertical-align: middle; }
 .pp-modo.pp-pilha { width: 118px; }
 .pp-final-item { border-left: 4px solid var(--ouro); } .pp-final-item b { display: block; font-size: 22px; margin: 2px 0; } .pp-final-item small { color: var(--mudo); }
+
+/* Finanças: fluxo de caixa, clientes e fornecedores, conciliação */
+.f-fluxo-svg { width: 100%; height: auto; display: block; }
+.f-fluxo-svg .f-pos { fill: #1baf7a; } .f-fluxo-svg .f-neg { fill: #e34948; }
+.f-kpis small { display: block; font-size: 11px; color: var(--mudo); }
+.f-alerta { border-color: var(--perigo); background: var(--perigo-claro); color: var(--texto); }
+tr.f-atual td { background: var(--ouro-claro); }
+/* Itens de grade nunca empurram a página para os lados (tabelas rolam dentro do cartão). */
+.cartoes > *, .kpis > *, .linha > * { min-width: 0; }
+@media (max-width: 700px) { .cartoes, .cartoes.largos { grid-template-columns: minmax(0, 1fr); } }
+.cartao { min-width: 0; }
+.nowrap { white-space: nowrap; }
