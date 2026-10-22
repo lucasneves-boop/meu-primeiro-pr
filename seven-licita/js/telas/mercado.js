@@ -127,10 +127,46 @@
     } catch (err) { aviso(err.message, 'erro'); return; }
     const regs = Nucleo.lerPlanilhaCapag(linhas);
     if (!regs.length) { aviso('Não achei as colunas de município e CAPAG na planilha. Confira se é a planilha de CAPAG dos municípios do Tesouro.', 'erro'); return; }
-    const capag = e().config.capag = {};
-    regs.forEach(function (r) { const v = { municipio: r.municipio, uf: r.uf, ibge: r.ibge, nota: r.nota, ano: r.ano, fonte: f.name }; capag[r.ibge || Nucleo.chaveCapag(r.municipio, r.uf)] = v; if (r.ibge && r.uf) capag[Nucleo.chaveCapag(r.municipio, r.uf)] = v; });
+    const semNome = await completarNomes(regs);
+    e().config.capag = indexarCapag(regs.map(function (r) { return { municipio: r.municipio, uf: r.uf, ibge: r.ibge, nota: r.nota, ano: r.ano, fonte: f.name }; }));
     e().config.capagImportadaEm = new Date().toISOString(); e().config.capagArquivo = f.name;
-    Dados.salvar(); aviso(regs.length + ' municípios importados da planilha da CAPAG.'); App.redesenhar();
+    Dados.salvar(); aviso(regs.length + ' municípios importados da planilha da CAPAG.' + (semNome ? ' ' + semNome + ' sem nome identificado (código IBGE não encontrado).' : ''), semNome ? 'erro' : ''); App.redesenhar();
+  }
+
+  // Tabela oficial do IBGE (código → nome e UF), carregada só quando a CAPAG precisa.
+  let ibgeP = null;
+  function carregarIBGE() {
+    if (self.MunicipiosIBGE) return Promise.resolve(self.MunicipiosIBGE);
+    return ibgeP = ibgeP || new Promise(function (ok, erro) { const s = document.createElement('script'); s.src = 'js/municipios-ibge.js'; s.onload = function () { ok(self.MunicipiosIBGE); }; s.onerror = function () { ibgeP = null; erro(new Error('Tabela de municípios do IBGE indisponível.')); }; document.head.appendChild(s); });
+  }
+  function semNomeValido(r) { return !r.municipio || /^\s*\d[\d.\s]*$/.test(r.municipio); }
+  // Preenche o nome (e a UF) de quem veio só com o código IBGE. Devolve quantos continuaram sem nome.
+  async function completarNomes(regs) {
+    if (!regs.some(semNomeValido)) return 0;
+    let T = null; try { T = await carregarIBGE(); } catch (x) { /* segue sem a tabela */ }
+    let falta = 0;
+    regs.forEach(function (r) {
+      if (!semNomeValido(r)) return;
+      const achado = Nucleo.municipioPorIbge(T, r.ibge || r.municipio);
+      if (achado) { r.municipio = achado.nome; r.uf = r.uf || achado.uf; r.ibge = achado.ibge; } else falta++;
+    });
+    return falta;
+  }
+  // A mesma nota fica acessível pelo código IBGE e pelo nome+UF (para casar com os avisos do PNCP).
+  function indexarCapag(lista) {
+    const capag = {};
+    lista.forEach(function (v) { if (v.ibge) capag[v.ibge] = v; if (v.municipio && !semNomeValido(v)) capag[Nucleo.chaveCapag(v.municipio, v.uf)] = v; else if (!v.ibge) capag[Nucleo.chaveCapag(v.municipio, v.uf)] = v; });
+    return capag;
+  }
+  // Notas importadas antes desta correção podem ter só o número no lugar do nome: corrige uma vez, ao abrir a CAPAG.
+  let corrigindo = false;
+  async function corrigirNomesSalvos() {
+    if (corrigindo) return; const todos = registrosCapag(); if (!todos.some(semNomeValido)) return;
+    corrigindo = true;
+    const lista = todos.map(function (r) { const v = Object.assign({}, r); delete v.chave; if (/^\d{6,7}$/.test(String(v.municipio || '').trim()) && !v.ibge) v.ibge = String(v.municipio).trim(); return v; });
+    await completarNomes(lista);
+    e().config.capag = indexarCapag(lista); Dados.salvar(); corrigindo = false;
+    if (App.rota().tela === 'mercado' && App.rota().sub === 'capag') App.redesenhar();
   }
 
   // Lista única (a importação guarda a mesma nota por IBGE e por nome, para casar com os avisos).
@@ -166,6 +202,7 @@
 
   function telaCapag(el) {
     const todos = registrosCapag(); const f = filtroCapag;
+    if (todos.some(semNomeValido)) corrigirNomesSalvos();
     const lista = todos.filter(function (r) { return (!f.uf || r.uf === f.uf) && (!f.nota || r.nota.replace('+', '') === f.nota) && (!f.texto || Nucleo.normalizar(r.municipio).indexOf(Nucleo.normalizar(f.texto)) >= 0); });
     const cont = {}; todos.forEach(function (r) { const k = r.nota.replace('+', ''); cont[k] = (cont[k] || 0) + 1; });
     const ufs = todos.map(function (r) { return r.uf; }).filter(function (x, i, l) { return x && l.indexOf(x) === i; }).sort();

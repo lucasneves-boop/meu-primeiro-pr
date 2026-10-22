@@ -100,3 +100,32 @@ test('planilha da CAPAG: acha cabeçalho e colunas em qualquer ordem', () => {
   assert.equal(N.chaveCapag('Catalão', 'go'), 'catalao-GO');
   assert.deepEqual(N.lerPlanilhaCapag([['x', 'y'], ['1', '2']]), []);
 });
+
+test('planilha da CAPAG: coluna de código com "Município" no nome não vira o nome do município', () => {
+  const r = N.lerPlanilhaCapag([
+    ['Cód. Município IBGE', 'Município', 'UF', 'CAPAG'],
+    ['5205109', 'Catalão', 'GO', 'A'],
+    ['5300108', 'Brasília', 'DF', 'B']
+  ]);
+  assert.deepEqual(r[0], { municipio: 'Catalão', uf: 'GO', ibge: '5205109', nota: 'A', ano: '' });
+  const r2 = N.lerPlanilhaCapag([['Código do Município', 'Nome', 'Classificação CAPAG'], ['5205109', 'Catalão', 'A']]);
+  assert.equal(r2[0].municipio, 'Catalão'); assert.equal(r2[0].ibge, '5205109');
+});
+
+test('planilha da CAPAG: "Instituição" no formato do Tesouro e planilha só com código', () => {
+  const r = N.lerPlanilhaCapag([['Instituição', 'Cod.IBGE', 'População', 'Indicador 1', 'Nota 1', 'CAPAG'], ['Prefeitura Municipal de Catalão - GO', '5205109', '114427', '0,5', 'A', 'A'], ['Município de Anápolis/GO', '5201108', '398869', '0,6', 'B', 'B+']]);
+  assert.deepEqual(r.map(x => [x.municipio, x.uf, x.ibge, x.nota]), [['Catalão', 'GO', '5205109', 'A'], ['Anápolis', 'GO', '5201108', 'B+']]);
+  const so = N.lerPlanilhaCapag([['Município', 'UF', 'CAPAG'], ['5205109', 'GO', 'A']]);
+  assert.deepEqual([so[0].municipio, so[0].ibge], ['', '5205109']);
+  assert.deepEqual(N.limparNomeMunicipio('Prefeitura de São Paulo (SP)'), { nome: 'São Paulo', uf: 'SP' });
+  assert.deepEqual(N.limparNomeMunicipio('Pau-Brasil'), { nome: 'Pau-Brasil', uf: '' });
+  const T = { 5205109: ['Catalão', 'GO'] };
+  assert.deepEqual(N.municipioPorIbge(T, '5205109'), { nome: 'Catalão', uf: 'GO', ibge: '5205109' });
+  assert.deepEqual(N.municipioPorIbge(T, '520510'), { nome: 'Catalão', uf: 'GO', ibge: '5205109' });
+  assert.equal(N.municipioPorIbge(T, '999'), null);
+});
+
+test('planilha da CAPAG só com a coluna de código', () => {
+  const r = N.lerPlanilhaCapag([['Código do Município', 'Classificação CAPAG'], ['5205109', 'A']]);
+  assert.deepEqual([r[0].municipio, r[0].ibge, r[0].nota], ['', '5205109', 'A']);
+});

@@ -82,24 +82,57 @@
     return '';
   }
   function chaveCapag(municipio, uf) { return normalizar(municipio) + '-' + String(uf || '').toUpperCase(); }
+  // "Prefeitura Municipal de Catalão - GO" → { nome: "Catalão", uf: "GO" }
+  function limparNomeMunicipio(t) {
+    let s = String(t || '').replace(/\s+/g, ' ').trim(); let uf = '';
+    const m = s.match(/^(.*?)\s*(?:[-–\/]\s*|\()([A-Z]{2})\)?$/); if (m && UFS_BR.indexOf(m[2]) >= 0) { s = m[1]; uf = m[2]; }
+    s = s.replace(/^(?:prefeitura(?: municipal)?|munic[ií]pio|c[aâ]mara municipal)\s+(?:de|do|da|dos|das)\s+/i, '').trim();
+    return { nome: s, uf: uf };
+  }
+  const UFS_BR = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
   function lerPlanilhaCapag(linhas) {
-    const achar = function (cab, res) { for (const re of res) { const i = cab.findIndex(function (c) { return re.test(c); }); if (i >= 0) return i; } return -1; };
+    const achar = function (cab, res, fora) { for (const re of res) { const i = cab.findIndex(function (c, k) { return re.test(c) && !(fora && fora(c, k)); }); if (i >= 0) return i; } return -1; };
+    const ehCodigo = function (c) { return /\bcod|codigo|ibge|^id\b|\bid$|cnpj/.test(c); };
+    const numerico = function (v) { return /^\s*\d[\d.\s]*\s*$/.test(String(v || '')); };
     let h = -1, col = null;
     for (let i = 0; i < Math.min(linhas.length, 30) && h < 0; i++) {
-      const cab = linhas[i].map(normalizar);
-      const nota = achar(cab, [/^capag$/, /^classificacao capag/, /capag/, /classificacao/, /^nota$/]);
-      const nome = achar(cab, [/^municipio$/, /^nome do municipio/, /municipio/, /^ente$/, /nome/]);
-      if (nota >= 0 && nome >= 0) { h = i; col = { nota: nota, nome: nome, uf: achar(cab, [/^uf$/, /sigla uf/, /^estado$/, /\buf\b/]), ibge: achar(cab, [/ibge/, /^cod/, /codigo/]), ano: achar(cab, [/^ano/, /exercicio/, /referencia/]) }; }
+      const cab = (linhas[i] || []).map(normalizar);
+      const nota = achar(cab, [/^capag$/, /^classificacao capag/, /capag/, /classificacao/, /^nota$/], ehCodigo);
+      // a coluna do nome nunca é a de código (ex.: "Código do Município"), mesmo que tenha "município" no cabeçalho
+      const nomes = [/^municipio$/, /^nome do municipio/, /nome municipio/, /^municipio\b/, /municipio/, /^ente$/, /instituicao/, /^nome$/, /nome/];
+      let nome = achar(cab, nomes, function (c, k) { return ehCodigo(c) || k === nota; });
+      // planilha só com o código IBGE: o nome vem depois, pela tabela do IBGE
+      if (nota >= 0 && nome < 0) nome = achar(cab, [/ibge/, /municipio/, /^cod/, /codigo/], function (c, k) { return k === nota; });
+      if (nota >= 0 && nome >= 0) {
+        // conferir pelo conteúdo: se a coluna escolhida só tem números, procurar outra com texto
+        const amostra = linhas.slice(i + 1, i + 40).filter(function (l) { return l && l[nome] !== '' && l[nome] != null; });
+        if (amostra.length && amostra.filter(function (l) { return numerico(l[nome]); }).length > amostra.length / 2) {
+          const alt = cab.findIndex(function (c, k) { return k !== nome && k !== nota && !ehCodigo(c) && nomes.some(function (re) { return re.test(c); }) && amostra.some(function (l) { return l[k] && !numerico(l[k]); }); });
+          if (alt >= 0) nome = alt;
+        }
+        h = i; col = { nota: nota, nome: nome, uf: achar(cab, [/^uf$/, /sigla uf/, /^estado$/, /\buf\b/], function (c, k) { return k === nome; }), ibge: achar(cab, [/ibge/, /^cod/, /codigo/], function (c, k) { return k === nota; }), ano: achar(cab, [/^ano/, /exercicio/, /referencia/]) };
+      }
     }
     if (h < 0) return [];
     const out = [];
     linhas.slice(h + 1).forEach(function (l) {
-      const nota = normalizarNotaCapag(l[col.nota]); const nome = String(l[col.nome] || '').trim();
-      if (!nome || !nota) return;
-      const ibge = col.ibge >= 0 ? String(l[col.ibge] || '').replace(/\D/g, '') : '';
-      out.push({ municipio: nome, uf: col.uf >= 0 ? String(l[col.uf] || '').trim().toUpperCase().slice(0, 2) : '', ibge: ibge.length >= 6 ? ibge : '', nota: nota, ano: col.ano >= 0 ? String(l[col.ano] || '').trim() : '' });
+      if (!l) return;
+      const nota = normalizarNotaCapag(l[col.nota]); const bruto = String(l[col.nome] || '').trim();
+      if (!bruto || !nota) return;
+      let ibge = col.ibge >= 0 ? String(l[col.ibge] || '').replace(/\D/g, '') : '';
+      const limpo = numerico(bruto) ? { nome: '', uf: '' } : limparNomeMunicipio(bruto);
+      if (!ibge && numerico(bruto)) ibge = bruto.replace(/\D/g, '');
+      const uf = (col.uf >= 0 ? String(l[col.uf] || '').trim().toUpperCase().slice(0, 2) : '') || limpo.uf;
+      out.push({ municipio: limpo.nome, uf: uf, ibge: ibge.length >= 6 ? ibge : '', nota: nota, ano: col.ano >= 0 ? String(l[col.ano] || '').trim() : '' });
     });
     return out;
+  }
+  // Nome e UF pelo código IBGE (7 dígitos, ou 6 sem o dígito verificador), usando a tabela MunicipiosIBGE.
+  function municipioPorIbge(tabela, codigo) {
+    const c = String(codigo || '').replace(/\D/g, ''); if (!tabela || c.length < 6) return null;
+    if (tabela[c]) return { nome: tabela[c][0], uf: tabela[c][1], ibge: c };
+    if (c.length === 6) { for (let d = 0; d <= 9; d++) { const k = c + d; if (tabela[k]) return { nome: tabela[k][0], uf: tabela[k][1], ibge: k }; } }
+    return null;
   }
 
   // ---------- números ----------
@@ -404,6 +437,6 @@
     estatisticas: estatisticas, ranking: ranking, concentracao: concentracao, paraCSV: paraCSV, lerCSV: lerCSV,
     precoSugerido: precoSugerido, reducaoEfetiva: reducaoEfetiva, decidirLance: decidirLance,
     convocadosEtapaFechada: convocadosEtapaFechada, criarSimulacao: criarSimulacao, passoSimulacao: passoSimulacao,
-    posicaoAtual: posicaoAtual, destacar: destacar, lerPlanilhaCapag: lerPlanilhaCapag, normalizarNotaCapag: normalizarNotaCapag, chaveCapag: chaveCapag
+    posicaoAtual: posicaoAtual, destacar: destacar, lerPlanilhaCapag: lerPlanilhaCapag, limparNomeMunicipio: limparNomeMunicipio, municipioPorIbge: municipioPorIbge, normalizarNotaCapag: normalizarNotaCapag, chaveCapag: chaveCapag
   };
 });
