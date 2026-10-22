@@ -178,7 +178,7 @@
 
   async function configurar() {
     const a = e(); const p = a.pref;
-    const r = await modal({ titulo: 'Ajustes da Agenda', corpo: '<fieldset><legend>Foco (Pomodoro)</legend><div class="linha">' + campo('Foco (min)', '<input name="pomo" type="number" min="5" max="120" value="' + p.pomo + '">') + campo('Pausa curta', '<input name="pausa" type="number" min="1" max="30" value="' + p.pausa + '">') + campo('Pausa longa', '<input name="longa" type="number" min="5" max="60" value="' + p.longa + '">') + campo('Pausa longa a cada', '<input name="ciclo" type="number" min="2" max="8" value="' + p.ciclo + '">') + '</div></fieldset>' +
+    const r = await modal({ titulo: 'Ajustes da Seven Task', corpo: '<fieldset><legend>Foco (Pomodoro)</legend><div class="linha">' + campo('Foco (min)', '<input name="pomo" type="number" min="5" max="120" value="' + p.pomo + '">') + campo('Pausa curta', '<input name="pausa" type="number" min="1" max="30" value="' + p.pausa + '">') + campo('Pausa longa', '<input name="longa" type="number" min="5" max="60" value="' + p.longa + '">') + campo('Pausa longa a cada', '<input name="ciclo" type="number" min="2" max="8" value="' + p.ciclo + '">') + '</div></fieldset>' +
       '<fieldset><legend>Calendário</legend><label class="check"><input type="checkbox" name="licita"' + (p.licita ? ' checked' : '') + '> Mostrar sessões e prazos de cotação e os prazos do Seven Hub</label>' + campo('Semana começa no', '<select name="ini">' + opcoes([{ v: 0, t: 'Domingo' }, { v: 1, t: 'Segunda' }], p.inicioSemana) + '</select>') + '</fieldset>' +
       '<fieldset><legend>Lembretes</legend><p class="mini">Notificações do navegador: <b>' + ('Notification' in window ? { granted: 'ativadas', denied: 'bloqueadas no navegador', default: 'não ativadas' }[Notification.permission] : 'indisponíveis') + '</b>. Os lembretes funcionam com o sistema aberto.</p>' + ('Notification' in window && Notification.permission === 'default' ? '<button type="button" class="btn" data-notif>Ativar notificações</button>' : '') + '</fieldset>' +
       '<fieldset><legend>Exportar / importar</legend><div class="grupo-botoes"><button type="button" class="btn" data-ics>Exportar .ics (Google, Outlook, celular)</button><button type="button" class="btn" data-imp-ics>Importar .ics</button></div></fieldset>',
@@ -348,7 +348,7 @@
   });
 
   Telas.agenda = {
-    titulo: 'Agenda',
+    titulo: 'Seven Task',
     render: function (el, sub, param) {
       e();
       const vista = sub || 'tarefas';

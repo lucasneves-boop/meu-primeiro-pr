@@ -97,7 +97,7 @@
   function onboarding(c, n) {
     Dados.e.empresas = Dados.e.empresas || []; if (!Dados.e.empresas.some(function (x) { return x.cnpj === c.cnpj; })) Dados.e.empresas.push({ id: Dados.id('emp'), razao: c.razao, fantasia: c.fantasia, cnpj: c.cnpj, porte: /EPP/i.test(c.porte) ? 'EPP' : /ME|MICRO/i.test(c.porte) ? 'ME' : 'Demais', uf: c.uf, municipio: c.municipio, ramo: c.oQueVende || c.segmento, contato: decisor(c).nome || '' });
     if (Telas.agenda && Telas.agenda.criar) ['Enviar contrato e lista de documentos de habilitação para ' + nomeConta(c) + ' amanhã !alta', 'Cadastrar ' + nomeConta(c) + ' nos portais e criar perfis de busca em 3 dias', 'Primeira disputa de ' + nomeConta(c) + ' em 7 dias !alta'].forEach(function (t) { Telas.agenda.criar(t + ' #onboarding'); });
-    linhaTempo(c, 'nota', 'Cliente cadastrado e onboarding criado na Agenda.'); aviso('Cliente cadastrado e 3 tarefas de onboarding criadas na Agenda.');
+    linhaTempo(c, 'nota', 'Cliente cadastrado e onboarding criado na Seven Task.'); aviso('Cliente cadastrado e 3 tarefas de onboarding criadas na Agenda.');
   }
   function aplicarCadencia(c, n, chave, inicio) { C.gerarCadencia(chave, inicio || hoje()).forEach(function (a) { e().atividades.push(Object.assign({ id: Dados.id('atv'), contaId: c.id, negocioId: n ? n.id : null }, a)); }); linhaTempo(c, 'cadencia', 'Cadência aplicada: ' + C.CADENCIAS[chave].nome + '.'); salvar(); }
 

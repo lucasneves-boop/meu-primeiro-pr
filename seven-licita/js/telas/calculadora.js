@@ -150,7 +150,7 @@
   }
 
   Telas.calculadora = {
-    titulo: 'Calculadora',
+    titulo: 'Seven Calc',
     render: function (el, sub) {
       sub = sub || 'cientifica';
       const favs = Dados.e.config.calcFavoritas || [];

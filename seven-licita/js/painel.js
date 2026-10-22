@@ -9,10 +9,10 @@
   const CATALOGO = [
     { id: 'kpis', t: 'Indicadores do dia', g: 'Licitações', tam: 'g', d: 'Avisos novos, propostas, disputas, prazos, documentos e pendências.' },
     { id: 'sessoes', t: 'Próximas sessões', g: 'Licitações', tam: 'm', d: 'Sessões de avisos favoritos e prazos de proposta.' },
-    { id: 'prazos', t: 'Prazos do pregoeiro', g: 'Licitações', tam: 'm', d: 'Prazos abertos no Monitorar, do mais urgente.' },
+    { id: 'prazos', t: 'Prazos do pregoeiro', g: 'Licitações', tam: 'm', d: 'Prazos abertos no Seven Watch, do mais urgente.' },
     { id: 'pendencias', t: 'Pendências do Quadro', g: 'Licitações', tam: 'm', d: 'Cartões e checklists atrasados ou vencendo.' },
     { id: 'propostas', t: 'Propostas por situação', g: 'Licitações', tam: 'm', d: 'Rascunho, pronta, enviada, ganha e não vencida.' },
-    { id: 'monitor', t: 'Licitações acompanhadas', g: 'Licitações', tam: 'p', d: 'Processos no Monitorar por situação.' },
+    { id: 'monitor', t: 'Licitações acompanhadas', g: 'Licitações', tam: 'p', d: 'Processos no Seven Watch por situação.' },
     { id: 'quadro', t: 'Funil das licitações', g: 'Licitações', tam: 'm', d: 'Cartões em cada lista do quadro de licitações.' },
     { id: 'documentos', t: 'Documentos de habilitação', g: 'Licitações', tam: 'p', d: 'Válidos, vencendo e vencidos.' },
     { id: 'pncp', t: 'Publicadas hoje no PNCP', g: 'Licitações', tam: 'm', d: 'Licitações do dia por faixa de valor (consulta ao PNCP).' },
@@ -28,7 +28,7 @@
     { id: 'nf-faturamento', t: 'Faturamento (notas fiscais)', g: 'Financeiro', tam: 'm', d: 'Notas de saída autorizadas, últimos 12 meses.' },
     { id: 'loja', t: 'Pedidos da Loja', g: 'Financeiro', tam: 'p', d: 'Pedidos por mês nos últimos 6 meses.' },
     { id: 'agenda', t: 'Agenda da semana', g: 'Gestão', tam: 'm', d: 'Tarefas nos próximos 7 dias e atrasadas.' },
-    { id: 'semanas', t: '12 Semanas', g: 'Gestão', tam: 'm', d: 'Execução semanal do ciclo ativo (linha dos 85%).' },
+    { id: 'semanas', t: 'Seven 12S', g: 'Gestão', tam: 'm', d: 'Execução semanal do ciclo ativo (linha dos 85%).' },
     { id: 'atalhos', t: 'Atalhos', g: 'Gestão', tam: 'p', d: 'Acesso rápido às telas mais usadas.' }
   ];
   const PADRAO = ['kpis', 'sessoes', 'prazos', 'com-funil', 'fin-fluxo', 'propostas', 'documentos', 'agenda', 'pendencias', 'com-ganhos', 'nf-faturamento', 'atalhos'];

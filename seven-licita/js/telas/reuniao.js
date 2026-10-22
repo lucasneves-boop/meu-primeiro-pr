@@ -1,5 +1,5 @@
-/* Reuniões: videochamadas da equipe estilo Google Meet, dentro da Plêiade.
-   WebRTC em malha (cada participante conecta com os demais); a sinalização passa pelo mesmo Firebase da Plêiade em /chamadas/<código>. */
+/* Reuniões: videochamadas da equipe estilo Google Meet, dentro da Seven Plêiades.
+   WebRTC em malha (cada participante conecta com os demais); a sinalização passa pelo mesmo Firebase da Seven Plêiades em /chamadas/<código>. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -253,7 +253,7 @@
     if (call.painel === 'enquetes') { const f = box.querySelector('#rn-enq-f'); const rasc = f ? Array.from(f.elements).map(function (x) { return x.value; }) : null; const foco = f && f.contains(document.activeElement) ? document.activeElement.name : null; box.innerHTML = painelEnquetes(); const nf = box.querySelector('#rn-enq-f'); if (rasc) Array.from(nf.elements).forEach(function (x, i) { if (rasc[i] != null && x.name) x.value = rasc[i]; }); if (foco) nf.elements[foco].focus(); }
     if (call.painel === 'perguntas') { const f = box.querySelector('#rn-per-f'); const rasc = f ? f.t.value : ''; const foco = f && document.activeElement === f.t; box.innerHTML = painelPerguntas(); const nf = box.querySelector('#rn-per-f'); nf.t.value = rasc; if (foco) nf.t.focus(); }
     if (call.painel === 'info') {
-      box.innerHTML = '<header><h3>Detalhes da reunião</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header><p><b>' + esc(s.nome || 'Reunião') + '</b></p><p class="mini">Informações para participar</p><p class="rn-link">' + esc(linkSala(call.sid)) + '</p><button class="btn mini" data-rn="copiar">📋 Copiar informações</button><p class="mini mudo">Código: <b>' + esc(call.sid) + '</b>. Quem entra precisa estar na Plêiade da equipe (mesmo servidor).</p>';
+      box.innerHTML = '<header><h3>Detalhes da reunião</h3><button class="icone" data-rn="fechar-painel" aria-label="Fechar">×</button></header><p><b>' + esc(s.nome || 'Reunião') + '</b></p><p class="mini">Informações para participar</p><p class="rn-link">' + esc(linkSala(call.sid)) + '</p><button class="btn mini" data-rn="copiar">📋 Copiar informações</button><p class="mini mudo">Código: <b>' + esc(call.sid) + '</b>. Quem entra precisa estar na Seven Plêiades da equipe (mesmo servidor).</p>';
     }
   }
 
@@ -430,7 +430,7 @@
     const vivas = lista.filter(function (s) { return C.ativos(s).length; }).sort(function (a, b) { return b.criadaEm - a.criadaEm; });
     const recentes = lista.filter(function (s) { return !C.ativos(s).length && Date.now() - s.criadaEm < 7 * 864e5; }).sort(function (a, b) { return b.criadaEm - a.criadaEm; }).slice(0, 8);
     const c = cfgRede();
-    el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas para a equipe Seven</h1><p class="mudo">Reúna a equipe em segundos, direto na Plêiade: vídeo, áudio, apresentação de tela e chat.</p>' +
+    el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas para a equipe Seven</h1><p class="mudo">Reúna a equipe em segundos, direto na Seven Plêiades: vídeo, áudio, apresentação de tela e chat.</p>' +
       '<div class="rn-home-ac"><button class="btn primario" data-h="nova">📹 Nova reunião</button><form id="rn-cod" class="rn-cod"><input name="c" placeholder="Digite um código ou link" aria-label="Código da reunião"><button class="btn fantasma">Participar</button></form></div>' +
       (call ? '<p class="rn-ao-vivo">Você está numa chamada. <a href="#/reuniao/' + esc(call.sid) + '">Voltar para a chamada</a></p>' : '') +
       '<h3>Acontecendo agora</h3>' + (vivas.length ? vivas.map(function (s) { const at = C.ativos(s); return '<a class="rn-item" href="#/reuniao/' + esc(s.id) + '"><span class="rn-item-ic ao-vivo">●</span><div><b>' + esc(s.nome || 'Reunião') + '</b><small>' + at.length + ' na chamada · ' + at.map(function (u) { return esc(nomeDe(u).split(' ')[0]); }).join(', ') + (s.canal ? ' · #' + esc(api().nomeCanal(s.canal)) : '') + '</small></div><span class="btn mini primario">Participar</span></a>'; }).join('') : '<p class="mudo mini">Nenhuma chamada ativa.</p>') +
@@ -458,7 +458,7 @@
   window.addEventListener('hashchange', function () { pilula(); if (previa && !/^#\/reuniao\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(location.hash)) { pararStream(previa); previa = null; } });
 
   Telas.reuniao = {
-    titulo: 'Reuniões',
+    titulo: 'Seven Sync',
     criar: criar,
     atual: function () { return call && call.sid; },
     sair: sair,
@@ -466,8 +466,8 @@
       const pl = Telas.pleiade;
       if (!pl._t.iniciado) pl._t.iniciar();
       const cfgP = pl.api.cfg();
-      if (!(cfgP.modo === 'firebase' && cfgP.url)) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas da equipe</h1><p>As chamadas usam o servidor da equipe configurado na Plêiade (modo equipe), que faz a ponte entre os computadores.</p><a class="btn primario" href="#/pleiade">Configurar a Plêiade</a></div></div>'; return; }
-      if (!eu()) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas da equipe</h1><p>Entre na Plêiade primeiro para ter seu perfil na equipe.</p><a class="btn primario" href="#/pleiade">Abrir a Plêiade</a></div></div>'; return; }
+      if (!(cfgP.modo === 'firebase' && cfgP.url)) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas da equipe</h1><p>As chamadas usam o servidor da equipe configurado na Seven Plêiades (modo equipe), que faz a ponte entre os computadores.</p><a class="btn primario" href="#/pleiade">Configurar a Seven Plêiades</a></div></div>'; return; }
+      if (!eu()) { el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Videochamadas da equipe</h1><p>Entre na Seven Plêiades primeiro para ter seu perfil na equipe.</p><a class="btn primario" href="#/pleiade">Abrir a Seven Plêiades</a></div></div>'; return; }
       if (!pl._t.conectado && !Object.keys(pl.api.arv()).length) { el.innerHTML = '<div class="rn-home"><p class="mudo">Conectando ao servidor da equipe…</p></div>'; const tentar = function () { if (/^#\/reuniao/.test(location.hash)) App.redesenhar(); }; pl._t.ouvintes.push(function f() { pl._t.ouvintes.splice(pl._t.ouvintes.indexOf(f), 1); setTimeout(tentar, 50); }); return; }
       if (sub && C.codigoValido(sub)) {
         if (param === 'saiu') { el.innerHTML = '<div class="rn-home rn-saiu"><h2>Você saiu da reunião</h2><div class="grupo-botoes"><a class="btn" href="#/reuniao/' + esc(sub) + '">Participar novamente</a><a class="btn primario" href="#/reuniao">Voltar à tela inicial</a></div></div>'; return; }

@@ -802,7 +802,7 @@
   window.addEventListener('hashchange', function () { if (!/^#\/design\/editar\//.test(location.hash) && ed) { if (D.salvarVersao(ed.d, '', true)) Dados.salvar(); ed = null; } });
 
   Telas.design = {
-    titulo: 'Design',
+    titulo: 'Seven Design',
     render: function (el, sub, param) { if (sub === 'editar') return telaEditor(el, param); ed = null; telaInicio(el); },
     _renderizar: renderizar
   };

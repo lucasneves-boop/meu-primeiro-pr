@@ -237,14 +237,14 @@
     const r = await modal({ titulo: 'Opções da anotação', botao: 'Aplicar', largo: true,
       corpo: '<div class="linha">' + campo('Fundo da página', '<select name="fundo">' + opcoes(FUNDOS, n.fundo || 'liso') + '</select>') + campo('Pasta', '<select name="pasta"><option value="">— Sem pasta —</option>' + opcoes(e().pastas.map(function (p) { return { v: p.id, t: p.nome }; }), n.pasta || '') + '</select>') + '</div>' +
         '<fieldset><legend>Cor da anotação</legend><div class="an-cores">' + A.CORES.map(function (c) { return '<label><input type="radio" name="cor" value="' + c + '"' + ((n.cor || '') === c ? ' checked' : '') + '><i style="background:' + (c || 'var(--superficie)') + '"></i></label>'; }).join('') + '</div></fieldset>' +
-        '<fieldset><legend>Ação</legend>' + [['', 'Só aplicar as opções acima'], ['txt', 'Exportar como texto (.txt)'], ['html', 'Exportar como página (.html)'], ['pdf', 'Imprimir / salvar em PDF'], ['agenda', 'Criar tarefa na Agenda com o título'], ['fixar', n.fixada ? 'Desafixar do topo' : 'Fixar no topo'], ['lixeira', 'Mover para a lixeira']].map(function (o, i) { return '<label class="check an-op"><input type="radio" name="acao" value="' + o[0] + '"' + (i === 0 ? ' checked' : '') + '> ' + o[1] + '</label>'; }).join('') + '</fieldset>' });
+        '<fieldset><legend>Ação</legend>' + [['', 'Só aplicar as opções acima'], ['txt', 'Exportar como texto (.txt)'], ['html', 'Exportar como página (.html)'], ['pdf', 'Imprimir / salvar em PDF'], ['agenda', 'Criar tarefa na Seven Task com o título'], ['fixar', n.fixada ? 'Desafixar do topo' : 'Fixar no topo'], ['lixeira', 'Mover para a lixeira']].map(function (o, i) { return '<label class="check an-op"><input type="radio" name="acao" value="' + o[0] + '"' + (i === 0 ? ' checked' : '') + '> ' + o[1] + '</label>'; }).join('') + '</fieldset>' });
     if (!r) return;
     Object.assign(n, { fundo: r.get('fundo'), pasta: r.get('pasta') || null, cor: r.get('cor') || '' });
     const a = r.get('acao'); const nn = Object.assign({}, n, { html: cont.html, titulo: titulo });
     if (a === 'txt') UI.baixar(A.nomeArquivo(nn, 'txt'), A.paraTexto(nn), 'text/plain;charset=utf-8');
     if (a === 'html') UI.baixar(A.nomeArquivo(nn, 'html'), '<!doctype html><meta charset="utf-8"><title>' + esc(A.titulo(nn)) + '</title><body style="font-family:sans-serif;max-width:760px;margin:40px auto;line-height:1.6"><h1>' + esc(A.titulo(nn)) + '</h1>' + cont.html.replace(/<img[^>]*>|<audio[^>]*><\/audio>/g, '') + (cont.tracos.length ? A.svg(cont.tracos, 700) : '') + '</body>', 'text/html;charset=utf-8');
     if (a === 'pdf') { Dados.salvar(); App.redesenhar(); setTimeout(function () { window.print(); }, 200); return; }
-    if (a === 'agenda' && Telas.agenda) { Telas.agenda.criar(A.titulo(nn) + ' #anotacao'); aviso('Tarefa criada na Agenda.'); }
+    if (a === 'agenda' && Telas.agenda) { Telas.agenda.criar(A.titulo(nn) + ' #anotacao'); aviso('Tarefa criada na Seven Task.'); }
     if (a === 'fixar') n.fixada = !n.fixada;
     if (a === 'lixeira') { n.apagadaEm = Date.now(); Dados.salvar(); aviso('Movida para a lixeira.'); location.hash = '#/anotacoes'; return; }
     Dados.salvar(); App.redesenhar();
@@ -274,7 +274,7 @@
   window.addEventListener('hashchange', function () { if (!/^#\/anotacoes\/nota\//.test(location.hash)) { est.notaAtual = null; Object.keys(est.abertas).forEach(function (k) { delete est.abertas[k]; delete est.senhas[k]; }); } });
 
   Telas.anotacoes = {
-    titulo: 'Anotações',
+    titulo: 'Seven Pad',
     render: function (el, sub, param) { e(); if (sub === 'nota') return telaNota(el, param); telaLista(el, sub, param); }
   };
 })();

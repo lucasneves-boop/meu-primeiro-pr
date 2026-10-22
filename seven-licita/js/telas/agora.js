@@ -1,4 +1,4 @@
-/* Ágora: rede social estilo X para profissionais de licitação. Sincroniza pela mesma infraestrutura da Plêiade (Firebase Realtime Database). */
+/* Seven Ágora: rede social estilo X para profissionais de licitação. Sincroniza pela mesma infraestrutura da Seven Plêiades (Firebase Realtime Database). */
 (function () {
   'use strict';
   function corOk(c) { return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#8c9bab'; }
@@ -18,7 +18,7 @@
   }
   function eu() { return cfg().eu; }
 
-  // ---------- transporte (mesmo formato da Plêiade) ----------
+  // ---------- transporte (mesmo formato da Seven Plêiades) ----------
   const T = {
     arv: {}, fonte: null, conectado: false, erro: '', iniciado: false, base: '',
     remoto: function () { return cfg().modo === 'firebase' && !!cfg().url; },
@@ -43,7 +43,7 @@
     enviar: function (metodo, caminho, valor) {
       if (!this.remoto()) { Dados.salvar(); return Promise.resolve(); }
       return fetch(this.url(caminho), { method: metodo, headers: { 'Content-Type': 'application/json' }, body: metodo === 'DELETE' ? undefined : JSON.stringify(valor) })
-        .then(function (r) { if (!r.ok) throw new Error('servidor respondeu ' + r.status); }).catch(function (err) { aviso('Ágora: não foi possível salvar (' + err.message + ').', 'erro'); });
+        .then(function (r) { if (!r.ok) throw new Error('servidor respondeu ' + r.status); }).catch(function (err) { aviso('Seven Ágora: não foi possível salvar (' + err.message + ').', 'erro'); });
     },
     set: function (caminho, valor) { this.arv = P.definir(this.arv, caminho, valor); if (!this.remoto()) Dados.e.agora = this.arv; this.mudou(); return this.enviar(valor == null ? 'DELETE' : 'PUT', caminho, valor); },
     patch: function (caminho, obj) { this.arv = P.mesclar(this.arv, caminho, obj); if (!this.remoto()) Dados.e.agora = this.arv; this.mudou(); return this.enviar('PATCH', caminho, obj); },
@@ -182,8 +182,8 @@
     const lista = Object.keys(perfis()).map(function (k) { return Object.assign({ id: k }, perfis()[k]); });
     const novo = !atual; const m = atual || { cor: CORES[lista.length % CORES.length], uf: (Dados.empresaAtiva() || {}).uf || 'GO', nome: (Dados.e.config && Dados.e.config.responsavel) || '' };
     const r = await modal({
-      titulo: novo ? 'Entrar na Ágora' : 'Editar perfil', botao: novo ? 'Entrar' : 'Salvar', semCancelar: novo && !eu(), largo: true,
-      corpo: (novo ? '<p>A Ágora é a praça pública dos profissionais de licitação: poste, comente, debata e siga quem entende do assunto.</p>' + (lista.length ? campo('Já tenho perfil nesta comunidade', '<select name="existente"><option value="">— sou novo —</option>' + opcoes(lista.map(function (x) { return { v: x.id, t: x.nome + ' @' + x.handle }; })) + '</select>') : '') : '') +
+      titulo: novo ? 'Entrar na Seven Ágora' : 'Editar perfil', botao: novo ? 'Entrar' : 'Salvar', semCancelar: novo && !eu(), largo: true,
+      corpo: (novo ? '<p>A Seven Ágora é a praça pública dos profissionais de licitação: poste, comente, debata e siga quem entende do assunto.</p>' + (lista.length ? campo('Já tenho perfil nesta comunidade', '<select name="existente"><option value="">— sou novo —</option>' + opcoes(lista.map(function (x) { return { v: x.id, t: x.nome + ' @' + x.handle }; })) + '</select>') : '') : '') +
         '<div class="linha">' + campo('Nome *', '<input name="nome" value="' + esc(m.nome || '') + '" maxlength="50">') + campo('@usuário', '<input name="handle" value="' + esc(m.handle || '') + '" maxlength="15" placeholder="gerado do nome" pattern="[a-z0-9_]*">', 'Letras minúsculas, números e _') + '</div>' +
         '<div class="linha">' + campo('Atuação', '<select name="cargo">' + opcoes(CARGOS, m.cargo || CARGOS[0]) + '</select>') + campo('Empresa ou órgão', '<input name="empresa" value="' + esc(m.empresa || '') + '" maxlength="60">') + campo('UF', '<select name="uf">' + opcoes(UFS, m.uf) + '</select>') + '</div>' +
         campo('Bio', '<textarea name="bio" rows="2" maxlength="160">' + esc(m.bio || '') + '</textarea>') +
@@ -212,7 +212,7 @@
   function nav(rota) {
     const nv = naoVistas(); const me = perfil(eu());
     const it = function (r, ic, t, extra) { return '<a href="#/agora' + (r ? '/' + r : '') + '" class="' + (rota === r ? 'ativo' : '') + '"><span class="go-ic">' + ic + '</span><span class="go-nt">' + t + '</span>' + (extra || '') + '</a>'; };
-    return '<nav class="go-nav" aria-label="Ágora"><a class="go-marca" href="#/agora" aria-label="Ágora — início">Ἀ<span>Ágora</span></a>' +
+    return '<nav class="go-nav" aria-label="Seven Ágora"><a class="go-marca" href="#/agora" aria-label="Seven Ágora — início">Ἀ<span>Seven Ágora</span></a>' +
       it('', '⌂', 'Página inicial') + it('explorar', '⌕', 'Explorar') + it('notificacoes', '🔔', 'Notificações', nv ? '<b class="go-badge">' + (nv > 99 ? '99+' : nv) + '</b>' : '') + it('salvos', '🔖', 'Salvos') + it('u/' + me.handle, '👤', 'Perfil') + it('config', '⚙', 'Configurações') +
       '<button class="btn primario go-btn-postar" data-ag="novo-post"><span class="go-nt">Postar</span><span class="go-ic">✎</span></button>' +
       '<div class="go-eu">' + avatar(eu(), 36) + '<div><b>' + esc(me.nome) + '</b><small>@' + esc(me.handle) + '</small></div><span class="go-con' + (T.conectado ? ' ok' : '') + '" title="' + esc(T.erro || (T.remoto() ? 'Conectado à comunidade' : 'Modo local: só este navegador')) + '">●</span></div></nav>';
@@ -220,7 +220,7 @@
   function lateral() {
     const tr = A.tendencias(posts(), { limite: 6 });
     const sug = A.quemSeguir(perfis(), seguir(), eu(), posts(), 3).filter(function (u) { return !ocultos()[u]; });
-    return '<aside class="go-lado"><form class="go-pesq" id="go-pesq" role="search"><input name="q" placeholder="Buscar na Ágora" aria-label="Buscar"></form>' +
+    return '<aside class="go-lado"><form class="go-pesq" id="go-pesq" role="search"><input name="q" placeholder="Buscar na Seven Ágora" aria-label="Buscar"></form>' +
       '<section class="go-box"><h3>O que está acontecendo</h3>' + (tr.length ? tr.map(function (t, i) { return '<a class="go-trend" href="#/agora/tag/' + encodeURIComponent(t.tag) + '"><small>' + (i + 1) + ' · Assunto do momento</small><b>#' + esc(t.tag) + '</b><small>' + t.posts + ' post' + (t.posts > 1 ? 's' : '') + ' · ' + t.autores + ' pessoa' + (t.autores > 1 ? 's' : '') + '</small></a>'; }).join('') : '<p class="mini mudo">Use #hashtags nos posts (ex.: #Lei14133, #pregão, #SRP) para aparecerem aqui.</p>') + '</section>' +
       (sug.length ? '<section class="go-box"><h3>Quem seguir</h3>' + sug.map(function (u) { const m = perfil(u); return '<div class="go-sug" data-uid="' + esc(u) + '">' + avatar(u, 40) + '<div><a href="#/agora/u/' + esc(m.handle) + '"><b>' + esc(m.nome) + '</b></a><small>@' + esc(m.handle) + (m.cargo ? ' · ' + esc(cargoCurto(m.cargo)) : '') + '</small></div><button class="btn mini" data-ag="seguir">Seguir</button></div>'; }).join('') + '</section>' : '') +
       '<p class="go-rodape">Regras: respeito, sem dados pessoais de terceiros e sem informação sigilosa de processos. Denuncie o que violar.</p></aside>';
@@ -303,8 +303,8 @@
       '<label class="co-origem"><input type="radio" name="modo" value="firebase"' + (c.modo === 'firebase' ? ' checked' : '') + '><span><b>Comunidade online (Firebase Realtime Database)</b><small>Todos que usarem o mesmo endereço e comunidade veem o mesmo feed, em tempo real.</small></span></label>' +
       campo('Endereço do banco', '<input name="url" value="' + esc(c.url) + '" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">') +
       '<div class="linha">' + campo('Comunidade', '<input name="comunidade" value="' + esc(c.comunidade) + '">', 'Ex.: licitantes, licitantes-go') + campo('Token (opcional)', '<input name="token" type="password" value="' + esc(c.token) + '">') + '</div>' +
-      (pl.url ? '<button type="button" class="btn mini fantasma" data-ag="usar-pleiade">Usar a mesma conexão da Plêiade</button> ' : '') + '<button class="btn primario">Salvar conexão</button>' +
-      '<p class="mini mudo">Os dados ficam em <code>/agora/&lt;comunidade&gt;</code> do mesmo banco usado pela Plêiade. Nas regras do Firebase, libere leitura e escrita desse caminho só para usuários autenticados.</p></form>' +
+      (pl.url ? '<button type="button" class="btn mini fantasma" data-ag="usar-pleiade">Usar a mesma conexão da Seven Plêiades</button> ' : '') + '<button class="btn primario">Salvar conexão</button>' +
+      '<p class="mini mudo">Os dados ficam em <code>/agora/&lt;comunidade&gt;</code> do mesmo banco usado pela Seven Plêiades. Nas regras do Firebase, libere leitura e escrita desse caminho só para usuários autenticados.</p></form>' +
       '<section class="cartao"><h3>Sua conta</h3><p>' + esc(perfil(eu()).nome) + ' @' + esc(perfil(eu()).handle) + '</p><button class="btn" data-ag="editar-perfil">Editar perfil</button> <button class="btn fantasma" data-ag="trocar">Trocar de perfil</button></section>' +
       '<section class="cartao"><h3>Silenciados</h3><p class="mini mudo">Posts deles somem do seu feed; eles não sabem.</p>' + lst(c.silenciados, 'dessilenciar') + '<h3>Bloqueados</h3>' + lst(c.bloqueados, 'desbloquear') + '</section></div>';
   }
@@ -420,13 +420,13 @@
   }
 
   Telas.agora = {
-    titulo: 'Ágora',
+    titulo: 'Seven Ágora',
     render: async function (el, sub, param) {
       arv();
-      if (eu() && !perfis()[eu()] && T.remoto() && !T.conectado && sub !== 'config') { el.innerHTML = '<div class="go-vazio go-boas"><h2>Ágora</h2><p>Conectando à comunidade…</p>' + (T.erro ? '<p class="alerta">' + esc(T.erro) + '</p><a class="btn" href="#/agora/config">Configurações</a>' : '') + '</div>'; return; }
+      if (eu() && !perfis()[eu()] && T.remoto() && !T.conectado && sub !== 'config') { el.innerHTML = '<div class="go-vazio go-boas"><h2>Seven Ágora</h2><p>Conectando à comunidade…</p>' + (T.erro ? '<p class="alerta">' + esc(T.erro) + '</p><a class="btn" href="#/agora/config">Configurações</a>' : '') + '</div>'; return; }
       if ((!eu() || !perfis()[eu()]) && !(sub === 'config' && eu())) {
         if (eu()) { cfg().eu = null; Dados.salvar(); }
-        el.innerHTML = '<div class="go-vazio go-boas"><h2>Ágora</h2><p>A rede dos profissionais de licitação.</p></div>';
+        el.innerHTML = '<div class="go-vazio go-boas"><h2>Seven Ágora</h2><p>A rede dos profissionais de licitação.</p></div>';
         if (!document.querySelector('.modal-fundo') && await formPerfil(null)) App.redesenhar();
         return;
       }

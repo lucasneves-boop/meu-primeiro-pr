@@ -58,7 +58,7 @@
       '<div class="hb-barra" role="progressbar" aria-valuenow="' + P.pct + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + P.pct + '%"></i></div>' +
       '<p class="hb-num"><b>' + P.pct + '%</b> pronto · <span class="ok">' + (c.ok + c['sem-validade']) + ' em dia</span> · <span class="alerta">' + c.vencendo + ' vencendo</span> · <span class="perigo">' + c.vencido + ' vencido(s)</span> · ' + c.falta + ' faltando</p>' +
       '<p class="mini">SICAF revisado: ' + (rev ? '<b>' + dataBR(rev) + '</b>' : '<b class="alerta">nunca registrado</b>') + ' · <a href="#/habilitacao/sicaf">Guia do SICAF</a></p>' +
-      '<div class="grupo-botoes"><button class="btn" data-a="lembretes">Criar lembretes de renovação na Agenda</button><a class="btn fantasma" href="#/cadastrar/documentos">+ Anexar documentos</a></div></section>' +
+      '<div class="grupo-botoes"><button class="btn" data-a="lembretes">Criar lembretes de renovação na Seven Task</button><a class="btn fantasma" href="#/cadastrar/documentos">+ Anexar documentos</a></div></section>' +
       H.GRUPOS.map(function (g) {
         const ls = P.linhas.filter(function (l) { return l.item.g === g.id; });
         return '<section class="cartao"><h3>' + esc(g.t) + ' <span class="mini mudo">' + esc(g.base) + '</span></h3><div class="tabela-rolagem"><table class="tabela hb-tab"><thead><tr><th>Documento exigido</th><th>No sistema</th><th>Situação</th><th></th></tr></thead><tbody>' +
@@ -75,7 +75,7 @@
       const b = ev.target.closest('[data-a]'); if (!b) return;
       const linhas = b.dataset.a === 'lembretes' ? P.linhas.filter(function (l) { return l.doc && l.doc.validade; }) : P.linhas.filter(function (l) { return l.item.id === b.closest('tr').dataset.item; });
       if (!linhas.length) { aviso('Nenhum documento com validade cadastrada.', 'erro'); return; }
-      if (!Telas.agenda || !Telas.agenda.criar) { aviso('Agenda indisponível.', 'erro'); return; }
+      if (!Telas.agenda || !Telas.agenda.criar) { aviso('Seven Task indisponível.', 'erro'); return; }
       let n = 0;
       linhas.forEach(function (l) {
         const titulo = 'Renovar ' + l.doc.nome + ' — ' + (emp.fantasia || emp.razao);
@@ -84,7 +84,7 @@
         Telas.agenda.criar(titulo, { data: H.dataLembrete(l.doc.validade, 7), tags: ['certidao'] }); n++;
       });
       Dados.salvar();
-      aviso(n ? n + ' lembrete(s) criados na Agenda, 7 dias antes de cada vencimento.' : 'Os lembretes já existiam.');
+      aviso(n ? n + ' lembrete(s) criados na Seven Task, 7 dias antes de cada vencimento.' : 'Os lembretes já existiam.');
     };
   }
 
@@ -188,12 +188,12 @@
     el.onclick = function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b || !emp) return;
       if (b.dataset.a === 'revisei') { e().sicafRev[emp.id] = hoje(); Dados.salvar(); aviso('Revisão do SICAF registrada.'); App.redesenhar(); }
-      if (b.dataset.a === 'lembrete' && Telas.agenda) { const d = new Date(); d.setDate(d.getDate() + 30); Telas.agenda.criar('Revisar SICAF — ' + (emp.fantasia || emp.razao), { data: d.toISOString().slice(0, 10), tags: ['sicaf'] }); Dados.salvar(); aviso('Lembrete criado na Agenda.'); }
+      if (b.dataset.a === 'lembrete' && Telas.agenda) { const d = new Date(); d.setDate(d.getDate() + 30); Telas.agenda.criar('Revisar SICAF — ' + (emp.fantasia || emp.razao), { data: d.toISOString().slice(0, 10), tags: ['sicaf'] }); Dados.salvar(); aviso('Lembrete criado na Seven Task.'); }
     };
   }
 
   Telas.habilitacao = {
-    titulo: 'SICAF e Certidões',
+    titulo: 'Seven Docs',
     render: function (el, sub, param) {
       sub = sub || 'cliente';
       const telas = { cliente: telaCliente, federal: telaFederal, estados: telaEstados, municipios: telaMunicipios, sicaf: telaSicaf };

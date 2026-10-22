@@ -208,7 +208,7 @@
       '<div class="ia-acoes">' +
       '<button type="button" class="ia-acao" data-ia="copiar" data-i="' + i + '" title="Copiar">⧉ Copiar</button>' +
       (ultimo && !mem.enviando ? '<button type="button" class="ia-acao" data-ia="regenerar" title="Gerar outra resposta">↻ Refazer</button>' : '') +
-      '<button type="button" class="ia-acao" data-ia="nota" data-i="' + i + '" title="Salvar em Anotações">🗒 Salvar nota</button>' +
+      '<button type="button" class="ia-acao" data-ia="nota" data-i="' + i + '" title="Salvar no Seven Pad">🗒 Salvar nota</button>' +
       '<span class="ia-meta">' + esc(S.modelo(m.modelo).nome) + (m.uso ? ' · ' + S.dolar(S.custo(m.uso, m.modelo)) : '') + '</span></div>' +
       '</div></div>';
   }
@@ -407,7 +407,7 @@
     const d = Dados.e; d.anotacoes = d.anotacoes || {}; d.anotacoes.notas = d.anotacoes.notas || [];
     const html = S.markdown(S.textoDe(m.content)).replace(/<div class="ia-codigo-topo">.*?<\/div>/g, '') + '<p><small>Seven IA · ' + esc(conv ? conv.titulo : '') + '</small></p>';
     d.anotacoes.notas.push({ id: Dados.id('an'), titulo: conv ? conv.titulo : 'Seven IA', html: html, tracos: [], fundo: 'liso', cor: '', pasta: null, criadaEm: Date.now(), editadaEm: Date.now() });
-    Dados.salvar(); aviso('Salvo em Anotações.');
+    Dados.salvar(); aviso('Salvo no Seven Pad.');
   }
 
   Telas.ia = {

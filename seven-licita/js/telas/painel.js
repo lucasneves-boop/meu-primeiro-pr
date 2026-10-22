@@ -146,12 +146,12 @@
     },
     semanas: function (tam) {
       const s = Dados.e.semanas; const c = s && (s.ciclos || []).find(function (x) { return x.id === s.ativo; }) || (s && (s.ciclos || [])[(s.ciclos || []).length - 1]);
-      if (!c) return { corpo: '<p class="mudo">Monte seu plano em <a href="#/semanas">12 Semanas</a>.</p>' };
+      if (!c) return { corpo: '<p class="mudo">Monte seu plano em <a href="#/semanas">Seven 12S</a>.</p>' };
       const sr = Doze.serie(c);
       return { link: '#/semanas', corpo: G.linha(sr.map(function (x) { return 'S' + x.n; }), [{ nome: 'Execução', valores: sr.map(function (x) { return x.pct; }) }], { largura: LARG[tam], max: 100, ref: 85, refRotulo: 'meta 85%', fmt: function (v) { return Math.round(v) + '%'; }, fmtEixo: function (v) { return v + '%'; }, vazio: 'Pontue a primeira semana', titulo: 'Execução semanal' }), tabela: G.tabela(['Semana', 'Execução'], sr.map(function (x) { return ['S' + x.n, x.pct == null ? '—' : Math.round(x.pct) + '%']; })) };
     },
     atalhos: function () {
-      const l = [['#/encontrar', '⌕', 'Seven Radar'], ['#/cadastrar', '✎', 'Seven Bid'], ['#/disputar', '⚡', 'Seven Lance'], ['#/monitorar', '◉', 'Monitorar'], ['#/comercial', '📈', 'Seven Sales'], ['#/agenda', '☑', 'Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
+      const l = [['#/encontrar', '⌕', 'Seven Radar'], ['#/cadastrar', '✎', 'Seven Bid'], ['#/disputar', '⚡', 'Seven Lance'], ['#/monitorar', '◉', 'Seven Watch'], ['#/comercial', '📈', 'Seven Sales'], ['#/agenda', '☑', 'Seven Task'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
       return { corpo: '<nav class="pn-atalhos">' + l.map(function (x) { return '<a href="' + x[0] + '"><span aria-hidden="true">' + x[1] + '</span>' + x[2] + '</a>'; }).join('') + '</nav>' };
     }
   };
@@ -226,5 +226,5 @@
     };
   }
 
-  Telas.painel = { titulo: 'Painel', render: render };
+  Telas.painel = { titulo: 'Seven Dash', render: render };
 })();

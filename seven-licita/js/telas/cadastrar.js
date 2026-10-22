@@ -127,7 +127,7 @@
       '<div class="grupo-botoes vertical"><button class="btn" data-a="pronta">Marcar como pronta</button><button class="btn primario" data-a="enviada">Registrar envio no portal</button><button class="btn" data-a="erro">Registrar erro no envio</button>' +
       '<label class="check"><input type="checkbox" data-a="disputar"' + (p.disputar ? ' checked' : '') + '> Enviar ao Seven Lance</label>' +
       '<button class="btn fantasma" data-a="imprimir">Imprimir proposta</button><button class="btn fantasma" data-a="readequar">Proposta atualizada (pós-lances)</button>' +
-      '<button class="btn fantasma" data-a="monitorar">Adicionar ao Monitorar</button><button class="btn fantasma" data-a="quadro">Criar cartão no Quadro</button><button class="btn fantasma perigo" data-a="excluir">Excluir proposta</button></div></section></div>';
+      '<button class="btn fantasma" data-a="monitorar">Adicionar ao Seven Watch</button><button class="btn fantasma" data-a="quadro">Criar cartão no Quadro</button><button class="btn fantasma perigo" data-a="excluir">Excluir proposta</button></div></section></div>';
 
     el.insertAdjacentHTML('beforeend', Telas.oport.secao(Telas.oport.chaveProposta(p), 'cadastrar'));
     el.querySelector('#cab').oninput = function () { const fd = new FormData(this); p.portal = fd.get('portal'); p.validade = fd.get('validade'); p.prazoEntrega = fd.get('prazoEntrega'); p.impostos = Nucleo.lerNumeroBR(fd.get('impostos')) || 0; p.margem = Nucleo.lerNumeroBR(fd.get('margem')) || 0; Dados.salvar(); };
