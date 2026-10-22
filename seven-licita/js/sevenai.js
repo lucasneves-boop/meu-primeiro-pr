@@ -1,4 +1,4 @@
-/* Seven.ai: assistente estilo claude.ai sobre a API da Anthropic. Aqui só a parte pura: modelos, montagem da
+/* Seven.ia: assistente estilo claude.ai sobre a API da Anthropic. Aqui só a parte pura: modelos, montagem da
    requisição, histórico para a API (eco correto de blocos), markdown seguro, fontes, custo e contexto do app. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.SevenAI = fabrica();
@@ -23,7 +23,7 @@
   function modelo(id) { return MODELOS.find(function (m) { return m.id === id; }) || MODELOS[0]; }
 
   const SISTEMA = [
-    'Você é o Seven.ai, assistente da Seven, BPO de Licitações: terceirização completa do departamento de licitações, do edital ao pagamento, para empresas que vendem ou querem vender ao poder público. Fundador: Lucas Neves. Atendimento presencial em Catalão-GO, sede em Brasília-DF.',
+    'Você é a Seven.ia, assistente da Seven, BPO de Licitações: terceirização completa do departamento de licitações, do edital ao pagamento, para empresas que vendem ou querem vender ao poder público. Fundador: Lucas Neves. Atendimento presencial em Catalão-GO, sede em Brasília-DF.',
     'Domínio: Lei 14.133/2021, LC 123/2006, Lei 4.320/1964, editais, PNCP, Compras.gov.br, BLL, SISLOG-GO, habilitação, SICAF, certidões, propostas, sessões de lance, recursos, contratos, empenho e pagamento.',
     'Responda em português do Brasil, direto e objetivo, sem enrolação. Use markdown quando ajudar (listas, tabelas, títulos curtos).',
     'Cite o artigo da lei quando afirmar uma regra. Se não tiver certeza de um número, prazo ou dispositivo, diga que precisa conferir em vez de inventar. Prazos e exigências de um edital específico devem ser conferidos no próprio edital.',
@@ -240,11 +240,11 @@
   }
 
   function exportarMarkdown(conv, mensagens) {
-    const out = ['# ' + conv.titulo, '', '_Seven.ai · ' + modelo(conv.modelo).nome + ' · ' + new Date(conv.criadaEm).toLocaleDateString('pt-BR') + '_', ''];
+    const out = ['# ' + conv.titulo, '', '_Seven.ia · ' + modelo(conv.modelo).nome + ' · ' + new Date(conv.criadaEm).toLocaleDateString('pt-BR') + '_', ''];
     (mensagens || []).forEach(function (m) {
       if (m.role === 'user') { const an = anexosUsuario(m); out.push('## Você', '', textoUsuario(m) + (an.length ? '\n\n_Anexos: ' + an.map(function (a) { return a.nome; }).join(', ') + '_' : ''), ''); }
-      else if (m.recusa) out.push('## Seven.ai', '', '_(pedido recusado pelos filtros de segurança)_', '');
-      else { const f = fontesDe(m.content); out.push('## Seven.ai', '', textoDe(m.content) + (f.length ? '\n\nFontes:\n' + f.map(function (x) { return '- [' + x.titulo + '](' + x.url + ')'; }).join('\n') : ''), ''); }
+      else if (m.recusa) out.push('## Seven.ia', '', '_(pedido recusado pelos filtros de segurança)_', '');
+      else { const f = fontesDe(m.content); out.push('## Seven.ia', '', textoDe(m.content) + (f.length ? '\n\nFontes:\n' + f.map(function (x) { return '- [' + x.titulo + '](' + x.url + ')'; }).join('\n') : ''), ''); }
     });
     return out.join('\n');
   }

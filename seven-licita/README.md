@@ -29,7 +29,7 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Concorrentes | Histórico dos fornecedores vencedores nas análises salvas | Siga |
 | CAPAG | Nota de capacidade de pagamento dos municípios (Tesouro Nacional), importada da planilha do Tesouro Transparente (Excel ou CSV) ou registrada à mão, com filtros por nota e UF; a nota aparece nos avisos. Inclui o atraso real de pagamento de cada órgão, calculado com as notas e pagamentos da Execução dos cartões | Effecti + Siga |
 | Clientes (CNPJs) | Vários clientes na mesma conta; o cliente ativo filtra propostas, documentos, disputas e monitoramento | Effecti + Siga |
-| Seven.ai | Assistente de IA estilo claude.ai sobre a API da Anthropic, com a chave do próprio usuário (fica só no navegador, fora do backup). Respostas em streaming; Opus 5.5 por padrão (Sonnet 5.5, Haiku 5.5 e Fable 5.1 opcionais) com nova tentativa automática em outro modelo quando o pedido é recusado; esforço ajustável; raciocínio resumido; pesquisa na web com fontes (Opus e Sonnet); anexos (PDF, imagem, DOCX, texto); projetos com instruções e documentos, inclusive as fontes dos Cadernos; contexto opcional do app (clientes, agenda, licitações, documentos vencendo); atalhos de licitação; editar, refazer, parar, exportar em Markdown e salvar em Anotações; custo estimado por conversa | claude.ai |
+| Seven.ia | Assistente de IA estilo claude.ai sobre a API da Anthropic, com a chave do próprio usuário (fica só no navegador, fora do backup). Respostas em streaming; Opus 5.5 por padrão (Sonnet 5.5, Haiku 5.5 e Fable 5.1 opcionais) com nova tentativa automática em outro modelo quando o pedido é recusado; esforço ajustável; raciocínio resumido; pesquisa na web com fontes (Opus e Sonnet); anexos (PDF, imagem, DOCX, texto); projetos com instruções e documentos, inclusive as fontes dos Cadernos; contexto opcional do app (clientes, agenda, licitações, documentos vencendo); atalhos de licitação; editar, refazer, parar, exportar em Markdown e salvar em Anotações; custo estimado por conversa | claude.ai |
 | Loja Seven | Vitrine dos serviços da Seven (preço sob consulta), busca, carrinho, cupons, lista de desejos e pedidos; o pedido vira negócio no Comercial e lançamento em Finanças; a mensagem ao cliente abre no WhatsApp para revisão antes do envio | Amazon |
 | Comercial (CRM) | Venda do BPO: prospecção com cadência, diagnóstico SPIN, estudo de mercado, proposta com 3 opções e ROI, tratamento de objeções e plano de ação no fechamento | CRM |
 | Precificação | Preço de produto e de serviço, item a item ou em lote, ligado a propostas e disputas | — |
@@ -58,7 +58,7 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 - **Enviar proposta, lance, documento ou mensagem ao portal.** Exigiria entrar nos portais com as credenciais
   dos clientes e automatizar sistemas de terceiros. O app prepara tudo e registra o que foi feito; o envio é no portal.
   Por isso o Disputar tem um simulador, e não um robô de lances.
-- **IA sem chave.** O Seven.ai lê editais e responde perguntas, mas usa a chave da API da Anthropic de quem usa e é
+- **IA sem chave.** A Seven.ia lê editais e responde perguntas, mas usa a chave da API da Anthropic de quem usa e é
   cobrado na conta dela. A chave fica no navegador; para uso em equipe, o ideal é um servidor que guarde a chave.
 - **CAPAG sem importação.** O site do Tesouro não permite consulta direta pelo app; baixe a planilha em
   https://www.tesourotransparente.gov.br/temas/estados-e-municipios/capacidade-de-pagamento-capag e importe em CAPAG.
@@ -73,6 +73,6 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 npm test        # regras do núcleo: catálogo, documentos, robô, etapa fechada, CSV, preço
 npm run e2e     # Chromium de ponta a ponta contra o PNCP real (precisa do Playwright)
 node testes/modulos.e2e.cjs   # demais módulos no navegador
-node testes/sevenai.e2e.cjs   # Seven.ai com o SDK da Anthropic simulado (não gasta créditos)
+node testes/sevenai.e2e.cjs   # Seven.ia com o SDK da Anthropic simulado (não gasta créditos)
 node testes/pleiade.e2e.cjs; node testes/agora.e2e.cjs; node testes/reuniao.e2e.cjs   # tempo real com Firebase simulado
 ```

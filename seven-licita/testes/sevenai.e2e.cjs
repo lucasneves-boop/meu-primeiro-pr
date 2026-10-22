@@ -1,4 +1,4 @@
-// Seven.ai: o módulo do SDK da Anthropic (jsDelivr) é trocado por um simulado que transmite eventos como a API.
+// Seven.ia: o módulo do SDK da Anthropic (jsDelivr) é trocado por um simulado que transmite eventos como a API.
 // Uso: node testes/sevenai.e2e.cjs [pasta-de-capturas]
 const path = require('path'); const fs = require('fs');
 const { abrir } = require('./apoio.cjs');
@@ -68,7 +68,7 @@ Object.assign(Anthropic, { APIError, AuthenticationError, PermissionDeniedError,
   try {
     await pg.goto(url); await pg.evaluate(() => { Dados.e.empresas = [{ id: 'e1', razao: 'Alfa Comércio LTDA', fantasia: 'Alfa', cnpj: '11.222.333/0001-81' }]; Dados.e.empresaAtiva = 'e1'; Dados.salvar(); });
     await pg.goto(url + '#/ia'); await pg.waitForSelector('.ia-boas');
-    ok(/Seven\.ai/.test(await pg.locator('.menu a[data-rota=ia]').innerText()), 'Seven.ai no menu');
+    ok(/Seven\.ia/.test(await pg.locator('.menu a[data-rota=ia]').innerText()), 'Seven.ia no menu');
     ok(await pg.locator('.ia-aviso-chave').count() === 1, 'sem chave: pede para cadastrar');
     ok(await pg.locator('.ia-atalhos button').count() === 6, 'atalhos de licitação na tela inicial');
     await foto('ia-inicio');

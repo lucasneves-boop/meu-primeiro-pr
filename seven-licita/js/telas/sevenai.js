@@ -1,4 +1,4 @@
-/* Seven.ai (estilo claude.ai): conversas com a API da Anthropic direto do navegador, com a chave do próprio usuário.
+/* Seven.ia (estilo claude.ai): conversas com a API da Anthropic direto do navegador, com a chave do próprio usuário.
    Streaming, anexos (PDF, imagem, DOCX, texto), pesquisa na web com fontes, raciocínio visível, projetos com instruções
    e documentos (inclusive fontes dos Cadernos) e contexto opcional dos dados do Seven Licita. */
 (function () {
@@ -171,7 +171,7 @@
     const pref = e().pref; const mdl = S.modelo(conv ? conv.modelo : pref.modelo); const env = mem.enviando;
     return '<form class="ia-comp" data-ia="comp">' +
       '<div class="ia-chips">' + chipsHTML() + '</div>' +
-      '<textarea name="q" rows="1" placeholder="' + (conv ? 'Responder…' : 'Como posso ajudar hoje?') + '" aria-label="Mensagem para o Seven.ai">' + esc(mem.rascunho) + '</textarea>' +
+      '<textarea name="q" rows="1" placeholder="' + (conv ? 'Responder…' : 'Como posso ajudar hoje?') + '" aria-label="Mensagem para a Seven.ia">' + esc(mem.rascunho) + '</textarea>' +
       '<div class="ia-comp-barra">' +
       '<button type="button" class="ia-ico" data-ia="anexar" title="Anexar PDF, imagem, DOCX ou texto" aria-label="Anexar arquivo">📎</button>' +
       '<button type="button" class="ia-tog' + (pref.busca && mdl.busca ? ' on' : '') + '" data-ia="tog" data-k="busca"' + (mdl.busca ? '' : ' disabled title="Pesquisa na web disponível no Opus 5.5 e no Sonnet 5.5"') + ' aria-pressed="' + !!(pref.busca && mdl.busca) + '">🌐 Pesquisa</button>' +
@@ -256,7 +256,7 @@
       (!chave() ? '<div class="ia-aviso-chave"><p>Para conversar, cadastre uma chave da API da Anthropic. Ela fica só neste navegador.</p><button type="button" class="btn primario" data-ia="config">Cadastrar chave</button></div>' : '') +
       compositorHTML(null) +
       '<div class="ia-atalhos">' + S.ATALHOS.map(function (a, i) { return '<button type="button" data-ia="atalho" data-i="' + i + '">' + a.ic + ' ' + esc(a.t) + '</button>'; }).join('') + '</div>' +
-      '<p class="ia-rodape mudo mini">O Seven.ai pode errar. Confira prazos, valores e artigos de lei no edital e na norma antes de agir.</p></div>');
+      '<p class="ia-rodape mudo mini">A Seven.ia pode errar. Confira prazos, valores e artigos de lei no edital e na norma antes de agir.</p></div>');
     const t = el.querySelector('.ia-comp textarea'); if (t) { autoAltura(t); t.focus(); }
     el.querySelector('.ia-comp').dataset.projeto = projId || '';
   }
@@ -271,7 +271,7 @@
       '<button type="button" class="ia-ico" data-ia="exportar" title="Baixar em Markdown">⤓</button>' +
       '<button type="button" class="ia-ico" data-ia="excluir" title="Excluir conversa">🗑</button></header>' +
       '<div class="ia-rolagem"><div class="ia-fio">' + mem.msgs.map(function (m, i) { return mensagemHTML(m, i, conv); }).join('') + (mem.enviando && mem.enviando.id === conv.id ? aoVivoHTML() : '') + '</div></div>' +
-      '<div class="ia-base">' + compositorHTML(conv) + '<p class="mudo mini">O Seven.ai pode errar. Confira no edital e na norma.</p></div>');
+      '<div class="ia-base">' + compositorHTML(conv) + '<p class="mudo mini">A Seven.ia pode errar. Confira no edital e na norma.</p></div>');
     const rol = el.querySelector('.ia-rolagem'); rol.scrollTop = rol.scrollHeight;
     const t = el.querySelector('.ia-comp textarea'); autoAltura(t); if (mem.editando < 0) t.focus({ preventScroll: true });
   }
@@ -310,9 +310,9 @@
   // ---------- modais ----------
   async function configurar(obrigatorio) {
     const r = await modal({ titulo: 'Chave da API da Anthropic', botao: 'Salvar',
-      corpo: (obrigatorio ? '<p>Para usar o Seven.ai, informe uma chave da API.</p>' : '') +
+      corpo: (obrigatorio ? '<p>Para usar a Seven.ia, informe uma chave da API.</p>' : '') +
         campo('Chave', '<input name="chave" type="password" autocomplete="off" placeholder="sk-ant-…" value="' + esc(chave()) + '">', 'Crie em console.anthropic.com → API Keys. Defina um limite de gasto mensal no console.') +
-        '<p class="mini mudo">A chave fica guardada só neste navegador (não entra no backup) e é enviada direto à Anthropic. Quem usar este computador pode vê-la: use uma chave só para o Seven.ai e revogue se o aparelho for compartilhado.</p>' +
+        '<p class="mini mudo">A chave fica guardada só neste navegador (não entra no backup) e é enviada direto à Anthropic. Quem usar este computador pode vê-la: use uma chave só para a Seven.ia e revogue se o aparelho for compartilhado.</p>' +
         (chave() ? '<p><button type="button" class="btn fantasma mini" data-esquecer>Esquecer a chave</button></p>' : ''),
       aoAbrir: function (f) { const b = f.querySelector('[data-esquecer]'); if (b) b.onclick = function () { f.chave.value = ''; }; },
       validar: function (fd) { const v = String(fd.get('chave') || '').trim(); return v && !/^sk-ant-/.test(v) ? 'A chave da Anthropic começa com "sk-ant-".' : ''; } });
@@ -324,7 +324,7 @@
   async function editarProjeto(p) {
     const r = await modal({ titulo: p ? 'Editar projeto' : 'Novo projeto', largo: true, botao: p ? 'Salvar' : 'Criar',
       corpo: campo('Nome *', '<input name="nome" required value="' + esc(p ? p.nome : '') + '">') + campo('Descrição', '<input name="descricao" value="' + esc(p ? p.descricao || '' : '') + '">') +
-        campo('Instruções', '<textarea name="instrucoes" rows="6" placeholder="Como o Seven.ai deve responder neste projeto">' + esc(p ? p.instrucoes || '' : '') + '</textarea>') });
+        campo('Instruções', '<textarea name="instrucoes" rows="6" placeholder="Como a Seven.ia deve responder neste projeto">' + esc(p ? p.instrucoes || '' : '') + '</textarea>') });
     if (!r) return null;
     const x = p || { id: Dados.id('iap'), fontes: [], cadernos: [] };
     x.nome = String(r.get('nome')).trim(); x.descricao = String(r.get('descricao') || '').trim(); x.instrucoes = String(r.get('instrucoes') || '').trim(); x.editadoEm = Date.now();
@@ -405,13 +405,13 @@
   }
   function salvarNota(m, conv) {
     const d = Dados.e; d.anotacoes = d.anotacoes || {}; d.anotacoes.notas = d.anotacoes.notas || [];
-    const html = S.markdown(S.textoDe(m.content)).replace(/<div class="ia-codigo-topo">.*?<\/div>/g, '') + '<p><small>Seven.ai · ' + esc(conv ? conv.titulo : '') + '</small></p>';
-    d.anotacoes.notas.push({ id: Dados.id('an'), titulo: conv ? conv.titulo : 'Seven.ai', html: html, tracos: [], fundo: 'liso', cor: '', pasta: null, criadaEm: Date.now(), editadaEm: Date.now() });
+    const html = S.markdown(S.textoDe(m.content)).replace(/<div class="ia-codigo-topo">.*?<\/div>/g, '') + '<p><small>Seven.ia · ' + esc(conv ? conv.titulo : '') + '</small></p>';
+    d.anotacoes.notas.push({ id: Dados.id('an'), titulo: conv ? conv.titulo : 'Seven.ia', html: html, tracos: [], fundo: 'liso', cor: '', pasta: null, criadaEm: Date.now(), editadaEm: Date.now() });
     Dados.salvar(); aviso('Salvo em Anotações.');
   }
 
   Telas.ia = {
-    titulo: 'Seven.ai',
+    titulo: 'Seven.ia',
     render: function (el, sub, param) {
       mem.lateral = false;
       if (sub === 'c' && param) return telaConversa(el, param);
