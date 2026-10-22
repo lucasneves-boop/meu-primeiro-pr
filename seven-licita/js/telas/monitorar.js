@@ -39,7 +39,7 @@
           const dest = m.mensagens.filter(function (x) { return !x.lida && Nucleo.destacar(x.texto, e().palavrasChave).length; }).length;
           const prox = (m.prazos || []).filter(function (p) { return !p.feito; }).sort(function (a, b) { return new Date(a.ate) - new Date(b.ate); })[0];
           return '<tr class="clicavel" data-id="' + m.id + '"><td><b>' + esc(m.titulo) + '</b><br><span class="mini mudo">' + esc(String(m.objeto || '').slice(0, 100)) + '</span></td><td>' + esc(m.portal || '') + '</td><td><span class="tag">' + esc(m.situacao) + '</span></td><td>' + esc(m.responsavel || '—') + '</td><td>' + m.mensagens.length + (dest ? ' <span class="tag vermelho">' + dest + ' destaque(s)</span>' : '') + '</td><td>' + (prox ? esc(prox.tipo) + '<br><small>' + dataHora(prox.ate) + '</small>' : '—') + '</td></tr>';
-        }).join('') + '</tbody></table></div>' : UI.vazio('Nada sendo monitorado', 'Adicione licitações a partir do Encontrar ou de uma proposta.', '<a class="btn" href="#/encontrar">Ir para o Encontrar</a>'));
+        }).join('') + '</tbody></table></div>' : UI.vazio('Nada sendo monitorado', 'Adicione licitações a partir do Seven Radar ou de uma proposta.', '<a class="btn" href="#/encontrar">Ir para o Seven Radar</a>'));
     el.onclick = function (ev) {
       const c = ev.target.closest('[data-cat]'); if (c) { filtroCat = c.dataset.cat; App.redesenhar(); return; }
       const tr = ev.target.closest('tr[data-id]'); if (tr) location.hash = '#/monitorar/licitacao/' + tr.dataset.id;

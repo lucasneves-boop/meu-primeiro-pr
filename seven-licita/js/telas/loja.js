@@ -1,4 +1,4 @@
-/* Loja Seven: vitrine estilo marketplace dos produtos e serviços da Seven, carrinho, pedidos e gestão do catálogo. */
+/* Seven Shop: vitrine estilo marketplace dos produtos e serviços da Seven, carrinho, pedidos e gestão do catálogo. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -13,7 +13,8 @@
     const d = Dados.e; d.loja = d.loja || {}; const l = d.loja;
     if (!l.produtos) l.produtos = L.CATALOGO.map(function (p, i) { return Object.assign({ preco: null, precoDe: null, ativo: true, destaque: i < 4, prazo: '', criadoEm: '2026-10-21' }, JSON.parse(JSON.stringify(p))); });
     ['cupons', 'carrinho', 'desejos', 'pedidos', 'avaliacoes', 'perguntas', 'vistos'].forEach(function (k) { l[k] = l[k] || []; });
-    l.cfg = Object.assign({ nome: 'Loja Seven', whatsapp: '(61) 98347-2232', parcelasMax: 12, parcelaMin: 100, assinatura: 'Lucas Neves | Seven', pix: '' }, l.cfg || {});
+    l.cfg = Object.assign({ nome: 'Seven Shop', whatsapp: '(61) 98347-2232', parcelasMax: 12, parcelaMin: 100, assinatura: 'Lucas Neves | Seven', pix: '' }, l.cfg || {});
+    if (l.cfg.nome === 'Loja Seven') l.cfg.nome = 'Seven Shop'; // nome antigo da loja
     return l;
   }
   function salvar() { Dados.salvar(); }
@@ -69,7 +70,7 @@
     const emp = Dados.empresaAtiva(); const c = nCarrinho();
     return '<header class="lj-topo no-print"><a class="lj-logo" href="#/loja"><b>seven</b><span>loja</span></a>' +
       '<div class="lj-entrega"><small>Atender</small><b>' + esc(emp ? (emp.fantasia || emp.razao) : 'Catalão-GO') + '</b></div>' +
-      '<form class="lj-busca" id="lj-busca" role="search"><select name="cat" aria-label="Categoria"><option value="">Todos</option>' + L.CATEGORIAS.map(function (k) { return '<option value="' + k.id + '"' + (est.f.cat === k.id ? ' selected' : '') + '>' + esc(k.t) + '</option>'; }).join('') + '</select><input name="q" list="lj-sug" autocomplete="off" placeholder="Pesquisar na Loja Seven" value="' + esc(atual || '') + '" aria-label="Pesquisar"><datalist id="lj-sug"></datalist><button aria-label="Buscar">⌕</button></form>' +
+      '<form class="lj-busca" id="lj-busca" role="search"><select name="cat" aria-label="Categoria"><option value="">Todos</option>' + L.CATEGORIAS.map(function (k) { return '<option value="' + k.id + '"' + (est.f.cat === k.id ? ' selected' : '') + '>' + esc(k.t) + '</option>'; }).join('') + '</select><input name="q" list="lj-sug" autocomplete="off" placeholder="Pesquisar na Seven Shop" value="' + esc(atual || '') + '" aria-label="Pesquisar"><datalist id="lj-sug"></datalist><button aria-label="Buscar">⌕</button></form>' +
       '<nav class="lj-atalhos"><a href="#/loja/pedidos"><small>Devoluções</small><b>e Pedidos</b></a><a href="#/loja/desejos"><small>Sua</small><b>Lista</b></a><a href="#/loja/carrinho" class="lj-carrinho" aria-label="Carrinho com ' + c + ' itens"><span class="lj-cn">' + c + '</span>🛒<b>Carrinho</b></a></nav></header>' +
       '<nav class="lj-cats no-print"><a href="#/loja/busca/">☰ Todos</a>' + L.CATEGORIAS.map(function (k) { return '<a href="#/loja/busca/" data-cat="' + k.id + '">' + esc(k.t) + '</a>'; }).join('') + '<a href="#/loja/admin" class="lj-admin">⚙ Gerenciar loja</a></nav>';
   }
@@ -272,7 +273,7 @@
       linhaStatus(o) +
       '<div class="lj-ped-grade"><div><h4>Cliente</h4><p><b>' + esc(o.cliente.razao) + '</b>' + (o.cliente.cnpj ? '<br>CNPJ ' + esc(cnpj(o.cliente.cnpj)) : '') + (o.cliente.contato ? '<br>' + esc(o.cliente.contato) : '') + (o.cliente.telefone ? '<br>' + esc(o.cliente.telefone) : '') + (o.cliente.email ? '<br>' + esc(o.cliente.email) : '') + (o.cliente.cidade ? '<br>' + esc(o.cliente.cidade) : '') + '</p></div><div><h4>Pagamento</h4><p>' + esc(o.pagamento) + '</p>' + (o.obs ? '<h4>Observações</h4><p>' + esc(o.obs) + '</p>' : '') + '</div></div>' +
       '<table class="tabela"><thead><tr><th>Item</th><th>Qtd</th><th>Unitário</th><th>Total</th></tr></thead><tbody>' + o.itens.map(function (x) { return '<tr><td>' + esc(x.t) + '<br><span class="mini mudo">por ' + esc(x.unidade) + (x.tipo === 'recorrente' ? ' · mensal' : '') + '</span></td><td>' + x.qtd + '</td><td>' + L.moeda(x.preco) + '</td><td>' + (x.preco == null ? 'sob consulta' : L.moeda(x.preco * x.qtd)) + '</td></tr>'; }).join('') + '</tbody><tfoot>' + (o.desconto ? '<tr><td colspan="3">Desconto ' + esc(o.cupom || '') + '</td><td>-' + L.moeda(o.desconto) + '</td></tr>' : '') + '<tr><td colspan="3"><b>Total</b>' + (o.consulta ? ' (+ ' + o.consulta + ' item(ns) sob consulta)' : '') + '</td><td><b>' + L.moeda(o.total) + '</b></td></tr></tfoot></table>' +
-      '<div class="grupo-botoes no-print lj-integr">' + '<button class="btn fantasma" data-a="crm"' + (o.negocioId ? ' disabled' : '') + '>' + (o.negocioId ? '✓ Negócio no Comercial' : 'Criar negócio no Comercial') + '</button>' + '<button class="btn fantasma" data-a="financas"' + (o.lancado || !o.total ? ' disabled' : '') + '>' + (o.lancado ? '✓ Lançado em Finanças' : 'Lançar receita em Finanças') + '</button>' + (o.status !== 'cancelado' && o.status !== 'concluido' ? '<button class="btn fantasma perigo" data-a="cancelar">Cancelar pedido</button>' : '') + '</div></section></div>';
+      '<div class="grupo-botoes no-print lj-integr">' + '<button class="btn fantasma" data-a="crm"' + (o.negocioId ? ' disabled' : '') + '>' + (o.negocioId ? '✓ Negócio no Seven Sales' : 'Criar negócio no Seven Sales') + '</button>' + '<button class="btn fantasma" data-a="financas"' + (o.lancado || !o.total ? ' disabled' : '') + '>' + (o.lancado ? '✓ Lançado em Finanças' : 'Lançar receita em Finanças') + '</button>' + (o.status !== 'cancelado' && o.status !== 'concluido' ? '<button class="btn fantasma perigo" data-a="cancelar">Cancelar pedido</button>' : '') + '</div></section></div>';
     el.onclick = async function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return;
       const a = b.dataset.a;
@@ -290,10 +291,10 @@
       if (a === 'crm') {
         const d = Dados.e; d.comercial = d.comercial || {}; const c = d.comercial; c.contas = c.contas || []; c.negocios = c.negocios || [];
         let conta = c.contas.find(function (x) { return (o.cliente.cnpj && x.cnpj === o.cliente.cnpj) || ('cta:' + x.id) === o.cliente.ref; });
-        if (!conta) { conta = { id: Dados.id('cta'), razao: o.cliente.razao, fantasia: '', cnpj: o.cliente.cnpj, municipio: (o.cliente.cidade.split('-')[0] || '').trim(), uf: (o.cliente.cidade.split('-')[1] || '').trim(), origem: 'Loja Seven', contatos: o.cliente.contato ? [{ id: Dados.id('ct'), nome: o.cliente.contato, papel: 'Decisor', whatsapp: o.cliente.telefone, telefone: '', email: o.cliente.email }] : [], timeline: [], criadoEm: new Date().toISOString() }; c.contas.unshift(conta); }
+        if (!conta) { conta = { id: Dados.id('cta'), razao: o.cliente.razao, fantasia: '', cnpj: o.cliente.cnpj, municipio: (o.cliente.cidade.split('-')[0] || '').trim(), uf: (o.cliente.cidade.split('-')[1] || '').trim(), origem: 'Seven Shop', contatos: o.cliente.contato ? [{ id: Dados.id('ct'), nome: o.cliente.contato, papel: 'Decisor', whatsapp: o.cliente.telefone, telefone: '', email: o.cliente.email }] : [], timeline: [], criadoEm: new Date().toISOString() }; c.contas.unshift(conta); }
         const neg = { id: Dados.id('neg'), contaId: conta.id, titulo: 'Pedido ' + o.numero + ' · ' + o.itens.map(function (x) { return x.t.split(' — ')[0]; }).join(', '), etapa: o.status === 'novo' ? 'proposta' : 'ganho', mensalidade: o.recorrente || null, meses: 12, implantacao: o.total - (o.recorrente || 0) || null, criadoEm: hoje(), atualizadoEm: hoje(), historicoEtapas: [], origem: 'loja:' + o.id };
-        c.negocios.push(neg); conta.timeline = conta.timeline || []; conta.timeline.unshift({ em: new Date().toISOString(), tipo: 'negocio', texto: 'Pedido ' + o.numero + ' feito na Loja Seven.' });
-        o.negocioId = neg.id; aviso('Negócio criado no Comercial.');
+        c.negocios.push(neg); conta.timeline = conta.timeline || []; conta.timeline.unshift({ em: new Date().toISOString(), tipo: 'negocio', texto: 'Pedido ' + o.numero + ' feito na Seven Shop.' });
+        o.negocioId = neg.id; aviso('Negócio criado no Seven Sales.');
       }
       if (a === 'financas' && Telas.financas && Telas.financas.lancar) { const perfil = Telas.financas.lancar([{ tipo: 'receita', descricao: 'Pedido ' + o.numero + ' — ' + o.cliente.razao, valor: o.total, data: hoje(), categoria: 'Serviços', origem: 'loja:' + o.id }]); o.lancado = true; aviso('Receita lançada em Finanças (' + perfil + ').'); }
       salvar(); App.redesenhar();
@@ -335,7 +336,7 @@
     if (aba === 'config') corpo = '<form class="cartao" id="lj-cfg">' + '<div class="linha">' + campo('Nome da loja', '<input name="nome" value="' + esc(l.cfg.nome) + '">') + campo('Assinatura das mensagens', '<input name="assinatura" value="' + esc(l.cfg.assinatura) + '">') + '</div><div class="linha">' + campo('Parcelas sem juros (máx.)', '<input name="parcelasMax" type="number" min="1" max="24" value="' + l.cfg.parcelasMax + '">') + campo('Parcela mínima (R$)', '<input name="parcelaMin" type="number" min="1" value="' + l.cfg.parcelaMin + '">') + '</div><button class="btn primario">Salvar</button></form>';
     el.innerHTML = topo() + '<div class="lj"><h2>Gerenciar loja</h2>' + UI.abas([{ id: 'catalogo', t: 'Catálogo', n: l.produtos.length }, { id: 'cupons', t: 'Cupons' }, { id: 'perguntas', t: 'Perguntas', n: pend }, { id: 'config', t: 'Configurações' }], aba, 'loja/admin') + corpo + '</div>';
     hidratar(el);
-    const fc = el.querySelector('#lj-cfg'); if (fc) fc.onsubmit = function (ev) { ev.preventDefault(); const d = new FormData(fc); Object.assign(l.cfg, { nome: d.get('nome').trim() || 'Loja Seven', assinatura: d.get('assinatura').trim(), parcelasMax: Math.max(1, Number(d.get('parcelasMax')) || 1), parcelaMin: Math.max(1, Number(d.get('parcelaMin')) || 1) }); salvar(); aviso('Configurações salvas.'); };
+    const fc = el.querySelector('#lj-cfg'); if (fc) fc.onsubmit = function (ev) { ev.preventDefault(); const d = new FormData(fc); Object.assign(l.cfg, { nome: d.get('nome').trim() || 'Seven Shop', assinatura: d.get('assinatura').trim(), parcelasMax: Math.max(1, Number(d.get('parcelasMax')) || 1), parcelaMin: Math.max(1, Number(d.get('parcelaMin')) || 1) }); salvar(); aviso('Configurações salvas.'); };
     el.onclick = async function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
       const tr = b.closest('[data-id]'); const p = tr && prod(tr.dataset.id);
@@ -361,7 +362,7 @@
   }
 
   Telas.loja = {
-    titulo: 'Loja Seven',
+    titulo: 'Seven Shop',
     render: function (el, sub, param) {
       e();
       const telas = { busca: telaBusca, p: telaProduto, carrinho: telaCarrinho, checkout: telaCheckout, pedidos: telaPedidos, pedido: telaPedido, desejos: telaDesejos, admin: telaAdmin };

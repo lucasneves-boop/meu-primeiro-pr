@@ -96,7 +96,7 @@
     'com-funil': function (tam) {
       const m = Comercial.metricas((Dados.e.comercial || {}).negocios || [], hoje());
       const it = m.porEtapa.filter(function (x) { return x.id !== 'perdido'; }).map(function (x) { return { r: x.nome, v: x.qtd, rotuloValor: x.qtd + ' · ' + reais(x.valor), dica: x.nome + ': ' + x.qtd + ' negócio(s), ' + moeda(x.valor) }; });
-      return { link: '#/comercial/funil', corpo: it.some(function (x) { return x.v; }) ? G.barras(it, { largura: LARG[tam], linha: 26, titulo: 'Negócios por etapa' }) : '<p class="mudo">Cadastre contas no <a href="#/comercial">Comercial</a> para ver o funil.</p>', tabela: G.tabela(['Etapa', 'Negócios', 'Valor'], m.porEtapa.map(function (x) { return [x.nome, x.qtd, moeda(x.valor)]; })) };
+      return { link: '#/comercial/funil', corpo: it.some(function (x) { return x.v; }) ? G.barras(it, { largura: LARG[tam], linha: 26, titulo: 'Negócios por etapa' }) : '<p class="mudo">Cadastre contas no <a href="#/comercial">Seven Sales</a> para ver o funil.</p>', tabela: G.tabela(['Etapa', 'Negócios', 'Valor'], m.porEtapa.map(function (x) { return [x.nome, x.qtd, moeda(x.valor)]; })) };
     },
     'com-ganhos': function (tam) {
       const ns = ((Dados.e.comercial || {}).negocios || []).filter(function (n) { return n.etapa === 'ganho'; });
@@ -151,7 +151,7 @@
       return { link: '#/semanas', corpo: G.linha(sr.map(function (x) { return 'S' + x.n; }), [{ nome: 'Execução', valores: sr.map(function (x) { return x.pct; }) }], { largura: LARG[tam], max: 100, ref: 85, refRotulo: 'meta 85%', fmt: function (v) { return Math.round(v) + '%'; }, fmtEixo: function (v) { return v + '%'; }, vazio: 'Pontue a primeira semana', titulo: 'Execução semanal' }), tabela: G.tabela(['Semana', 'Execução'], sr.map(function (x) { return ['S' + x.n, x.pct == null ? '—' : Math.round(x.pct) + '%']; })) };
     },
     atalhos: function () {
-      const l = [['#/encontrar', '⌕', 'Encontrar'], ['#/cadastrar', '✎', 'Cadastrar'], ['#/disputar', '⚡', 'Disputar'], ['#/monitorar', '◉', 'Monitorar'], ['#/comercial', '📈', 'Comercial'], ['#/agenda', '☑', 'Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
+      const l = [['#/encontrar', '⌕', 'Seven Radar'], ['#/cadastrar', '✎', 'Seven Bid'], ['#/disputar', '⚡', 'Seven Lance'], ['#/monitorar', '◉', 'Monitorar'], ['#/comercial', '📈', 'Seven Sales'], ['#/agenda', '☑', 'Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
       return { corpo: '<nav class="pn-atalhos">' + l.map(function (x) { return '<a href="' + x[0] + '"><span aria-hidden="true">' + x[1] + '</span>' + x[2] + '</a>'; }).join('') + '</nav>' };
     }
   };
@@ -170,7 +170,7 @@
   function render(el) {
     const d = Dados.e; const c = cfg(); const emp = Dados.empresaAtiva();
     const dataTxt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, function (c) { return c.toUpperCase(); });
-    el.innerHTML = (!d.empresas.length ? '<div class="boas-vindas cartao"><h2>Bem-vindo à Plataforma 7</h2><ol><li><a href="#/empresas">Cadastre o primeiro cliente (CNPJ)</a></li><li><a href="#/encontrar/catalogos">Monte o catálogo de produtos</a> e <a href="#/encontrar/perfis">o perfil de busca</a></li><li>Capture os avisos do PNCP e envie os bons para o Quadro e o Cadastrar</li></ol><p class="mini">Os dados ficam neste navegador. Faça backup em <a href="#/config">Configurações</a>.</p></div>' : '') +
+    el.innerHTML = (!d.empresas.length ? '<div class="boas-vindas cartao"><h2>Bem-vindo à Plataforma 7</h2><ol><li><a href="#/empresas">Cadastre o primeiro cliente (CNPJ)</a></li><li><a href="#/encontrar/catalogos">Monte o catálogo de produtos</a> e <a href="#/encontrar/perfis">o perfil de busca</a></li><li>Capture os avisos do PNCP e envie os bons para o Seven Hub e o Seven Bid</li></ol><p class="mini">Os dados ficam neste navegador. Faça backup em <a href="#/config">Configurações</a>.</p></div>' : '') +
       '<div class="pn-topo"><div><p class="pn-data">' + esc(dataTxt) + '</p>' + (emp ? '<p class="mini mudo">Cliente ativo: ' + esc(emp.fantasia || emp.razao) + '</p>' : '') + '</div><div class="grupo-botoes">' +
       (editando ? '<button class="btn" data-pn="add">＋ Adicionar bloco</button><button class="btn fantasma" data-pn="padrao">Restaurar padrão</button><button class="btn primario" data-pn="editar">Concluir</button>' : '<button class="btn" data-pn="editar">✎ Personalizar painel</button>') + '</div></div>' +
       (editando ? '<p class="pn-dica-edicao mini">Arraste os blocos pela alça ⠿ (ou use ↑ ↓) para reordenar, troque o tamanho em P/M/G e retire com ✕. As mudanças ficam salvas.</p>' : '') +

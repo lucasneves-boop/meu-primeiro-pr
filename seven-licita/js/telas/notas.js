@@ -32,7 +32,7 @@
   }
   async function daProposta() {
     const ps = (Dados.e.propostas || []).filter(function (p) { return p.itens && p.itens.some(function (i) { return i.unitario; }); });
-    if (!ps.length) return aviso('Nenhuma proposta com preços. Preencha os valores em Cadastrar.', 'erro');
+    if (!ps.length) return aviso('Nenhuma proposta com preços. Preencha os valores no Seven Bid.', 'erro');
     const r = await modal({ titulo: 'Nota a partir de proposta', botao: 'Criar nota', corpo: campo('Proposta', '<select name="p">' + opcoes(ps.map(function (p) { return { v: p.id, t: [p.numero, p.orgao, String(p.objeto || '').slice(0, 50)].filter(Boolean).join(' · ') }; })) + '</select>') + '<label class="check"><input type="checkbox" name="vencidos" checked> Só os itens marcados como vencidos (se houver)</label>' });
     if (!r) return; const p = ps.find(function (x) { return x.id === r.get('p'); }); const emp = Dados.empresa(p.empresaId) || Dados.empresaAtiva(); if (emp) Dados.e.empresaAtiva = emp.id;
     let its = p.itens.filter(function (i) { return i.participar !== false && i.unitario; }); if (r.get('vencidos') && its.some(function (i) { return i.vencido; })) its = its.filter(function (i) { return i.vencido; });

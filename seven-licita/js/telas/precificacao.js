@@ -146,7 +146,7 @@
   }
 
   Telas.precificacao = {
-    titulo: 'Precificação',
+    titulo: 'Seven Price',
     resultadoProduto: resultadoProduto,
     render: function (el, sub) {
       sub = sub || 'produto';
