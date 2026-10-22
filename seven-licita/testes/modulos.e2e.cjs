@@ -317,7 +317,7 @@ const testes = {
     await pg.goto(url); await pg.evaluate(() => { Dados.e.empresas.push({ id: 'empnf', razao: 'Papelaria Exemplo LTDA', fantasia: 'Papelaria Exemplo', cnpj: '11222333000181', porte: 'ME', uf: 'GO', municipio: 'Catalão' }); Dados.e.empresaAtiva = 'empnf'; Dados.salvar(); });
     await pg.goto(url + '#/notas/config'); await pg.fill('#nf-cfg [name=ie]', '101234567'); await pg.fill('#nf-cfg [name=logradouro]', 'Rua 10'); await pg.fill('#nf-cfg [name=proximoNumero]', '57'); await pg.click('#nf-cfg .btn.primario');
     ok(await pg.evaluate(() => Dados.e.empresas.find(e => e.id === 'empnf').fiscal.proximoNumero === 57), 'configurações fiscais do emitente');
-    await pg.goto(url + '#/notas/saida'); await pg.click('.vazio [data-a=nfe]'); await pg.waitForSelector('.nf-ed');
+    await pg.evaluate(() => { Dados.e.nfCfgGuia = { guiado: false }; Dados.salvar(); }); await pg.goto(url + '#/notas/saida'); await pg.click('.vazio [data-a=nfe]'); await pg.waitForSelector('.nf-ed');
     await pg.fill('[data-k="destinatario.documento"]', '11.444.777/0001-61'); await pg.fill('[data-k="destinatario.nome"]', 'Prefeitura Municipal de Catalão'); await pg.fill('[data-k="destinatario.municipio"]', 'Catalão');
     await pg.click('[data-nf=item]'); await pg.fill('[data-k="itens.0.descricao"]', 'Papel A4 75 g/m², caixa com 10 resmas'); await pg.fill('[data-k="itens.0.ncm"]', '48025610'); await pg.fill('[data-k="itens.0.quantidade"]', '200'); await pg.fill('[data-k="itens.0.valorUnitario"]', '238,50');
     ok(await pg.inputValue('[data-k="itens.0.cfop"]') === '5102', 'CFOP sugerido para venda dentro do estado');

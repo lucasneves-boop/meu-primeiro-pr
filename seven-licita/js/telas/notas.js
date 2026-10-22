@@ -104,7 +104,7 @@
       const r = ev.target.closest('[data-abrir]'); if (r) { const n = nota(r.dataset.abrir); location.hash = '#/notas/' + (n.situacao === 'rascunho' || n.situacao === 'pronta' ? 'editar/' : 'ver/') + n.id; }
     };
   }
-  function abas(ativa) { return UI.abas([{ id: 'saida', t: 'Notas de saída' }, { id: 'entrada', t: 'Notas de entrada' }, { id: 'relatorios', t: 'Relatórios' }, { id: 'config', t: 'Configurações fiscais' }], ativa, 'notas'); }
+  function abas(ativa) { return UI.abas([{ id: 'saida', t: 'Notas de saída' }, { id: 'entrada', t: 'Notas de entrada' }, { id: 'relatorios', t: 'Relatórios' }, { id: 'config', t: 'Configurações fiscais' }, { id: 'aprender', t: '📘 Aprender' }], ativa, 'notas'); }
 
   function calcularNota(n) { return N.calcular(n, emitente(n) || {}); }
 
@@ -159,7 +159,79 @@
       if (a === 'duplicar') { const c = JSON.parse(JSON.stringify(n)); Object.assign(c, { id: Dados.id('nf'), situacao: 'rascunho', numero: null, chave: null, protocolo: null, autorizadaEm: null, lancadoFinanceiro: false, emissao: hoje(), saida: hoje(), historico: [], cce: [], cancelamento: null, xmlId: null }); log(c, 'Duplicada da nota ' + numero(n) + '.'); lista().unshift(c); Dados.salvar(); location.hash = '#/notas/editar/' + c.id; }
       if (a === 'excluir' && await confirmar('Excluir rascunho', 'Excluir esta nota em rascunho?', 'Excluir')) { Dados.e.notas = lista().filter(function (x) { return x !== n; }); Dados.salvar(); location.hash = '#/notas/saida'; }
     };
+    guiar(el, n);
   }
+  // ---------- emissor guiado (etapas no estilo do emissor do Sebrae) e explicações de cada campo ----------
+  const G = self.NFGuia;
+  const SECOES = ['dados', 'destinatario', 'itens', 'transporte', 'contrato', 'pagamento', 'complementar'];
+  const COLUNAS = { 'Descrição': 'itens.descricao', NCM: 'itens.ncm', CFOP: 'itens.cfop', CST: 'itens.cst', CSOSN: 'itens.cst', 'Un.': 'itens.unidade', 'Qtd.': 'itens.quantidade', 'Valor unit.': 'itens.valorUnitario', 'Desc. R$': 'itens.desconto', 'ICMS %': 'itens.aliqIcms', 'IPI %': 'itens.aliqIpi' };
+  const guia = { etapa: {}, ajuda: null };
+  function guiado() { const c = Dados.e.nfCfgGuia = Dados.e.nfCfgGuia || { guiado: true }; return c.guiado !== false; }
+  function botaoAjuda(k, rot) { return '<button type="button" class="nf-q" data-ajuda="' + esc(k) + '" aria-label="O que é ' + esc(rot || k) + '?" title="O que é isto?">?</button>'; }
+  function guiar(el, n) {
+    if (!G) return;
+    const serv = n.tipo === 'servico';
+    const etapas = G.ETAPAS;
+    // "?" em cada campo
+    el.querySelectorAll('.nf-col [data-k]').forEach(function (inp) {
+      const k = G.chave(inp.dataset.k); if (!G.verbete(k)) return;
+      const lab = inp.closest('label.campo'); const chk = inp.closest('label.check');
+      if (lab && !lab.querySelector('.nf-q')) { const sp = lab.querySelector(':scope > span'); if (sp) sp.insertAdjacentHTML('beforeend', botaoAjuda(k, sp.textContent)); }
+      else if (chk && !chk.querySelector('.nf-q')) chk.insertAdjacentHTML('beforeend', botaoAjuda(k, chk.textContent));
+      else if (!lab && !chk && inp.closest('td') === null && !inp.parentNode.querySelector('.nf-q')) inp.insertAdjacentHTML('afterend', botaoAjuda(k));
+    });
+    el.querySelectorAll('.nf-itens thead th').forEach(function (th) { const k = COLUNAS[th.textContent.trim()]; if (k && !th.querySelector('.nf-q')) th.insertAdjacentHTML('beforeend', ' ' + botaoAjuda(k, th.textContent)); });
+    // etapas
+    const secs = el.querySelectorAll('.nf-col > section.cartao'); secs.forEach(function (sc, i) { sc.dataset.etapa = SECOES[i] || 'complementar'; });
+    const atual = guia.etapa[n.id] || 'dados'; const i = etapas.findIndex(function (x) { return x.id === atual; }); const et = etapas[i] || etapas[0];
+    const v = N.validar(n, emitente(n) || {}); const pend = function (id) { return v.filter(function (x) { return x.nivel === 'erro' && etapaDoErro(x.msg) === id; }).length; };
+    const barra = '<nav class="nf-passos" aria-label="Etapas da nota">' + etapas.map(function (x, k) { return '<button type="button" class="nf-passo' + (x.id === et.id ? ' on' : '') + (k < i ? ' feito' : '') + '" data-etapa="' + x.id + '"><span class="nf-passo-n">' + (k + 1) + '</span><span class="nf-passo-t">' + esc(x.t) + (pend(x.id) ? ' <b class="nf-pend" title="Pendências nesta etapa">' + pend(x.id) + '</b>' : '') + '</span></button>'; }).join('') + '</nav>' +
+      '<div class="nf-modo"><label class="check-inline"><input type="checkbox" id="nf-guiado"' + (guiado() ? ' checked' : '') + '> Emissor guiado (uma etapa por vez, com explicações)</label><a href="#/notas/aprender" class="mini">📘 Aprender: glossário e fontes oficiais</a></div>';
+    const intro = '<section class="cartao nf-intro" data-etapa-intro><div class="nf-intro-n">Etapa ' + (i + 1) + ' de ' + etapas.length + '</div><h3>' + esc(et.t) + '</h3><p class="nf-intro-r">' + esc(et.resumo) + '</p><p class="nf-feynman"><b>Explicando simples:</b> ' + esc(et.feynman) + '</p>' +
+      (et.id === 'emitir' ? fluxoEmissao() : '<details><summary>O que cada campo desta etapa significa</summary><ul class="nf-glos">' + et.campos.map(function (c) { const x = G.verbete(c); return x ? '<li><button type="button" class="link-btn" data-ajuda="' + esc(x.id) + '">' + esc(x.t) + '</button>: ' + esc(x.o) + '</li>' : ''; }).join('') + '</ul></details>') +
+      '<div class="nf-nav">' + (i > 0 ? '<button type="button" class="btn" data-etapa="' + etapas[i - 1].id + '">← ' + esc(etapas[i - 1].t) + '</button>' : '<span></span>') + (i < etapas.length - 1 ? '<button type="button" class="btn primario" data-etapa="' + etapas[i + 1].id + '">' + esc(etapas[i + 1].t) + ' →</button>' : '') + '</div></section>';
+    const col = el.querySelector('.nf-col'); col.insertAdjacentHTML('afterbegin', intro); el.querySelector('.nf-ed').insertAdjacentHTML('beforebegin', barra);
+    if (guiado()) { el.querySelector('.nf-ed').classList.add('guiado'); secs.forEach(function (sc) { sc.hidden = sc.dataset.etapa !== et.id; }); if (et.id === 'emitir') el.querySelector('.nf-lado').classList.add('destaque'); }
+    else el.querySelector('[data-etapa-intro]').hidden = true;
+    if (guia.ajuda) abrirAjuda(guia.ajuda);
+    const original = el.onclick;
+    el.onclick = function (ev) {
+      const q = ev.target.closest('[data-ajuda]'); if (q) { ev.preventDefault(); abrirAjuda(q.dataset.ajuda, n); return; }
+      const pa = ev.target.closest('[data-etapa]'); if (pa && pa.tagName === 'BUTTON') { guia.etapa[n.id] = pa.dataset.etapa; if (!guiado()) { Dados.e.nfCfgGuia.guiado = true; } App.redesenhar(); window.scrollTo(0, 0); return; }
+      if (ev.target.closest('[data-fechar-ajuda]')) { guia.ajuda = null; const a = document.getElementById('nf-ajuda'); if (a) a.remove(); document.body.classList.remove('com-ajuda-nf'); return; }
+      return original && original.call(this, ev);
+    };
+    el.querySelector('#nf-guiado').onchange = function () { Dados.e.nfCfgGuia.guiado = this.checked; Dados.salvar(); App.redesenhar(); };
+  }
+  // Em que etapa cada mensagem da validação aparece (para o número de pendências na barra).
+  function etapaDoErro(msg) { const m = String(msg).toLowerCase(); if (/destinat|cnpj|cpf|uf|inscri|ie\b/.test(m)) return 'destinatario'; if (/item|ncm|cfop|cst|csosn|quantidade|valor unit|servi[çc]o/.test(m)) return 'itens'; if (/emitente|certificado/.test(m)) return 'emitir'; if (/natureza|emiss/.test(m)) return 'dados'; if (/parcela|duplicata|pagamento/.test(m)) return 'pagamento'; if (/empenho|contrato/.test(m)) return 'contrato'; return 'emitir'; }
+  function fluxoEmissao() {
+    const passos = [['1', 'Conferir', 'Veja os erros e avisos ao lado e o espelho da nota.'], ['2', 'Assinar', 'O emissor assina o arquivo XML com o certificado digital (A1 ou A3) da empresa.'], ['3', 'Transmitir', 'O XML vai para a SEFAZ do seu estado (NF-e) ou para a prefeitura/Emissor Nacional (NFS-e).'], ['4', 'Autorização', 'A SEFAZ devolve o protocolo. Só agora a nota vale.'], ['5', 'DANFE e XML', 'Imprima o DANFE para acompanhar a carga e envie o XML ao comprador.'], ['6', 'Depois', 'Errou algo simples? Carta de correção. Mercadoria não saiu? Cancelamento no prazo.']];
+    return '<ol class="nf-fluxo">' + passos.map(function (p) { return '<li><span>' + p[0] + '</span><b>' + p[1] + '</b><small>' + p[2] + '</small></li>'; }).join('') + '</ol><p class="mini mudo">Este sistema prepara e confere a nota. A assinatura e a transmissão são feitas por um emissor autorizado (por exemplo, o emissor gratuito do Sebrae, para NF-e, ou o Emissor Nacional, para NFS-e) com o certificado da empresa: use "Enviar ao emissor (JSON)" e depois "Registrar autorização". ' + botaoAjuda('certificado', 'certificado digital') + '</p>';
+  }
+  function abrirAjuda(k, n) {
+    const x = G.verbete(k); if (!x) return; guia.ajuda = k;
+    let a = document.getElementById('nf-ajuda'); if (!a) { a = document.createElement('aside'); a.id = 'nf-ajuda'; a.className = 'nf-ajuda'; a.setAttribute('role', 'dialog'); a.setAttribute('aria-label', 'Explicação do campo'); document.body.appendChild(a); a.addEventListener('click', function (ev) { if (ev.target.closest('[data-fechar-ajuda]')) { guia.ajuda = null; a.remove(); document.body.classList.remove('com-ajuda-nf'); } const q = ev.target.closest('[data-ajuda]'); if (q) abrirAjuda(q.dataset.ajuda); }); }
+    const termo = x.busca ? x.busca + (k === 'itens.ncm' && n && n.itens[0] ? (n.itens[0].descricao || '').split(/\s+/).slice(0, 3).join(' ') : '') : x.t;
+    const bloco = function (r, t) { return t ? '<h4>' + r + '</h4><p>' + esc(t) + '</p>' : ''; };
+    a.innerHTML = '<header><span class="nf-ajuda-tag">Entenda o campo</span><button type="button" class="icone" data-fechar-ajuda aria-label="Fechar explicação">×</button></header><h3>' + esc(x.t) + '</h3><p class="nf-ajuda-o">' + esc(x.o) + '</p>' +
+      bloco('Explicando simples', x.f) + bloco('Para que serve', x.p) + bloco('Exemplo', x.ex) + bloco('Erro comum', x.erro) + bloco('Onde achar a informação', x.onde) +
+      '<h4>Fontes oficiais</h4><ul class="nf-fontes">' + x.fontes.map(function (f) { return '<li><a href="' + esc(UI.url(f.url)) + '" target="_blank" rel="noopener">' + esc(f.nome) + ' ↗</a></li>'; }).join('') + '</ul>' +
+      '<a class="btn mini" href="' + esc(G.busca(termo)) + '" target="_blank" rel="noopener">🔎 Pesquisar "' + esc(termo.trim()) + '" em sites do governo</a>' +
+      '<p class="mini mudo">Regras de ICMS e ISS mudam por estado e município: na dúvida, confirme com o contador.</p>';
+    document.body.classList.add('com-ajuda-nf');
+  }
+  function telaAprender(el) {
+    const q = guia.q || '';
+    const l = G.pesquisar(q);
+    el.innerHTML = abas('aprender') + '<section class="cartao nf-intro"><h3>Como uma nota fiscal funciona</h3><p class="nf-feynman">Pense na nota fiscal como um envelope registrado: dentro vai a descrição do que você vendeu, por quanto e para quem; o carimbo é a autorização da SEFAZ (ou da prefeitura, no caso de serviço). O papel que viaja com a mercadoria (DANFE) é só um retrato do envelope. O envelope de verdade é o arquivo XML, que você guarda e envia ao comprador.</p>' + fluxoEmissao() + '</section>' +
+      '<section class="cartao"><h3>Passo a passo do emissor</h3><ol class="nf-etapas-lista">' + G.ETAPAS.map(function (e) { return '<li><b>' + esc(e.t) + '</b>: ' + esc(e.feynman) + '</li>'; }).join('') + '</ol></section>' +
+      '<section class="cartao"><header class="nf-apr-cab"><h3>Glossário (' + l.length + ')</h3><input type="search" id="nf-q" placeholder="Buscar: NCM, CFOP, DIFAL, empenho…" value="' + esc(q) + '" aria-label="Buscar no glossário"></header><div class="nf-glossario">' +
+      l.map(function (x) { return '<article><h4>' + esc(x.t) + '</h4><p><b>' + esc(x.o) + '</b> ' + esc(x.f) + '</p>' + (x.ex ? '<p class="mini"><b>Exemplo:</b> ' + esc(x.ex) + '</p>' : '') + (x.erro ? '<p class="mini"><b>Erro comum:</b> ' + esc(x.erro) + '</p>' : '') + '<p class="mini">' + x.fontes.map(function (f) { return '<a href="' + esc(UI.url(f.url)) + '" target="_blank" rel="noopener">' + esc(f.nome) + ' ↗</a>'; }).join(' · ') + '</p></article>'; }).join('') + '</div></section>' +
+      '<section class="cartao"><h3>Fontes oficiais</h3><ul class="nf-fontes">' + Object.keys(G.FONTES).map(function (k) { return '<li><a href="' + esc(UI.url(G.FONTES[k][1])) + '" target="_blank" rel="noopener">' + esc(G.FONTES[k][0]) + ' ↗</a></li>'; }).join('') + '</ul></section>';
+    const b = el.querySelector('#nf-q'); b.oninput = function () { guia.q = b.value; clearTimeout(b._t); b._t = setTimeout(function () { telaAprender(el); const nb = el.querySelector('#nf-q'); nb.focus(); nb.setSelectionRange(nb.value.length, nb.value.length); }, 250); };
+  }
+
   function somarDias(iso, n) { const d = new Date((iso || hoje()) + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
   function atualizarResumo(el, n) {
     const e = emitente(n) || {}; const c = calcularNota(n); const t = c.totais; const serv = n.tipo === 'servico';
@@ -280,12 +352,13 @@
   Telas.notas = {
     titulo: 'Notas Fiscais',
     render: function (el, sub, param) {
-      el.onclick = el.oninput = el.onchange = null;
+      el.onclick = el.oninput = el.onchange = null; const aj = document.getElementById('nf-ajuda'); if (aj && sub !== 'editar') { aj.remove(); guia.ajuda = null; document.body.classList.remove('com-ajuda-nf'); }
       if (sub === 'editar') return telaEditor(el, param);
       if (sub === 'ver') return telaDanfe(el, param);
       if (sub === 'entrada') return telaLista(el, 'entrada');
       if (sub === 'relatorios') return telaRelatorios(el);
       if (sub === 'config') return telaConfig(el);
+      if (sub === 'aprender') return telaAprender(el);
       return telaLista(el, 'saida');
     }
   };

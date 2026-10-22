@@ -1,0 +1,31 @@
+// Emissor de notas guiado: etapas, "?" em cada campo com explicação e fontes oficiais, e a aba Aprender.
+const path = require('path');
+const { abrir } = require('./apoio.cjs');
+(async () => {
+  const t = await abrir(path.join(process.env.SAIDA || '/tmp', 'nf'));
+  const { pg, url, ok, foto } = t;
+  await pg.goto(url + '#/painel'); await pg.waitForSelector('#conteudo');
+  await pg.evaluate(() => { Dados.e.empresas.push({ id: 'emp1', razao: 'Cliente Teste LTDA', cnpj: '12345678000190', uf: 'GO', municipio: 'Catalão', porte: 'ME' }); Dados.e.empresaAtiva = 'emp1'; Dados.salvar(); });
+  await pg.goto(url + '#/notas/saida'); await pg.click('.vazio [data-a=nfe]'); await pg.waitForSelector('.nf-passos');
+  ok(await pg.locator('.nf-passo').count() === 8, '8 etapas, como no emissor do Sebrae');
+  ok(await pg.locator('.nf-col > section.cartao[data-etapa]:not([hidden])').count() === 1, 'emissor guiado mostra uma etapa por vez');
+  ok(/Explicando simples/.test(await pg.textContent('.nf-intro')), 'explicação simples da etapa');
+  await pg.click('.nf-col [data-etapa=dados]:not([hidden]) .nf-q >> nth=0'); await pg.waitForSelector('#nf-ajuda');
+  ok(/Natureza da operação/.test(await pg.textContent('#nf-ajuda')) && await pg.locator('#nf-ajuda .nf-fontes a').count() >= 1, '"?" abre explicação com fontes oficiais');
+  await foto('nf-ajuda');
+  await pg.click('[data-fechar-ajuda]');
+  await pg.click('.nf-nav .btn.primario'); await pg.waitForSelector('.nf-col > section[data-etapa=destinatario]:not([hidden])'); ok(true, 'avança para Destinatário');
+  await pg.click('.nf-passo[data-etapa=itens]'); await pg.click('[data-nf=item]'); await pg.waitForSelector('.nf-itens');
+  await pg.click('.nf-itens th .nf-q[data-ajuda="itens.ncm"]'); await pg.waitForSelector('#nf-ajuda');
+  const aj = await pg.textContent('#nf-ajuda'); ok(/CEP/.test(aj) && /Classif/.test(aj), 'NCM explicado com link do Classif');
+  ok(/site%3Agov\.br/.test(await pg.getAttribute('#nf-ajuda a.btn', 'href')), 'botão de pesquisa nas fontes do governo');
+  await foto('nf-itens');
+  await pg.click('.nf-passo[data-etapa=emitir]'); ok(await pg.locator('.nf-fluxo li').count() === 6, 'etapa final explica assinar, transmitir e autorizar');
+  await pg.uncheck('#nf-guiado'); ok(await pg.locator('.nf-col > section.cartao[data-etapa]:not([hidden])').count() >= 6, 'modo página única mostra tudo');
+  await pg.goto(url + '#/notas/aprender'); await pg.waitForSelector('.nf-glossario');
+  const n0 = await pg.locator('.nf-glossario article').count(); await pg.fill('#nf-q', 'difal'); await pg.waitForTimeout(400);
+  ok(n0 > 30 && await pg.locator('.nf-glossario article').count() >= 1 && await pg.locator('.nf-glossario article').count() < n0, 'glossário com busca');
+  await foto('nf-aprender');
+  await pg.setViewportSize({ width: 390, height: 844 }); await pg.goto(url + '#/notas/saida'); await pg.click('.nf-lista a >> nth=0').catch(() => {});
+  await t.fechar();
+})().catch(e => { console.error(e); process.exit(1); });

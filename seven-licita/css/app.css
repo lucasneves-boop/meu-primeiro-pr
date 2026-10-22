@@ -2313,3 +2313,53 @@ tr.f-atual td { background: var(--ouro-claro); }
 :root[data-theme="gold"] input:focus, :root[data-theme="gold"] select:focus, :root[data-theme="gold"] textarea:focus { border-color: var(--ouro); outline-color: var(--ouro); }
 :root[data-theme="gold"] .ia-app { --ia-fundo: #070604; --ia-lat: #000; --ia-bolha: #1c1609; --ia-comp: #0f0c07; }
 .tema-dourado .tema-amostra i:first-child { background: #000; } .tema-dourado .tema-amostra i:last-child { background: linear-gradient(135deg, #0c0a06 60%, #c9a25a 60%); }
+
+/* Emissor de notas guiado */
+.nf-passos { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin: 4px 0 10px; }
+.nf-passo { font: inherit; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie); color: var(--texto); cursor: pointer; text-align: left; }
+.nf-passo:hover { border-color: var(--ouro); }
+.nf-passo.on { border-color: var(--ouro); background: var(--ouro-claro); }
+.nf-passo-n { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--superficie-2); }
+.nf-passo.on .nf-passo-n, .nf-passo.feito .nf-passo-n { background: var(--ouro); color: #050505; }
+.nf-passo-t { font-size: 12px; font-weight: 600; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+.nf-pend { display: inline-grid; place-items: center; min-width: 16px; height: 16px; border-radius: 8px; background: var(--perigo); color: #fff; font-size: 10px; padding: 0 4px; }
+.nf-modo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.nf-intro { border-left: 4px solid var(--ouro); }
+.nf-intro-n { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--mudo); }
+.nf-intro h3 { margin: 2px 0 4px; }
+.nf-intro-r { margin: 0 0 6px; font-weight: 600; }
+.nf-feynman { margin: 0 0 8px; line-height: 1.6; }
+.nf-glos { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+.nf-glos li { margin: 3px 0; }
+.nf-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.nf-q { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; border-radius: 50%; border: 1px solid var(--ouro); background: transparent; color: var(--marca); font: 700 11px/1 var(--fonte); cursor: pointer; vertical-align: middle; padding: 0; }
+.nf-q:hover { background: var(--ouro); color: #050505; }
+.nf-ajuda { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); z-index: 70; background: var(--superficie); color: var(--texto); border-left: 3px solid var(--ouro); box-shadow: -10px 0 30px rgba(0, 0, 0, .25); padding: 16px 18px 24px; overflow-y: auto; }
+.nf-ajuda header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.nf-ajuda-tag { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--marca); font-weight: 700; }
+.nf-ajuda h3 { margin: 0 0 4px; }
+.nf-ajuda-o { font-weight: 600; }
+.nf-ajuda h4 { margin: 14px 0 4px; }
+.nf-ajuda p { margin: 0 0 6px; line-height: 1.55; }
+.nf-fontes { margin: 0 0 12px; padding-left: 18px; }
+.nf-fontes li { margin: 4px 0; }
+.nf-fluxo { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.nf-fluxo li { border: 1px solid var(--borda); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.nf-fluxo li span { width: 24px; height: 24px; border-radius: 50%; background: var(--ouro); color: #050505; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+.nf-fluxo li small { color: var(--mudo); line-height: 1.4; }
+.nf-lado.destaque .cartao { border-color: var(--ouro); }
+.nf-apr-cab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.nf-apr-cab input { flex: 1; max-width: 360px; height: 38px; }
+.nf-glossario { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.nf-glossario article { border: 1px solid var(--borda); border-radius: 10px; padding: 10px 12px; }
+.nf-glossario h4 { margin: 0 0 4px; color: var(--marca); text-transform: none; font-size: 14px; letter-spacing: 0; }
+.nf-glossario p { margin: 0 0 6px; line-height: 1.5; font-size: 13px; }
+.nf-etapas-lista li { margin: 6px 0; line-height: 1.5; }
+@media (max-width: 1100px) { .nf-passos { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .nf-passos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { body.com-ajuda-nf .principal { margin-right: 420px; } }
+.nf-passos { grid-template-columns: repeat(8, minmax(112px, 1fr)); overflow-x: auto; padding-bottom: 4px; }
+.nf-passo-t { overflow-wrap: normal; word-break: normal; hyphens: auto; }
+@media (max-width: 1100px) { .nf-passos { grid-template-columns: repeat(8, minmax(112px, 1fr)); } }
+@media (max-width: 560px) { .nf-passos { grid-template-columns: repeat(8, minmax(104px, 1fr)); } }
+.nf-ajuda .btn { white-space: normal; max-width: 100%; text-align: left; height: auto; }
