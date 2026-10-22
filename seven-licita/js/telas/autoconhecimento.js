@@ -1,4 +1,4 @@
-/* Autoconhecimento: Big Five (IPIP-50), estilo DISC, temperamento e prática de raciocínio, por pessoa e por equipe. */
+/* Seven Prisma (autoconhecimento): Big Five (IPIP-50), estilo DISC, temperamento e prática de raciocínio, por pessoa e por equipe. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -30,7 +30,7 @@
     const tp = b5 ? P.temperamento(b5.dados) : null;
     const perfis = p.pessoas.map(function (x) { const b = ultimo(x.id, 'big5'), d = ultimo(x.id, 'disc'); return { nome: x.nome, big5: b && b.dados, disc: d && d.dados }; });
     const eq = P.equipe(perfis);
-    el.innerHTML = '<div class="pf"><header class="pf-topo"><div><h1>Autoconhecimento</h1><p class="mudo">Entenda como você e a equipe trabalham melhor. Resultados para reflexão e desenvolvimento, não para rotular ou selecionar pessoas.</p></div>' +
+    el.innerHTML = '<div class="pf"><header class="pf-topo"><div><h1>Seven Prisma</h1><p class="mudo">Entenda como você e a equipe trabalham melhor. Resultados para reflexão e desenvolvimento, não para rotular ou selecionar pessoas.</p></div>' +
       '<label class="pf-pessoa">Pessoa <select id="pf-pessoa">' + p.pessoas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === eu.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>'; }).join('') + '</select><button class="btn mini" data-a="add-pessoa">＋</button><button class="btn mini fantasma" data-a="renomear">Renomear</button></label></header>' +
       '<div class="pf-cards">' +
       cartao('big5', '🧭', 'Big Five', 'O modelo de personalidade com mais evidência científica. 50 afirmações (IPIP), cerca de 8 minutos.', b5 ? 'Feito em ' + data(b5.em) : '') +
@@ -106,7 +106,7 @@
   window.addEventListener('hashchange', function () { if (!/^#\/perfil\/raciocinio/.test(location.hash)) { clearInterval(est.timer); est.prova = null; } });
 
   Telas.perfil = {
-    titulo: 'Autoconhecimento',
+    titulo: 'Seven Prisma',
     render: function (el, sub) { e(); el.onclick = null; if (sub === 'big5') return telaBig5(el); if (sub === 'disc') return telaDisc(el); if (sub === 'raciocinio') return telaRaciocinio(el); telaInicio(el); }
   };
 })();

@@ -1,4 +1,4 @@
-/* Autoconhecimento: Big Five (IPIP-50, domínio público, Goldberg), estilo DISC (itens próprios, uso reflexivo),
+/* Seven Prisma (autoconhecimento): Big Five (IPIP-50, domínio público, Goldberg), estilo DISC (itens próprios, uso reflexivo),
    temperamento derivado de Extroversão × Estabilidade (leitura de Eysenck) e prática de raciocínio (sem estimar QI). Puro. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.Perfil = fabrica();
