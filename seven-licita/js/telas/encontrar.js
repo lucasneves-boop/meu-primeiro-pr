@@ -107,7 +107,7 @@
       '<button class="btn fantasma" data-a="anexos">Anexos</button>' +
       '<button class="btn fantasma" data-a="itens">Itens</button>' +
       '<button class="btn fantasma" data-a="anotar">✎ Anotações' + (Telas.oport.quantas(x.id) ? ' (' + Telas.oport.quantas(x.id) + ')' : '') + '</button>' +
-      '<button class="btn fantasma" data-a="ia" title="Abre a Seven.ia com os dados deste edital">✳ Perguntar à Seven.ia</button>' +
+      '<button class="btn fantasma" data-a="ia" title="Abre a Seven IA com os dados deste edital">✳ Perguntar à Seven IA</button>' +
       '<button class="btn fantasma" data-a="orgao">' + (orgFav ? '☆ Desfavoritar órgão' : '☆ Órgão') + '</button>' +
       '<span class="sep"></span>' +
       (contexto !== 'lixeira' ? '<button class="btn primario" data-a="cadastrar">Enviar para Cadastrar</button><button class="btn" data-a="quadro">+ Quadro</button><button class="btn" data-a="monitorar">Monitorar</button>' : '') +

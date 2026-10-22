@@ -1859,7 +1859,7 @@ kbd { font: 12px monospace; padding: 1px 5px; border: 1px solid var(--borda); bo
 .pf-res { text-align: center; } .pf-res > b { font-size: 46px; } .pf-res ol { text-align: left; } .pf-res li { margin: 8px 0; } .pf-res li.nao { color: var(--perigo); }
 @media (max-width: 600px) { .pf-esc span { font-size: 9px; } }
 
-/* ---------- Seven.ai (estilo claude.ai) ---------- */
+/* ---------- Seven IA (estilo claude.ai) ---------- */
 .ia-app { --ia-fundo: #faf9f5; --ia-lat: #f3f1ea; --ia-bolha: #ece8dd; --ia-comp: #ffffff; display: grid; grid-template-columns: 260px minmax(0, 1fr); margin: -20px -24px -48px; height: calc(100vh - 60px); background: var(--ia-fundo); color: var(--texto); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ia-app { --ia-fundo: #1c1b19; --ia-lat: #151513; --ia-bolha: #2b2a26; --ia-comp: #252421; } }
 :root[data-theme="dark"] .ia-app { --ia-fundo: #1c1b19; --ia-lat: #151513; --ia-bolha: #2b2a26; --ia-comp: #252421; }

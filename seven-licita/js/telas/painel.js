@@ -151,7 +151,7 @@
       return { link: '#/semanas', corpo: G.linha(sr.map(function (x) { return 'S' + x.n; }), [{ nome: 'Execução', valores: sr.map(function (x) { return x.pct; }) }], { largura: LARG[tam], max: 100, ref: 85, refRotulo: 'meta 85%', fmt: function (v) { return Math.round(v) + '%'; }, fmtEixo: function (v) { return v + '%'; }, vazio: 'Pontue a primeira semana', titulo: 'Execução semanal' }), tabela: G.tabela(['Semana', 'Execução'], sr.map(function (x) { return ['S' + x.n, x.pct == null ? '—' : Math.round(x.pct) + '%']; })) };
     },
     atalhos: function () {
-      const l = [['#/encontrar', '⌕', 'Encontrar'], ['#/cadastrar', '✎', 'Cadastrar'], ['#/disputar', '⚡', 'Disputar'], ['#/monitorar', '◉', 'Monitorar'], ['#/comercial', '📈', 'Comercial'], ['#/agenda', '☑', 'Agenda'], ['#/ia', '✳', 'Seven.ia'], ['#/habilitacao', '✓', 'Certidões']];
+      const l = [['#/encontrar', '⌕', 'Encontrar'], ['#/cadastrar', '✎', 'Cadastrar'], ['#/disputar', '⚡', 'Disputar'], ['#/monitorar', '◉', 'Monitorar'], ['#/comercial', '📈', 'Comercial'], ['#/agenda', '☑', 'Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
       return { corpo: '<nav class="pn-atalhos">' + l.map(function (x) { return '<a href="' + x[0] + '"><span aria-hidden="true">' + x[1] + '</span>' + x[2] + '</a>'; }).join('') + '</nav>' };
     }
   };
