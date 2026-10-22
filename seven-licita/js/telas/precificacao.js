@@ -96,43 +96,6 @@
       '<div class="cartao"><h4>Composição do BDI</h4><table class="tabela compacta"><tbody>' + [['Administração central', s.administracao], ['Seguro', s.seguro], ['Risco', s.risco], ['Garantia', s.garantia], ['Despesas financeiras', s.financeiro], ['Lucro', s.lucro], ['Tributos', s.tributos]].map(function (x) { return '<tr><td>' + x[0] + '</td><td class="n">' + pc(n(x[1]) || 0) + '</td></tr>'; }).join('') + '<tr><th>BDI</th><th class="n">' + pc(r.bdi * 100) + '</th></tr></tbody></table></div>';
   }
 
-  // ---------- lote: todos os itens de uma proposta ----------
-  function telaLote(el) {
-    const ps = Dados.e.propostas.filter(function (p) { return p.itens && p.itens.length; });
-    const L = est.lote; const p = ps.find(function (x) { return x.id === L.proposta; }) || ps[0];
-    if (!p) { el.innerHTML = UI.vazio('Nenhuma proposta com itens', 'Crie uma proposta no Cadastrar (os itens vêm do PNCP) para precificar todos de uma vez.', '<a class="btn primario" href="#/cadastrar">Ir para o Cadastrar</a>'); return; }
-    L.proposta = p.id; const pr = L.params;
-    const linhas = p.itens.filter(function (i) { return i.participar !== false; }).map(function (i) {
-      const custo = L.custos[p.id + ':' + i.numero] != null ? L.custos[p.id + ':' + i.numero] : i.custo;
-      const r = P.produto(Object.assign({}, pr, { custo: custo, quantidade: i.quantidade, referencia: i.refUnitaria, freteEntregaTotal: 0 }));
-      return { i: i, custo: custo, r: r };
-    });
-    const tot = linhas.reduce(function (s, x) { return { preco: s.preco + (x.r.valido && x.custo ? x.r.total : 0), minimo: s.minimo + (x.r.valido && x.custo ? x.r.totalMinimo : 0), ref: s.ref + (x.i.refUnitaria || 0) * (x.i.quantidade || 0) }; }, { preco: 0, minimo: 0, ref: 0 });
-    el.innerHTML = '<form class="cartao" id="l-form"><div class="linha">' + campo('Proposta', '<select name="proposta">' + opcoes(ps.map(function (x) { return { v: x.id, t: (x.modalidade || '') + ' ' + (x.numero || '') + ' · ' + (x.orgao || '') }; }), p.id) + '</select>') + '</div>' +
-      '<div class="linha">' + entrada('impostos', 'Impostos', pr.impostos, '', '%') + entrada('comissao', 'Comissão', pr.comissao, '', '%') + entrada('taxaBpo', 'Taxa da Seven', pr.taxaBpo, '', '%') + entrada('despesasFixas', 'Despesas fixas', pr.despesasFixas, '', '%') + entrada('prazoPagamento', 'Prazo de pagamento', pr.prazoPagamento, '', 'dias') + entrada('taxaMes', 'Custo do dinheiro', pr.taxaMes, '', '%/mês') + entrada('margem', 'Margem desejada', pr.margem, '', '%') + '</div></form>' +
-      '<div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Item</th><th>Descrição</th><th class="n">Qtd</th><th class="n">Custo unit.</th><th class="n">Ref. unit.</th><th class="n">Preço sugerido</th><th class="n">Mínimo</th><th class="n">Desconto s/ ref.</th><th class="n">Margem na ref.</th></tr></thead><tbody>' +
-      linhas.map(function (x) { const r = x.r; const ok = r.valido && x.custo; return '<tr class="' + (ok && r.referencia && !r.cabe ? 'p-linha-ruim' : '') + '"><td>' + esc(x.i.numero) + '</td><td class="desc">' + esc(String(x.i.descricao || '').slice(0, 120)) + '</td><td class="n">' + num(x.i.quantidade) + '</td><td class="n"><input class="p-custo" data-item="' + esc(x.i.numero) + '" inputmode="decimal" value="' + (x.custo != null && x.custo !== '' ? esc(String(x.custo).replace('.', ',')) : '') + '"></td><td class="n">' + moeda(x.i.refUnitaria) + '</td><td class="n"><b>' + (ok ? moeda(r.preco) : '—') + '</b></td><td class="n">' + (ok ? moeda(r.precoMinimo) : '—') + '</td><td class="n">' + (ok && r.referencia ? pc(r.descontoSobreRef * 100) : '—') + '</td><td class="n">' + (ok && r.referencia ? pc(r.margemNaReferencia) : '—') + '</td></tr>'; }).join('') +
-      '</tbody><tfoot><tr><th colspan="5">Totais</th><th class="n">' + moeda(tot.preco) + '</th><th class="n">' + moeda(tot.minimo) + '</th><th class="n" colspan="2">Referência: ' + moeda(tot.ref) + '</th></tr></tfoot></table></div>' +
-      '<p class="mini mudo">Linhas em vermelho: o mínimo passa da referência. Itens sem custo ficam de fora.</p>' +
-      '<div class="grupo-botoes"><button class="btn primario" data-a="aplicar-lote">Aplicar preços sugeridos na proposta</button><button class="btn" data-a="limite-lote">Usar mínimos como valor limite na disputa</button></div>';
-    const form = el.querySelector('#l-form');
-    form.onchange = function (ev) { if (ev.target.name === 'proposta') { L.proposta = ev.target.value; App.redesenhar(); return; } L.params = lerForm(form, L.params); delete L.params.proposta; App.redesenhar(); };
-    el.querySelectorAll('.p-custo').forEach(function (i) { i.onchange = function () { L.custos[p.id + ':' + i.dataset.item] = i.value === '' ? null : n(i.value); App.redesenhar(); }; });
-    el.onclick = async function (ev) {
-      const b = ev.target.closest('[data-a]'); if (!b) return;
-      if (b.dataset.a === 'aplicar-lote') {
-        let k = 0; linhas.forEach(function (x) { if (x.r.valido && x.custo) { x.i.custo = Nucleo.arredondar(x.custo, 4); x.i.unitario = Nucleo.arredondarCima(x.r.preco, 2); k++; } });
-        Dados.salvar(); aviso(k + ' item(ns) atualizados na proposta (custo e valor unitário).');
-      }
-      if (b.dataset.a === 'limite-lote') {
-        const d = Dados.e.disputas.find(function (x) { return x.propostaId === p.id; });
-        if (!d) { aviso('Esta proposta ainda não foi enviada ao Disputar. Ligue "Enviar ao Disputar" na proposta.', 'erro'); return; }
-        let k = 0; d.itens.forEach(function (it) { const x = linhas.find(function (y) { return String(y.i.numero) === String(it.numero); }); if (x && x.r.valido && x.custo) { it.limite = Nucleo.arredondarCima(x.r.precoMinimo, d.config.casas == null ? 2 : d.config.casas); it.custo = x.custo; it.aprovado = false; k++; } });
-        Dados.salvar(); aviso(k + ' valor(es) limite definidos na disputa. Marque "Aprovado" depois do aceite do cliente.');
-      }
-    };
-  }
-
   // ---------- salvas ----------
   function salvarPrec(tipo, dados) {
     const id = est.editando[tipo];
@@ -184,10 +147,11 @@
 
   Telas.precificacao = {
     titulo: 'Precificação',
+    resultadoProduto: resultadoProduto,
     render: function (el, sub) {
       sub = sub || 'produto';
-      el.innerHTML = abas([{ id: 'produto', t: 'Produto' }, { id: 'servico', t: 'Serviço (mão de obra)' }, { id: 'lote', t: 'Proposta inteira' }, { id: 'salvas', t: 'Salvas', n: e().precificacoes.length }], sub, 'precificacao') + '<div id="aba"></div>';
-      ({ produto: telaProduto, servico: telaServico, lote: telaLote, salvas: telaSalvas }[sub] || telaProduto)(el.querySelector('#aba'));
+      el.innerHTML = abas([{ id: 'produto', t: 'Produto' }, { id: 'servico', t: 'Serviço (mão de obra)' }, { id: 'lote', t: 'Vários itens (proposta inteira)' }, { id: 'salvas', t: 'Salvas', n: e().precificacoes.length }], sub, 'precificacao') + '<div id="aba"></div>';
+      ({ produto: telaProduto, servico: telaServico, lote: Telas.planilhaPrecos.render, salvas: telaSalvas }[sub] || telaProduto)(el.querySelector('#aba'));
       el.onclick = null;
     }
   };

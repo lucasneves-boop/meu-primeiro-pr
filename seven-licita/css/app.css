@@ -2131,3 +2131,73 @@ main#conteudo { flex: 1; }
 .ex-cel .ms-lista input[type=checkbox] { width: 16px; height: 16px; flex: none; }
 .ex-cel .ms-lista label { justify-content: flex-start; text-align: left; }
 .ex-cel select { appearance: none; -webkit-appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--mudo) 50%), linear-gradient(135deg, var(--mudo) 50%, transparent 50%); background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+
+/* Precificação › Vários itens */
+.pp-inicio { max-width: 760px; }
+.pp-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pp-barra select { min-width: 260px; max-width: 100%; height: 38px; }
+.pp-cab { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 12px; align-items: start; }
+.pp-cab .campo, .pp-grade .campo { margin: 0; min-width: 0; }
+.pp-cab input, .pp-cab select, .pp-grade input, .pp-grade select { width: 100%; height: 38px; }
+.pp-glob > header, .pp-itens > header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
+.pp-glob > header h3, .pp-itens > header h3 { margin: 0; display: flex; align-items: center; gap: 8px; }
+.pp-itens > header .btn.primario { margin-left: auto; }
+.pp-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; align-items: start; }
+.pp-eng { grid-column: 1 / -1; white-space: normal; }
+.pp-tab th, .pp-tab td { vertical-align: middle; }
+.pp-tab td { padding: 4px 6px; }
+.pp-tab input, .pp-tab select, .pp-tab textarea { width: 100%; height: 34px; min-width: 0; }
+.pp-tab textarea { resize: vertical; min-height: 34px; line-height: 1.35; padding: 6px 8px; font-size: 13px; }
+.pp-desc { min-width: 240px; }
+.pp-curto { width: 64px !important; }
+.pp-num { width: 104px !important; text-align: right; }
+.pp-tab select[data-k=modo] { width: 170px; }
+.pp-chk { width: 28px; text-align: center; }
+.pp-chk input { width: 16px; height: 16px; }
+.pp-tab td[data-c] { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-tab td[data-c=status] { white-space: normal; min-width: 160px; }
+.pp-tab tr.pp-ind td:first-child { box-shadow: inset 3px 0 0 var(--ouro); }
+.pp-tab tr.pp-erro td { background: var(--perigo-claro); }
+.pp-st { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.pp-st-ok { background: #e4f5ec; color: #1b6b43; } .pp-st-aviso { background: #fff1db; color: #7a4a00; } .pp-st-erro { background: var(--perigo); color: #fff; } .pp-st-info { background: var(--superficie-2); color: var(--mudo); }
+.pp-al { display: block; font-size: 11px; color: var(--mudo); line-height: 1.3; margin-top: 2px; }
+.pp-tab td.acoes { display: flex; gap: 4px; align-items: center; justify-content: flex-end; }
+.pp-vazio { padding: 12px 0 0; }
+.pp-totais { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin: 14px 0 8px; }
+.pp-card { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pp-card span { font-size: 12px; color: var(--mudo); }
+.pp-card b { font-size: 20px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pp-card small { font-size: 11px; color: var(--mudo); }
+.pp-card.destaque { border-top: 4px solid var(--ouro); } .pp-card.destaque b { color: var(--marca); }
+.pp-card.alerta b { color: var(--perigo); }
+.pp-extenso { margin: 0 0 12px; }
+.pp-final { margin-top: 12px; }
+.pp-ind-grade { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.pp-ind-grade fieldset { margin: 10px 0 0; }
+.pp-alertas { margin: 0; padding-left: 18px; font-size: 13px; }
+@media (max-width: 900px) { .pp-ind-grade { grid-template-columns: 1fr; } }
+.pp-grade input[type=checkbox], .pp-eng input { width: 16px !important; height: 16px !important; flex: none; }
+.pp-eng { display: flex; align-items: center; gap: 8px; }
+.pp-modo { display: grid; grid-template-columns: 112px 84px; gap: 4px; }
+.pp-tab .pp-modo select, .pp-tab .pp-modo input { width: 100%; }
+.pp-num { width: 96px !important; }
+.pp-desc { min-width: 220px; }
+.pp-tab td[data-c] small { display: block; font-size: 11px; color: var(--mudo); font-weight: 400; }
+.pp-modo { grid-template-columns: 100px 76px; }
+.pp-curto { width: 56px !important; }
+.pp-desc { min-width: 190px; }
+.pp-num { width: 88px !important; }
+.pp-totais { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 700px) { .pp-totais { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pp-tab td { padding: 4px; }
+.pp-tab th { padding: 8px 4px; }
+.pp-pilha { display: flex; flex-direction: column; gap: 4px; }
+.pp-modo.pp-pilha { display: flex; width: 104px; }
+.pp-desc { min-width: 170px; }
+.pp-tab td[data-c=status] { min-width: 0; }
+.pp-tab td.pp-desc .pp-al { color: var(--perigo); }
+.pp-tab tr.pp-erro td { background: transparent; } .pp-tab tr.pp-erro td:first-child { box-shadow: inset 3px 0 0 var(--perigo); }
+.pp-tab td.acoes { display: table-cell; white-space: nowrap; text-align: right; }
+.pp-tab td.acoes .btn, .pp-tab td.acoes .icone { vertical-align: middle; }
+.pp-modo.pp-pilha { width: 118px; }
+.pp-final-item { border-left: 4px solid var(--ouro); } .pp-final-item b { display: block; font-size: 22px; margin: 2px 0; } .pp-final-item small { color: var(--mudo); }
