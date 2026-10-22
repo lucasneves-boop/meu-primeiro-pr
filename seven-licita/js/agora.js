@@ -37,8 +37,8 @@
     const urls = [];
     let s = String(t || '').replace(RE_URL, function (u) { urls.push(u); return '\u0000' + (urls.length - 1) + '\u0000'; });
     s = esc(s);
-    s = s.replace(RE_TAG, function (m, a, k) { return a + '<a class="ag-tag" href="#/agora/tag/' + encodeURIComponent(normalizar(k)) + '">#' + k + '</a>'; });
-    s = s.replace(RE_MEN, function (m, a, k) { const h = k.toLowerCase(); return a + (!handles || handles[h] ? '<a class="ag-men" href="#/agora/u/' + h + '">@' + k + '</a>' : '@' + k); });
+    s = s.replace(RE_TAG, function (m, a, k) { return a + '<a class="go-tag" href="#/agora/tag/' + encodeURIComponent(normalizar(k)) + '">#' + k + '</a>'; });
+    s = s.replace(RE_MEN, function (m, a, k) { const h = k.toLowerCase(); return a + (!handles || handles[h] ? '<a class="go-men" href="#/agora/u/' + h + '">@' + k + '</a>' : '@' + k); });
     s = s.replace(/\u0000(\d+)\u0000/g, function (m, i) { const u = urls[i]; const href = /^www\./i.test(u) ? 'https://' + u : u; const vis = u.replace(/^https?:\/\/(www\.)?/i, ''); return '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer nofollow">' + esc(vis.length > 32 ? vis.slice(0, 31) + '…' : vis) + '</a>'; });
     return s.replace(/\n/g, '<br>');
   }

@@ -244,7 +244,7 @@
 
   // ---------- telas ----------
   function casca(el, ativa, miolo) {
-    el.innerHTML = '<div class="ia">' + lateralHTML(ativa) + '<section class="ia-main"><button type="button" class="ia-abrir-lat" data-ia="lateral" aria-label="Conversas">☰ Conversas</button>' + miolo + '</section></div>';
+    el.innerHTML = '<div class="ia-app">' + lateralHTML(ativa) + '<section class="ia-main"><button type="button" class="ia-abrir-lat" data-ia="lateral" aria-label="Conversas">☰ Conversas</button>' + miolo + '</section></div>';
     ligar(el);
   }
   function telaInicio(el, projId) {

@@ -12,8 +12,8 @@ test('comprimento conta link como 23 e extrai tags/menções', () => {
 test('formatar escapa HTML e linka tags, menções conhecidas e URLs', () => {
   const h = A.formatar('<b>oi</b> #SICAF @ana @fantasma https://pncp.gov.br/app/editais?x=1\nlinha', { ana: 'u1' });
   assert.match(h, /&lt;b&gt;oi&lt;\/b&gt;/);
-  assert.match(h, /<a class="ag-tag" href="#\/agora\/tag\/sicaf">#SICAF<\/a>/);
-  assert.match(h, /<a class="ag-men" href="#\/agora\/u\/ana">@ana<\/a>/);
+  assert.match(h, /<a class="go-tag" href="#\/agora\/tag\/sicaf">#SICAF<\/a>/);
+  assert.match(h, /<a class="go-men" href="#\/agora\/u\/ana">@ana<\/a>/);
   assert.match(h, / @fantasma /);
   assert.match(h, /href="https:\/\/pncp\.gov\.br\/app\/editais\?x=1" target="_blank" rel="noopener noreferrer nofollow">pncp\.gov\.br\/app\/editais\?x=1<\/a><br>linha/);
   assert.doesNotMatch(A.formatar('"><img src=x onerror=alert(1)>'), /<img/);
