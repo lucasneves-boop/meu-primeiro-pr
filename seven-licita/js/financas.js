@@ -1,4 +1,4 @@
-/* Seven Licita — motor de Minhas Finanças: saldos, faturas, parcelas, orçamentos, relatórios e importação OFX/CSV. Sem DOM. */
+/* Plataforma 7 — motor de Minhas Finanças: saldos, faturas, parcelas, orçamentos, relatórios e importação OFX/CSV. Sem DOM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Financas = fabrica();

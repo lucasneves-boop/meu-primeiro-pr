@@ -1,4 +1,4 @@
-/* Seven Licita — fórmulas de precificação (produto e serviço). Sem DOM. */
+/* Plataforma 7 — fórmulas de precificação (produto e serviço). Sem DOM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Precos = fabrica();

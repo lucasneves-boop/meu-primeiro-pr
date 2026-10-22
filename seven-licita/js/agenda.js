@@ -174,7 +174,7 @@
   }
   function ics(tarefas, agoraISO) {
     const carimbo = (agoraISO || new Date().toISOString()).replace(/[-:]/g, '').slice(0, 15) + 'Z';
-    const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Seven Licita//Agenda//PT-BR', 'CALSCALE:GREGORIAN'];
+    const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Plataforma 7//Agenda//PT-BR', 'CALSCALE:GREGORIAN'];
     tarefas.filter(function (t) { return t.data && !t.excluida; }).forEach(function (t) {
       L.push('BEGIN:VEVENT', 'UID:' + t.id + '@seven-licita', 'DTSTAMP:' + carimbo, 'SUMMARY:' + icsTexto(t.titulo));
       if (t.hora) { const fim = new Date(new Date(t.data + 'T' + t.hora + ':00Z').getTime() + (t.duracao || 30) * 6e4).toISOString(); L.push('DTSTART:' + icsData(t.data, t.hora), 'DTEND:' + icsData(fim.slice(0, 10), fim.slice(11, 16))); }

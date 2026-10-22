@@ -1,4 +1,4 @@
-/* Seven Licita — núcleo: regras puras, sem DOM, testáveis no Node. */
+/* Plataforma 7 — núcleo: regras puras, sem DOM, testáveis no Node. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Nucleo = fabrica();

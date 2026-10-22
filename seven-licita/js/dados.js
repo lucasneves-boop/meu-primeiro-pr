@@ -1,4 +1,4 @@
-/* Seven Licita — armazenamento local (localStorage para dados, IndexedDB para arquivos). */
+/* Plataforma 7 — armazenamento local (localStorage para dados, IndexedDB para arquivos). */
 (function () {
   'use strict';
   const CHAVE = 'seven-licita:v1';
@@ -77,7 +77,7 @@
   function exportar() { return JSON.stringify({ app: 'seven-licita', versao: 1, exportadoEm: new Date().toISOString(), dados: estado }, null, 1); }
   function importar(texto) {
     const j = JSON.parse(texto);
-    if (!j || j.app !== 'seven-licita' || !j.dados) throw new Error('Arquivo não é um backup do Seven Licita.');
+    if (!j || j.app !== 'seven-licita' || !j.dados) throw new Error('Arquivo não é um backup da Plataforma 7.');
     estado = Object.assign(vazio(), j.dados); salvar();
   }
 

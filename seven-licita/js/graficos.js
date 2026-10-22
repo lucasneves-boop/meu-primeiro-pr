@@ -77,7 +77,8 @@
   function barras(itens, o) {
     o = o || {}; const W = o.largura || 480; const fmt = o.fmt || compacto; const linha = o.linha || 26;
     if (!itens.length) return vazio(W, 120, o.vazio);
-    const H = itens.length * linha + 8; const esq = Math.min(170, Math.round(W * 0.36)), dir = W - 70;
+    const H = itens.length * linha + 8; const esq = Math.min(170, Math.round(W * 0.36));
+    const maiorValor = Math.max.apply(null, itens.map(function (x) { return String(x.rotuloValor != null ? x.rotuloValor : fmt(x.v || 0)).length; })); const dir = W - Math.max(40, Math.round(maiorValor * 6.8) + 14);
     const max = Math.max.apply(null, itens.map(function (x) { return x.v || 0; }).concat([0]));
     let c = '';
     itens.forEach(function (x, i) {

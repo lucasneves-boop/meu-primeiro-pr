@@ -1,4 +1,4 @@
-/* Seven Licita — cliente da API pública do PNCP (dados abertos, sem login). */
+/* Plataforma 7 — cliente da API pública do PNCP (dados abertos, sem login). */
 (function () {
   'use strict';
   const CONSULTA = 'https://pncp.gov.br/api/consulta/v1';

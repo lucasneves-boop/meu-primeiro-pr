@@ -94,7 +94,7 @@ Object.assign(Anthropic, { APIError, AuthenticationError, PermissionDeniedError,
     await perguntar('pesquise o PNCP');
     p = await ultimo();
     ok(p.tools && p.tools[0].type === 'web_search_20260209' && p.thinking.display === 'summarized', 'pesquisa na web e raciocínio resumido no pedido');
-    ok(/Dados atuais do Seven Licita/.test(p.system) && /Alfa \(11\.222\.333\/0001-81\)/.test(p.system), 'dados do app entram quando ligados');
+    ok(/Dados atuais da Plataforma 7/.test(p.system) && /Alfa \(11\.222\.333\/0001-81\)/.test(p.system), 'dados do app entram quando ligados');
     ok(p.messages.length === 3 && p.messages[1].role === 'assistant', 'histórico enviado inteiro');
     const ultima = pg.locator('.ia-msg.bot').last();
     ok(await ultima.locator('.ia-fontes a[href="https://www.gov.br/pncp/pt-br"]').count() === 1, 'fontes da pesquisa com link');

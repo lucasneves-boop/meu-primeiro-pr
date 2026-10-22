@@ -141,7 +141,7 @@
       '<button class="btn primario">Buscar</button></form>' +
       (est.buscando ? '<p class="mudo">Buscando no ' + nomePlat(est.fonte) + '…</p>' : est.erro ? '<p class="mu-erro">' + esc(est.erro) + '</p>' :
         est.res.length ? '<ul class="mu-resultados">' + est.res.map(function (it, i) { return itemHTML(it, i, 'res'); }).join('') + '</ul>' + '<p class="mudo mini">Prévias de 30 s fornecidas pelo ' + nomePlat(est.fonte) + '. A música completa toca no player oficial (com a sua conta logada no serviço) ou no app.</p>' :
-        est.q ? '<p class="mudo">Nada encontrado no ' + nomePlat(est.fonte) + '.</p>' : '<p class="mudo">Busque no catálogo do Deezer ou da Apple Music sem sair do Seven Licita: ouça a prévia, abra o player completo ou salve para depois.</p>');
+        est.q ? '<p class="mudo">Nada encontrado no ' + nomePlat(est.fonte) + '.</p>' : '<p class="mudo">Busque no catálogo do Deezer ou da Apple Music sem sair da Plataforma 7: ouça a prévia, abra o player completo ou salve para depois.</p>');
   }
   function abaSpotify() {
     const s = sp(); const ret = P.redirecionamento(location.href);
@@ -153,7 +153,7 @@
         '<li>Copie o <b>Client ID</b> do app e cole abaixo.</li></ol>' +
         (/^https:|^http:\/\/127\.0\.0\.1/.test(ret) ? '' : '<p class="mu-erro">O Spotify só aceita endereço com https (ou 127.0.0.1). Abra o app pelo domínio publicado para conectar.</p>') +
         '<form id="mu-sp-form" class="mu-busca-pl"><input name="cid" placeholder="Client ID" value="' + esc(s.clientId || '') + '" required pattern="[0-9a-fA-F]{32}" title="O Client ID tem 32 caracteres (0-9, a-f)" aria-label="Client ID do app do Spotify"><button class="btn primario">Conectar Spotify</button></form>' +
-        '<p class="mudo mini">O login é feito no site do Spotify; o Seven Licita recebe só a permissão de ler suas playlists e biblioteca, guardada neste navegador.</p></div>';
+        '<p class="mudo mini">O login é feito no site do Spotify; a Plataforma 7 recebe só a permissão de ler suas playlists e biblioteca, guardada neste navegador.</p></div>';
     }
     if (!est.spDados && !est.spCarregando) carregarSpotify();
     const d = est.spDados;
@@ -170,7 +170,7 @@
       (l.length ? '<div class="mu-ext">' + l.map(function (x, i) {
         const r = P.reconhecer(x.url) || {}; const nome = x.nome || nomePlat(r.plataforma);
         return '<section class="cartao"><header><h3>' + esc(nome) + '</h3><span class="tag claro">' + esc(nomePlat(r.plataforma) + ' · ' + P.rotuloTipo(r.tipo)) + '</span><a class="icone" href="' + esc(r.abrir || x.url) + '" target="_blank" rel="noopener" aria-label="Abrir no ' + esc(nomePlat(r.plataforma)) + '" title="Abrir no app">↗</a><button class="icone" data-del="' + i + '" aria-label="Remover">×</button></header>' +
-          (r.embed ? iframe(r, nome) : '<p class="mudo">O ' + esc(nomePlat(r.plataforma)) + ' não permite tocar dentro de outros sites. <a href="' + esc(r.abrir || x.url) + '" target="_blank" rel="noopener">Abrir no ' + esc(nomePlat(r.plataforma)) + ' ↗</a></p>') + '</section>';
+          (r.embed ? iframe(r, nome) + '<p class="mu-fora mini">Não tocou? Abra direto no <a href="' + esc(r.abrir || x.url) + '" target="_blank" rel="noopener">' + esc(nomePlat(r.plataforma)) + ' ↗</a>. Para ouvir a música inteira, entre na sua conta do ' + esc(nomePlat(r.plataforma)) + ' neste navegador.</p>' : '<p class="mudo">O ' + esc(nomePlat(r.plataforma)) + ' não permite tocar dentro de outros sites. <a href="' + esc(r.abrir || x.url) + '" target="_blank" rel="noopener">Abrir no ' + esc(nomePlat(r.plataforma)) + ' ↗</a></p>') + '</section>';
       }).join('') + '</div>' : '<p class="mudo">Salve aqui playlists, álbuns e faixas de qualquer plataforma. Os da busca e do Spotify também vêm para cá.</p>');
   }
 
@@ -178,7 +178,7 @@
     if (aba === 'buscar' || aba === 'spotify' || aba === 'salvos') est.aba = aba;
     const abas = [['buscar', 'Buscar'], ['spotify', 'Spotify'], ['salvos', 'Salvos (' + m().externos.length + ')']];
     el.innerHTML = '<h2>Plataformas</h2>' + plataformasHTML() +
-      (est.ouvindo ? '<section class="mu-agora"><header><b>Tocando no ' + esc(nomePlat(est.ouvindo.ref.plataforma)) + '</b><span>' + esc(est.ouvindo.titulo) + '</span><a class="icone" href="' + esc(est.ouvindo.link) + '" target="_blank" rel="noopener" aria-label="Abrir no app" title="Abrir no app">↗</a><button class="icone" data-fechar-agora aria-label="Fechar player">×</button></header>' + iframe(est.ouvindo.ref, est.ouvindo.titulo) + '</section>' : '') +
+      (est.ouvindo ? '<section class="mu-agora"><header><b>Tocando no ' + esc(nomePlat(est.ouvindo.ref.plataforma)) + '</b><span>' + esc(est.ouvindo.titulo) + '</span><a class="icone" href="' + esc(est.ouvindo.link) + '" target="_blank" rel="noopener" aria-label="Abrir no app" title="Abrir no app">↗</a><button class="icone" data-fechar-agora aria-label="Fechar player">×</button></header>' + iframe(est.ouvindo.ref, est.ouvindo.titulo) + '<p class="mu-fora mini">Não tocou? <a href="' + esc(est.ouvindo.link) + '" target="_blank" rel="noopener">Abrir no ' + esc(nomePlat(est.ouvindo.ref.plataforma)) + ' ↗</a></p></section>' : '') +
       '<nav class="mu-abas" role="tablist">' + abas.map(function (a) { return '<a role="tab" href="#/musicas/plataformas/' + a[0] + '" aria-selected="' + (est.aba === a[0]) + '" class="' + (est.aba === a[0] ? 'ativa' : '') + '">' + a[1] + '</a>'; }).join('') + '</nav>' +
       '<div class="mu-aba">' + (est.aba === 'spotify' ? abaSpotify() : est.aba === 'salvos' ? abaSalvos() : abaBuscar()) + '</div>';
     marcarPrevias();

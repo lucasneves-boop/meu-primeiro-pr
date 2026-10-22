@@ -1,4 +1,4 @@
-# Seven Licita
+# Plataforma 7
 
 Software da Seven para operar o departamento de licitações dos clientes, do edital ao pagamento, e a rotina da própria Seven
 (vendas, equipe, estudo e ferramentas).

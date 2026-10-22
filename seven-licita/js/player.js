@@ -1,4 +1,4 @@
-/* Seven Licita — player de música global (barra fixa que continua tocando entre as telas). */
+/* Plataforma 7 — player de música global (barra fixa que continua tocando entre as telas). */
 (function (raiz) {
   'use strict';
 

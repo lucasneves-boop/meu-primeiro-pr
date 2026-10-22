@@ -1,4 +1,4 @@
-/* Seven Licita — roteador e casca. */
+/* Plataforma 7 — roteador e casca. */
 (function () {
   'use strict';
   const { $, $$, esc } = UI;
@@ -21,7 +21,7 @@
     const tela = Telas[r.tela] || Telas.painel;
     $$('.menu a').forEach(function (a) { a.classList.toggle('ativo', a.dataset.rota === r.tela); a.setAttribute('aria-current', a.dataset.rota === r.tela ? 'page' : 'false'); });
     $('#titulo-tela').textContent = tela.titulo;
-    document.title = tela.titulo + ' · Seven Licita';
+    document.title = tela.titulo + ' · Plataforma 7';
     preencherEmpresas();
     const el = $('#conteudo');
     el.onclick = el.onchange = el.oninput = el.onkeydown = el.ondblclick = el.onfocusout = el.onsubmit = null;

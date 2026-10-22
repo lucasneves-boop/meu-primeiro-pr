@@ -48,7 +48,7 @@
     if (o.data) partes.push('Hoje é ' + o.data + '.');
     if (o.projeto && o.projeto.instrucoes) partes.push('Instruções do projeto "' + o.projeto.nome + '":\n' + o.projeto.instrucoes);
     if (o.fontes && o.fontes.length) partes.push('Documentos de referência do projeto. Use-os como base e diga quando a resposta vier deles:\n\n' + o.fontes.map(function (f) { return '<documento nome="' + String(f.nome).replace(/"/g, "'") + '">\n' + f.texto + '\n</documento>'; }).join('\n\n'));
-    if (o.contextoApp) partes.push('Dados atuais do Seven Licita (do próprio usuário):\n' + o.contextoApp);
+    if (o.contextoApp) partes.push('Dados atuais da Plataforma 7 (do próprio usuário):\n' + o.contextoApp);
     return partes.join('\n\n');
   }
 

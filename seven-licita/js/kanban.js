@@ -1,4 +1,4 @@
-/* Seven Licita — motor dos Quadros: Markdown, filtros, automações, recorrência e importação do Trello. Sem DOM. */
+/* Plataforma 7 — motor dos Quadros: Markdown, filtros, automações, recorrência e importação do Trello. Sem DOM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Kanban = fabrica();

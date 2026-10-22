@@ -1,4 +1,4 @@
-/* Seven Licita — utilidades de interface. */
+/* Plataforma 7 — utilidades de interface. */
 (function () {
   'use strict';
 

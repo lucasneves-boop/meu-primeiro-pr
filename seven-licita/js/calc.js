@@ -1,4 +1,4 @@
-/* Seven Licita — motor da Calculadora: expressões, datas e dias úteis, finanças, conversões. Sem DOM. */
+/* Plataforma 7 — motor da Calculadora: expressões, datas e dias úteis, finanças, conversões. Sem DOM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Calc = fabrica();

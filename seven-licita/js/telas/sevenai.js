@@ -1,6 +1,6 @@
 /* Seven.ia (estilo claude.ai): conversas com a API da Anthropic direto do navegador, com a chave do próprio usuário.
    Streaming, anexos (PDF, imagem, DOCX, texto), pesquisa na web com fontes, raciocínio visível, projetos com instruções
-   e documentos (inclusive fontes dos Cadernos) e contexto opcional dos dados do Seven Licita. */
+   e documentos (inclusive fontes dos Cadernos) e contexto opcional dos dados da Plataforma 7. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
