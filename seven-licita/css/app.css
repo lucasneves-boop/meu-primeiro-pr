@@ -1373,7 +1373,7 @@ body.com-player .ag-pomo-mini { bottom: 96px; }
 }
 @media (max-width: 560px) { .rn-dir .rn-b2[data-rn=info] { display: none; } .rn-b.rn-sair { width: 52px; } }
 
-/* ---------- Seven Games ---------- */
+/* ---------- Seven Jogos ---------- */
 .jg { max-width: 1100px; margin: 0 auto; }
 .jg-topo { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .jg-topo h2 { margin: 0; }
@@ -1820,7 +1820,7 @@ kbd { font: 12px monospace; padding: 1px 5px; border: 1px solid var(--borda); bo
 .sm-ciclo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; } .sm-ciclo div { flex: 1; display: flex; flex-direction: column; } .sm-ciclo small { color: var(--mudo); } .sm-ciclo.ativo { border-color: var(--ouro); }
 @media (max-width: 600px) { .sm-areas label { grid-template-columns: 1fr 1fr 24px auto; } }
 
-/* ---------- Seven Prisma (autoconhecimento) ---------- */
+/* ---------- Seven Perfil (autoconhecimento) ---------- */
 .pf { max-width: 1100px; margin: 0 auto; }
 .pf-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; } .pf-topo h1 { margin: 0 0 4px; }
 .pf-pessoa { display: flex; align-items: center; gap: 6px; } .pf-pessoa select { width: auto; }
@@ -2539,7 +2539,7 @@ body.modo-publico .lateral, body.modo-publico .abrir-menu, body.modo-publico .se
 .principal:has(#conteudo h1 + p.mudo) .desc-tela, .principal:has(#conteudo .kd-cab) .desc-tela { display: none; }
 @media print { .desc-tela { display: none !important; } }
 .menu-sep { border: 0; border-top: 1px solid #1f1a10; margin: 12px 6px 6px; }
-/* resultado da licitação (Seven Bid, Sniper e Watch) */
+/* resultado da licitação (Seven Proposta, Sniper e Watch) */
 .int-res { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; } .int-res-dica { margin: 0 0 10px; }
 .ag-ext-prazo, .ag-ext-documento, .ag-ext-pagamento, .ag-ext-contrato, .ag-ext-financeiro, .ag-ext-comercial { border-left: 3px solid var(--ouro); }
 .ag-ext-pagamento, .ag-ext-financeiro { border-left-color: var(--ok) !important; } .ag-ext-documento { border-left-color: var(--alerta) !important; } .ag-ext-prazo { border-left-color: var(--perigo) !important; } .ag-ext-comercial { border-left-color: var(--azul) !important; }

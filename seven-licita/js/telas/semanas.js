@@ -95,7 +95,7 @@
         '<fieldset><legend>Bloco estratégico (3 h seguidas, 1×/semana)</legend>' + sel('estDia', t.estDia || 'terça') + '<input type="time" name="estHora" value="' + esc(t.estHora || '08:00') + '"></fieldset>' +
         '<fieldset><legend>Blocos de reserva (30–60 min por dia)</legend><input type="time" name="resHora" value="' + esc(t.resHora || '11:30') + '"><input type="time" name="resHora2" value="' + esc(t.resHora2 || '17:00') + '"></fieldset>' +
         '<fieldset><legend>Bloco de fuga (3 h longe do trabalho)</legend><input name="fuga" value="' + esc(t.fuga || 'Um sábado à tarde por mês') + '"></fieldset></div>' +
-        '<label class="check"><input type="checkbox" name="agenda"> Criar esses blocos na Seven Task como eventos recorrentes</label>';
+        '<label class="check"><input type="checkbox" name="agenda"> Criar esses blocos na Seven Agenda como eventos recorrentes</label>';
     }
     if (k === 6) {
       const cp = c.compromisso; const chk = Z.checarPlano(c);
@@ -155,7 +155,7 @@
         Telas.agenda.criar('Bloco estratégico (3 h) #12semanas toda ' + t.estDia + ' ' + h(t.estHora));
         if (t.resHora) Telas.agenda.criar('Bloco de reserva #12semanas todo dia ' + h(t.resHora));
         if (t.resHora2) Telas.agenda.criar('Bloco de reserva #12semanas todo dia ' + h(t.resHora2));
-        aviso('Blocos criados na Seven Task.');
+        aviso('Blocos criados na Seven Agenda.');
       }
     }
     if (k === 6) { c.compromisso = { custos: fd.get('custos'), sabotador: fd.get('sabotador'), parceiro: fd.get('parceiro'), rsr: fd.get('rsr'), compartilhar: fd.get('compartilhar') }; }
@@ -200,7 +200,7 @@
     el.innerHTML = '<div class="sm-semana"><header class="sm-as-cab"><a class="btn mini fantasma" href="#/semanas">← Painel</a><h2>Semana ' + n + ' <small>' + br(s.inicio) + ' a ' + br(s.fim) + ' · ' + esc(s.fase) + '</small></h2><span class="ds-espaco"></span><a class="btn mini" href="#/semanas/semana/' + c.id + '/' + Math.max(1, n - 1) + '"' + (n === 1 ? ' hidden' : '') + '>‹</a><a class="btn mini" href="#/semanas/semana/' + c.id + '/' + Math.min(12, n + 1) + '"' + (n === 12 ? ' hidden' : '') + '>›</a></header>' +
       '<div class="sm-grade"><section class="cartao"><h3>Plano da semana</h3>' + (ts.length ? c.metas.map(function (m) { const tm = ts.filter(function (t) { return t.meta === m.id; }); return tm.length ? '<h4>' + esc(m.texto) + '</h4>' + tm.map(function (t) { return '<label class="check sm-t"><input type="checkbox" data-feito="' + t.id + '"' + (ex[t.id] ? ' checked' : '') + '> ' + esc(t.texto) + (t.resp ? ' <small class="mudo">· ' + esc(t.resp) + '</small>' : '') + (t.fundamental ? ' ⭐' : '') + '</label>'; }).join('') : ''; }).join('') : '<p class="mudo">Nenhuma tática vence nesta semana.</p>') +
       '<p class="mini mudo">Cada tática conta como cumprida ou não. “Treinar 3 vezes” feito 2 vezes não foi cumprida: a pontuação só serve se for honesta.</p>' +
-      '<div class="grupo-botoes"><button class="btn mini" data-a="agenda">🗓 Pôr as táticas na Seven Task</button></div></section>' +
+      '<div class="grupo-botoes"><button class="btn mini" data-a="agenda">🗓 Pôr as táticas na Seven Agenda</button></div></section>' +
       '<section class="cartao sm-placar"><h3>Pontuação</h3><b class="sm-pct ' + l.nivel + '">' + (p.pct != null ? p.pct + '%' : '—') + '</b><p>' + p.feitas + ' de ' + p.previstas + ' táticas</p><p class="mini">' + esc(l.t) + '</p>' +
       '<button class="btn ' + (c.pontuadas[n] ? 'fantasma' : 'primario') + '" data-a="pontuar">' + (c.pontuadas[n] ? '✓ Semana pontuada (desfazer)' : 'Registrar pontuação da semana') + '</button>' +
       '<button class="btn mini fantasma" data-a="compartilhar">Enviar pontuação ao parceiro</button></section>' +
@@ -216,7 +216,7 @@
     el.onclick = async function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return;
       if (b.dataset.a === 'pontuar') { if (c.pontuadas[n]) delete c.pontuadas[n]; else c.pontuadas[n] = Date.now(); salvar(); App.redesenhar(); }
-      if (b.dataset.a === 'agenda' && Telas.agenda) { ts.filter(function (t) { return !ex[t.id]; }).forEach(function (t) { Telas.agenda.criar(t.texto + ' #12semanas', { data: s.inicio < hoje() && hoje() <= s.fim ? hoje() : s.inicio, tags: ['12semanas'] }); }); Dados.salvar(); aviso('Táticas pendentes enviadas para a Seven Task.'); }
+      if (b.dataset.a === 'agenda' && Telas.agenda) { ts.filter(function (t) { return !ex[t.id]; }).forEach(function (t) { Telas.agenda.criar(t.texto + ' #12semanas', { data: s.inicio < hoje() && hoje() <= s.fim ? hoje() : s.inicio, tags: ['12semanas'] }); }); Dados.salvar(); aviso('Táticas pendentes enviadas para a Seven Agenda.'); }
       if (b.dataset.a === 'compartilhar') {
         const txt = 'Semana ' + n + ' do meu ciclo de 12 semanas: ' + (p.pct != null ? p.pct + '%' : '—') + ' (' + p.feitas + ' de ' + p.previstas + ' táticas).' + (notas.atrapalhou ? '\nO que atrapalhou: ' + notas.atrapalhou : '') + (notas.muda ? '\nO que muda: ' + notas.muda : '') + '\n\nLucas Neves | Seven';
         const r = await modal({ titulo: 'Enviar ao parceiro de acompanhamento', botao: 'Abrir WhatsApp', corpo: '<p class="mini mudo">O sistema só abre o WhatsApp; quem envia é você.</p>' + campo('Mensagem', '<textarea name="m" rows="7">' + esc(txt) + '</textarea>') });
@@ -263,7 +263,7 @@
   }
 
   Telas.semanas = {
-    titulo: 'Seven 12S',
+    titulo: 'Seven Metas',
     render: function (el, sub, param) {
       el.onchange = null;
       const p = String(param || '').split('/');

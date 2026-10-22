@@ -1,4 +1,4 @@
-/* Plataforma 7 — motor do Seven Pay: saldos, faturas, parcelas, orçamentos, relatórios e importação OFX/CSV. Sem DOM. */
+/* Plataforma 7 — motor do Seven Financeiro: saldos, faturas, parcelas, orçamentos, relatórios e importação OFX/CSV. Sem DOM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Financas = fabrica();

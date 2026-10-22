@@ -1,4 +1,4 @@
-/* Plataforma 7 — motor do Seven Hub: Markdown, filtros, automações, recorrência e importação do Trello. Sem DOM. */
+/* Plataforma 7 — motor do Seven Processo: Markdown, filtros, automações, recorrência e importação do Trello. Sem DOM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Kanban = fabrica();

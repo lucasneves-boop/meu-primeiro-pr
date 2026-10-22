@@ -9,10 +9,10 @@
   const CATALOGO = [
     { id: 'kpis', t: 'Indicadores do dia', g: 'Licitações', tam: 'g', d: 'Avisos novos, propostas, disputas, prazos, documentos e pendências.' },
     { id: 'sessoes', t: 'Próximas sessões', g: 'Licitações', tam: 'm', d: 'Sessões de avisos favoritos e prazos de proposta.' },
-    { id: 'prazos', t: 'Prazos do pregoeiro', g: 'Licitações', tam: 'm', d: 'Prazos abertos no Seven Watch, do mais urgente.' },
+    { id: 'prazos', t: 'Prazos do pregoeiro', g: 'Licitações', tam: 'm', d: 'Prazos abertos no Seven Sessão, do mais urgente.' },
     { id: 'pendencias', t: 'Pendências do Quadro', g: 'Licitações', tam: 'm', d: 'Cartões e checklists atrasados ou vencendo.' },
     { id: 'propostas', t: 'Propostas por situação', g: 'Licitações', tam: 'm', d: 'Rascunho, pronta, enviada, ganha e não vencida.' },
-    { id: 'monitor', t: 'Licitações acompanhadas', g: 'Licitações', tam: 'p', d: 'Processos no Seven Watch por situação.' },
+    { id: 'monitor', t: 'Licitações acompanhadas', g: 'Licitações', tam: 'p', d: 'Processos no Seven Sessão por situação.' },
     { id: 'quadro', t: 'Funil das licitações', g: 'Licitações', tam: 'm', d: 'Cartões em cada lista do quadro de licitações.' },
     { id: 'documentos', t: 'Documentos de habilitação', g: 'Licitações', tam: 'p', d: 'Válidos, vencendo e vencidos.' },
     { id: 'pncp', t: 'Publicadas hoje no PNCP', g: 'Licitações', tam: 'm', d: 'Licitações do dia por faixa de valor (consulta ao PNCP).' },
@@ -23,12 +23,12 @@
     { id: 'com-ganhos', t: 'Clientes ganhos por mês', g: 'Comercial', tam: 'm', d: 'Novos contratos nos últimos 6 meses.' },
     { id: 'com-origem', t: 'Contas por origem', g: 'Comercial', tam: 'p', d: 'De onde vêm os leads.' },
     { id: 'com-atividades', t: 'Atividades comerciais', g: 'Comercial', tam: 'm', d: 'O que fazer hoje e o que está atrasado.' },
-    { id: 'fin-fluxo', t: 'Receitas e despesas', g: 'Financeiro', tam: 'm', d: 'Últimos 6 meses (Seven Pay).' },
-    { id: 'fin-categorias', t: 'Despesas do mês', g: 'Financeiro', tam: 'p', d: 'Por categoria (Seven Pay).' },
+    { id: 'fin-fluxo', t: 'Receitas e despesas', g: 'Financeiro', tam: 'm', d: 'Últimos 6 meses (Seven Financeiro).' },
+    { id: 'fin-categorias', t: 'Despesas do mês', g: 'Financeiro', tam: 'p', d: 'Por categoria (Seven Financeiro).' },
     { id: 'nf-faturamento', t: 'Faturamento (notas fiscais)', g: 'Financeiro', tam: 'm', d: 'Notas de saída autorizadas, últimos 12 meses.' },
     { id: 'loja', t: 'Pedidos da Loja', g: 'Financeiro', tam: 'p', d: 'Pedidos por mês nos últimos 6 meses.' },
     { id: 'agenda', t: 'Agenda da semana', g: 'Gestão', tam: 'm', d: 'Tarefas nos próximos 7 dias e atrasadas.' },
-    { id: 'semanas', t: 'Seven 12S', g: 'Gestão', tam: 'm', d: 'Execução semanal do ciclo ativo (linha dos 85%).' },
+    { id: 'semanas', t: 'Seven Metas', g: 'Gestão', tam: 'm', d: 'Execução semanal do ciclo ativo (linha dos 85%).' },
     { id: 'atalhos', t: 'Atalhos', g: 'Gestão', tam: 'p', d: 'Acesso rápido às telas mais usadas.' }
   ];
   const PADRAO = ['kpis', 'sessoes', 'prazos', 'com-funil', 'fin-fluxo', 'propostas', 'documentos', 'agenda', 'pendencias', 'com-ganhos', 'nf-faturamento', 'atalhos'];

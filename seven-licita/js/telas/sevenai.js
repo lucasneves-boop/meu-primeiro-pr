@@ -1,6 +1,6 @@
 /* Seven IA (estilo claude.ai): conversas com a API da Anthropic direto do navegador, com a chave do próprio usuário.
    Streaming, anexos (PDF, imagem, DOCX, texto), pesquisa na web com fontes, raciocínio visível, projetos com instruções
-   e documentos (inclusive cadernos do Seven Synapse) e contexto opcional dos dados da Plataforma 7. */
+   e documentos (inclusive cadernos do Seven Cadernos) e contexto opcional dos dados da Plataforma 7. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -208,7 +208,7 @@
       '<div class="ia-acoes">' +
       '<button type="button" class="ia-acao" data-ia="copiar" data-i="' + i + '" title="Copiar">⧉ Copiar</button>' +
       (ultimo && !mem.enviando ? '<button type="button" class="ia-acao" data-ia="regenerar" title="Gerar outra resposta">↻ Refazer</button>' : '') +
-      '<button type="button" class="ia-acao" data-ia="nota" data-i="' + i + '" title="Salvar no Seven Pad">🗒 Salvar nota</button>' +
+      '<button type="button" class="ia-acao" data-ia="nota" data-i="' + i + '" title="Salvar no Seven Notas">🗒 Salvar nota</button>' +
       '<span class="ia-meta">' + esc(S.modelo(m.modelo).nome) + (m.uso ? ' · ' + S.dolar(S.custo(m.uso, m.modelo)) : '') + '</span></div>' +
       '</div></div>';
   }
@@ -301,7 +301,7 @@
       '<h3>Conversas</h3>' + (convs.length ? '<ul class="ia-pj-convs">' + convs.map(function (c) { return '<li><a href="#/ia/c/' + c.id + '"><b>' + esc(c.titulo) + '</b><small>' + new Date(c.editadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + '</small></a></li>'; }).join('') + '</ul>' : '<p class="mudo">Comece uma conversa acima; ela usará as instruções e as fontes do projeto.</p>') + '</div>' +
       '<aside class="ia-pj-lado"><section><h3>Instruções</h3><p class="ia-pj-instr">' + (p.instrucoes ? esc(p.instrucoes).replace(/\n/g, '<br>') : '<span class="mudo">Nenhuma. Ex.: "Responda sempre com tabela de prazos" ou "O cliente é ME e usa o benefício da LC 123".</span>') + '</p></section>' +
       '<section><h3>Fontes</h3><ul class="ia-pj-fontes">' + (p.fontes || []).map(function (f) { return '<li>📄 ' + esc(f.nome) + ' <small>' + (f.tam < 1000 ? f.tam + ' caracteres' : Math.round(f.tam / 1000) + ' mil caracteres') + '</small><button type="button" class="ia-acao" data-ia="tirar-fonte" data-id="' + f.id + '" aria-label="Remover fonte ' + esc(f.nome) + '">×</button></li>'; }).join('') +
-      (p.cadernos || []).map(function (cid) { const c = cads.find(function (x) { return x.id === cid; }); return c ? '<li>📒 Seven Synapse: ' + esc(c.titulo) + ' <small>' + c.fontes.length + ' fonte' + (c.fontes.length === 1 ? '' : 's') + '</small><button type="button" class="ia-acao" data-ia="tirar-caderno" data-id="' + cid + '" aria-label="Desvincular caderno">×</button></li>' : ''; }).join('') + '</ul>' +
+      (p.cadernos || []).map(function (cid) { const c = cads.find(function (x) { return x.id === cid; }); return c ? '<li>📒 Seven Cadernos: ' + esc(c.titulo) + ' <small>' + c.fontes.length + ' fonte' + (c.fontes.length === 1 ? '' : 's') + '</small><button type="button" class="ia-acao" data-ia="tirar-caderno" data-id="' + cid + '" aria-label="Desvincular caderno">×</button></li>' : ''; }).join('') + '</ul>' +
       '<div class="ia-pj-bts"><button type="button" class="btn mini" data-ia="fonte-arquivo">＋ Arquivo</button><button type="button" class="btn mini" data-ia="fonte-texto">＋ Texto</button>' + (cads.length ? '<button type="button" class="btn mini" data-ia="fonte-caderno">＋ Caderno do Synapse</button>' : '') + '</div>' +
       '<p class="mudo mini">As fontes vão inteiras em cada pergunta; o cache da API barateia as repetições.</p></section></aside></div></div>');
     el.querySelector('.ia-comp').dataset.projeto = p.id;
@@ -407,7 +407,7 @@
     const d = Dados.e; d.anotacoes = d.anotacoes || {}; d.anotacoes.notas = d.anotacoes.notas || [];
     const html = S.markdown(S.textoDe(m.content)).replace(/<div class="ia-codigo-topo">.*?<\/div>/g, '') + '<p><small>Seven IA · ' + esc(conv ? conv.titulo : '') + '</small></p>';
     d.anotacoes.notas.push({ id: Dados.id('an'), titulo: conv ? conv.titulo : 'Seven IA', html: html, tracos: [], fundo: 'liso', cor: '', pasta: null, criadaEm: Date.now(), editadaEm: Date.now() });
-    Dados.salvar(); aviso('Salvo no Seven Pad.');
+    Dados.salvar(); aviso('Salvo no Seven Notas.');
   }
 
   Telas.ia = {

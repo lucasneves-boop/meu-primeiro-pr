@@ -1,4 +1,4 @@
-/* Seven Price › Vários itens: planilha de formação de preços de uma proposta inteira.
+/* Seven Precificação › Vários itens: planilha de formação de preços de uma proposta inteira.
    Parâmetros globais valem para todos os itens ao mesmo tempo; qualquer item pode ser precificado
    individualmente (sobrescreve só o que for preenchido). Gera a proposta completa no fim. */
 (function () {
@@ -75,7 +75,7 @@
       '<div class="tabela-rolagem"><table class="tabela pp-tab"><thead><tr><th class="pp-chk"><input type="checkbox" id="pp-todos" aria-label="Selecionar todos"></th><th>Item / lote</th><th class="pp-desc">Descrição</th><th>Un.</th><th class="n">Qtd</th><th class="n">Custo unit. (R$)</th><th class="n">Ref. unit. (R$)</th><th>Precificar por</th><th class="n">Preço unit. / total</th><th class="n">Mínimo / margem</th><th>Situação</th><th></th></tr></thead><tbody>' +
       x.itens.map(linha).join('') + '</tbody></table></div>' + (x.itens.length ? '' : '<p class="mudo pp-vazio">Nenhum item. Adicione, importe da proposta ou cole do Excel.</p>') + '</section>' +
       '<div id="pp-res"></div>' +
-      '<div class="grupo-botoes pp-final"><button class="btn primario" data-a="proposta">Gerar proposta completa</button><button class="btn" data-a="aplicar">' + (x.propostaId ? 'Atualizar proposta no Seven Bid' : 'Criar proposta no Seven Bid') + '</button><button class="btn" data-a="limites">Mínimos como valor limite na disputa</button><button class="btn fantasma" data-a="formacao">Imprimir planilha de formação de preços</button><button class="btn fantasma" data-a="csv">Exportar (CSV)</button></div>';
+      '<div class="grupo-botoes pp-final"><button class="btn primario" data-a="proposta">Gerar proposta completa</button><button class="btn" data-a="aplicar">' + (x.propostaId ? 'Atualizar proposta no Seven Proposta' : 'Criar proposta no Seven Proposta') + '</button><button class="btn" data-a="limites">Mínimos como valor limite na disputa</button><button class="btn fantasma" data-a="formacao">Imprimir planilha de formação de preços</button><button class="btn fantasma" data-a="csv">Exportar (CSV)</button></div>';
     function g(k, r, suf, dica) { return campo(r, '<div class="p-campo"><input name="' + k + '" inputmode="decimal" value="' + esc(br(x.params[k])) + '"><span>' + suf + '</span></div>', dica); }
     calcular(el, x);
     ligar(el, x);
@@ -168,7 +168,7 @@
       if (b.dataset.a === 'nova') { nova(); App.redesenhar(); }
       if (b.dataset.a === 'da-proposta') {
         const ps = Dados.e.propostas.filter(function (p) { return p.itens && p.itens.length; });
-        if (!ps.length) { aviso('Nenhuma proposta com itens. Crie no Seven Bid (os itens vêm do PNCP) ou cole do Excel.', 'erro'); return; }
+        if (!ps.length) { aviso('Nenhuma proposta com itens. Crie no Seven Proposta (os itens vêm do PNCP) ou cole do Excel.', 'erro'); return; }
         const f = await modal({ titulo: 'Importar itens da proposta', botao: 'Importar', corpo: campo('Proposta', '<select name="p">' + opcoes(ps.map(function (p) { return { v: p.id, t: [p.modalidade, p.numero].filter(Boolean).join(' ') + ' · ' + (p.orgao || '') + ' · ' + p.itens.length + ' itens' }; })) + '</select>') + '<p class="mini mudo">Cria uma planilha nova, vinculada à proposta, com quantidade, referência, custo, marca e modelo já preenchidos.</p>' });
         if (!f) return; const p = ps.find(function (q) { return q.id === f.get('p'); });
         nova({ nome: [p.modalidade, p.numero].filter(Boolean).join(' ') + ' · ' + (p.orgao || ''), propostaId: p.id, orgao: p.orgao || '', modalidade: p.modalidade || '', numero: p.numero || '', processo: p.processo || '', objeto: p.objeto || '', validade: p.validade || 60, prazoEntrega: p.prazoEntrega || '', empresaId: p.empresaId, itens: deProposta(p) });
@@ -256,7 +256,7 @@
 
   function limitesDisputa(x) {
     const d = x.propostaId && Dados.e.disputas.find(function (q) { return q.propostaId === x.propostaId; });
-    if (!d) { aviso('Vincule uma proposta que já esteja no Seven Sniper (ligue "Enviar ao Seven Sniper" na proposta).', 'erro'); return; }
+    if (!d) { aviso('Vincule uma proposta que já esteja no Seven Pregão (ligue "Enviar ao Seven Pregão" na proposta).', 'erro'); return; }
     const r = P.planilha(x);
     let k = 0; d.itens.forEach(function (it) { const pi = acharItem(x.itens, it, x); const c = pi && r.itens.find(function (y) { return y.id === pi.id && y.ok; }); if (c) { it.limite = c.minimo; it.custo = c.custoDireto; it.aprovado = false; k++; } });
     Dados.salvar(); aviso(k + ' valor(es) limite definidos. Marque "Aprovado" depois do aceite do cliente.');

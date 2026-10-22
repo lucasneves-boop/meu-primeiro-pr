@@ -1,4 +1,4 @@
-/* Seven NFe (notas fiscais no estilo Bling): NF-e e NFS-e de saída, notas de entrada por XML, DANFE, retenções de órgão público e integração com Finanças. */
+/* Seven Faturamento (notas fiscais no estilo Bling): NF-e e NFS-e de saída, notas de entrada por XML, DANFE, retenções de órgão público e integração com Finanças. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -32,11 +32,11 @@
   }
   async function daProposta() {
     const ps = (Dados.e.propostas || []).filter(function (p) { return p.itens && p.itens.some(function (i) { return i.unitario; }); });
-    if (!ps.length) return aviso('Nenhuma proposta com preços. Preencha os valores no Seven Bid.', 'erro');
+    if (!ps.length) return aviso('Nenhuma proposta com preços. Preencha os valores no Seven Proposta.', 'erro');
     const r = await modal({ titulo: 'Nota a partir de proposta', botao: 'Criar nota', corpo: campo('Proposta', '<select name="p">' + opcoes(ps.map(function (p) { return { v: p.id, t: [p.numero, p.orgao, String(p.objeto || '').slice(0, 50)].filter(Boolean).join(' · ') }; })) + '</select>') + '<label class="check"><input type="checkbox" name="vencidos" checked> Só os itens marcados como vencidos (se houver)</label>' });
     if (!r) return; const p = ps.find(function (x) { return x.id === r.get('p'); }); const emp = Dados.empresa(p.empresaId) || Dados.empresaAtiva(); if (emp) Dados.e.empresaAtiva = emp.id;
     let its = p.itens.filter(function (i) { return i.participar !== false && i.unitario; }); if (r.get('vencidos') && its.some(function (i) { return i.vencido; })) its = its.filter(function (i) { return i.vencido; });
-    // O que já existe em outras ferramentas não é digitado de novo: empenho e contrato da Execução (Seven Hub) e destinatário de NF anterior ao mesmo órgão.
+    // O que já existe em outras ferramentas não é digitado de novo: empenho e contrato da Execução (Seven Processo) e destinatário de NF anterior ao mesmo órgão.
     const doc = p.ref ? p.ref.cnpj : ''; const alvo = self.Integracao && Integracao.cartaoDaProposta(Dados.e, p); const ex = alvo && alvo.c.execucao;
     const anterior = doc && lista().find(function (x) { return x.destinatario && x.destinatario.documento && String(x.destinatario.documento).replace(/\D/g, '') === String(doc).replace(/\D/g, '') && x.destinatario.logradouro; });
     const numEmp = ex && (ex.empenhos || []).length ? ex.empenhos[ex.empenhos.length - 1].numero : '';
@@ -122,7 +122,7 @@
     const n = nota(id); if (!n) { el.innerHTML = UI.vazio('Nota não encontrada', '<a href="#/notas/saida">Voltar</a>'); return; }
     const e = emitente(n); const serv = n.tipo === 'servico'; const simples = e && e.regime === 'simples';
     const d = n.destinatario;
-    el.innerHTML = '<p class="migalhas"><a href="#/notas/saida">Seven NFe</a> › ' + (serv ? 'NFS-e' : 'NF-e') + ' ' + rotSit(n) + '</p>' +
+    el.innerHTML = '<p class="migalhas"><a href="#/notas/saida">Seven Faturamento</a> › ' + (serv ? 'NFS-e' : 'NF-e') + ' ' + rotSit(n) + '</p>' +
       '<div class="nf-ed"><div class="nf-col">' +
       '<section class="cartao"><h3>' + (serv ? 'Nota de serviço (NFS-e)' : 'Nota fiscal eletrônica (NF-e)') + '</h3><div class="linha">' + campo('Natureza da operação', '<input data-k="natureza" list="nf-naturezas" value="' + esc(n.natureza) + '"><datalist id="nf-naturezas">' + N.NATUREZAS.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>') + (serv ? '' : campo('Finalidade', sel('finalidade', n, [{ v: 'normal', t: 'Normal' }, { v: 'complementar', t: 'Complementar' }, { v: 'ajuste', t: 'Ajuste' }, { v: 'devolucao', t: 'Devolução' }]))) + campo('Emissão', '<input type="date" data-k="emissao" value="' + esc(n.emissao) + '">') + (serv ? '' : campo('Saída', '<input type="date" data-k="saida" value="' + esc(n.saida || '') + '">')) + '</div>' +
       '<p class="mini mudo">Emitente: <b>' + esc(e ? e.nome : 'cadastre em Clientes') + '</b>' + (e ? ' · CNPJ ' + esc(cnpj(e.cnpj)) + ' · ' + esc((e.municipio || '') + '-' + (e.uf || '')) + ' · ' + { simples: 'Simples Nacional', presumido: 'Lucro Presumido', real: 'Lucro Real' }[e.regime] : '') + ' · <a href="#/notas/config">ajustar</a></p></section>' +
@@ -310,11 +310,11 @@
       (n.situacao === 'autorizada' && !n.lancadoFinanceiro ? b('financeiro', n.operacao === 'entrada' ? 'Lançar a pagar' : 'Lançar a receber') : '') + (n.situacao === 'autorizada' && n.operacao === 'saida' ? b('cce', 'Carta de correção') + b('cancelar', 'Cancelar', 'perigo') : '');
   }
   function lancarFinanceiro(n, silencioso) {
-    if (!Telas.financas || !Telas.financas.lancar) return silencioso ? null : aviso('Seven Pay indisponível.', 'erro');
+    if (!Telas.financas || !Telas.financas.lancar) return silencioso ? null : aviso('Seven Financeiro indisponível.', 'erro');
     const entrada = n.operacao === 'entrada'; const nome = entrada ? (n.emitenteExterno || {}).nome : n.destinatario.nome;
     const dups = (n.duplicatas || []).length ? n.duplicatas : [{ numero: '001', vencimento: somarDias(n.emissao, 30), valor: n.liquido || n.totalNota }];
     const perfil = Telas.financas.lancar(dups.map(function (x, i) { return { tipo: entrada ? 'despesa' : 'receita', descricao: (entrada ? 'NF ' : 'NF-e ') + numero(n) + ' · ' + (nome || '') + (dups.length > 1 ? ' (' + (i + 1) + '/' + dups.length + ')' : ''), valor: Number(x.valor), data: x.vencimento, categoria: entrada ? 'Fornecedores' : 'Vendas', origem: 'nota:' + n.id, contato: nome || '' }; }), { semSalvar: silencioso });
-    n.lancadoFinanceiro = true; if (silencioso) { log(n, dups.length + ' parcela(s) lançada(s) automaticamente no Seven Pay (' + perfil + ').'); return perfil; } log(n, dups.length + ' parcela(s) lançada(s) no Seven Pay (' + perfil + ').'); Dados.salvar(); aviso(dups.length + ' lançamento(s) pendente(s) criados no Seven Pay, perfil ' + perfil + '.'); App.redesenhar();
+    n.lancadoFinanceiro = true; if (silencioso) { log(n, dups.length + ' parcela(s) lançada(s) automaticamente no Seven Financeiro (' + perfil + ').'); return perfil; } log(n, dups.length + ' parcela(s) lançada(s) no Seven Financeiro (' + perfil + ').'); Dados.salvar(); aviso(dups.length + ' lançamento(s) pendente(s) criados no Seven Financeiro, perfil ' + perfil + '.'); App.redesenhar();
   }
   async function cancelar(n) {
     const horas = (Date.now() - new Date(n.autorizadaEm || n.emissao)) / 36e5;
@@ -354,7 +354,7 @@
   }
 
   Telas.notas = {
-    titulo: 'Seven NFe',
+    titulo: 'Seven Faturamento',
     lancarFinanceiro: lancarFinanceiro,
     render: function (el, sub, param) {
       el.onclick = el.oninput = el.onchange = null; const aj = document.getElementById('nf-ajuda'); if (aj && sub !== 'editar') { aj.remove(); guia.ajuda = null; document.body.classList.remove('com-ajuda-nf'); }

@@ -1,4 +1,4 @@
-/* Seven Shop: catálogo de produtos e serviços, busca, carrinho, cupons, recomendações e pedidos. Sem dependências. */
+/* Seven Loja: catálogo de produtos e serviços, busca, carrinho, cupons, recomendações e pedidos. Sem dependências. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();
   else raiz.Loja = fabrica();

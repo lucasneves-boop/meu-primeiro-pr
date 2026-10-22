@@ -1,4 +1,4 @@
-/* Seven Sign: envio de contratos para assinatura eletrônica no estilo do Clicksign, sem servidor.
+/* Seven Contrato: envio de contratos para assinatura eletrônica no estilo do Clicksign, sem servidor.
    O signatário recebe um link e o PDF; o app dele confere se o arquivo é o mesmo (SHA-256), ele assina e
    devolve um comprovante protegido por HMAC com a chave do link, que você registra aqui. */
 (function () {
@@ -70,12 +70,12 @@
       '<div class="grupo-botoes"><button type="button" class="btn fantasma" data-a="eu">+ Eu assino também</button>' + (Dados.empresaAtiva() ? '<button type="button" class="btn fantasma" data-a="cliente">+ Representante do cliente</button>' : '') + '</div></section>';
     if (et === 'envio') corpo = '<section class="cartao"><h3>Mensagem e prazo</h3>' + campo('Mensagem para os signatários', '<textarea data-c="mensagem" rows="4">' + esc(c.mensagem) + '</textarea>', 'Vai junto com o link. Você revisa o texto antes de enviar cada mensagem.') +
       '<div class="linha">' + campo('Prazo para assinar', '<input type="date" data-c="prazo" value="' + esc(c.prazo || '') + '">', 'Depois dele, o link deixa de aceitar assinaturas.') + '</div>' +
-      '<label class="check-inline ct-ck"><input type="checkbox" data-c="lembreteAgenda"' + (c.lembreteAgenda ? ' checked' : '') + '> Criar tarefa na Seven Task para cobrar as assinaturas no prazo</label></section>';
+      '<label class="check-inline ct-ck"><input type="checkbox" data-c="lembreteAgenda"' + (c.lembreteAgenda ? ' checked' : '') + '> Criar tarefa na Seven Agenda para cobrar as assinaturas no prazo</label></section>';
     if (et === 'revisar') { const er = K.validarEnvio(c); corpo = '<section class="cartao"><h3>Revisar e enviar</h3><dl class="ct-rev"><dt>Documento</dt><dd>' + esc(c.titulo) + (c.documento ? ' · código ' + esc(K.codigoVerificacao(c.documento.hash)) : '') + '</dd><dt>Signatários</dt><dd>' + (c.signatarios.map(function (s) { return esc(s.nome) + ' (' + esc(K.PAPEIS[s.papel] || '') + (c.sequencial ? ', ' + (s.ordem || 1) + 'º' : '') + ')'; }).join(', ') || '—') + '</dd><dt>Ordem</dt><dd>' + (c.sequencial ? 'Na ordem definida' : 'Todos ao mesmo tempo') + '</dd><dt>Prazo</dt><dd>' + (c.prazo ? data(c.prazo) : 'Sem prazo') + '</dd></dl>' +
       (er.length ? '<ul class="nf-val">' + er.map(function (x) { return '<li class="erro">' + esc(x) + '</li>'; }).join('') + '</ul>' : '<p class="ok">Tudo certo para enviar.</p>') +
       '<div class="grupo-botoes"><button type="button" class="btn primario" data-a="enviar"' + (er.length ? ' disabled' : '') + '>Enviar para assinatura</button></div><p class="mini mudo">Ao enviar, o documento fica travado (não pode mais ser alterado) e cada signatário ganha um link próprio.</p></section>'; }
     const idx = ETAPAS.findIndex(function (x) { return x[0] === et; });
-    el.innerHTML = '<p class="migalhas"><a href="#/contratos">Seven Sign</a> › ' + esc(c.titulo) + ' ' + rotSit(c) + '</p><nav class="ct-passos">' + ETAPAS.map(function (x, i) { return '<button type="button" class="ct-passo' + (x[0] === et ? ' on' : '') + (i < idx ? ' feito' : '') + '" data-etapa="' + x[0] + '"><span>' + x[1] + '</span>' + x[2] + '</button>'; }).join('') + '</nav>' + corpo +
+    el.innerHTML = '<p class="migalhas"><a href="#/contratos">Seven Contrato</a> › ' + esc(c.titulo) + ' ' + rotSit(c) + '</p><nav class="ct-passos">' + ETAPAS.map(function (x, i) { return '<button type="button" class="ct-passo' + (x[0] === et ? ' on' : '') + (i < idx ? ' feito' : '') + '" data-etapa="' + x[0] + '"><span>' + x[1] + '</span>' + x[2] + '</button>'; }).join('') + '</nav>' + corpo +
       '<div class="ct-nav">' + (idx > 0 ? '<button type="button" class="btn" data-etapa="' + ETAPAS[idx - 1][0] + '">← Voltar</button>' : '<button type="button" class="btn fantasma perigo" data-a="excluir">Excluir rascunho</button>') + (idx < ETAPAS.length - 1 ? '<button type="button" class="btn primario" data-etapa="' + ETAPAS[idx + 1][0] + '">Continuar →</button>' : '') + '</div>';
     el.oninput = el.onchange = function (ev) {
       const t = ev.target;
@@ -126,7 +126,7 @@
   }
   // Texto → PDF A4 com quebra de linha (pdf-lib).
   async function textoParaPdf(titulo, texto) {
-    const L = await carregarPdfLib(); const doc = await L.PDFDocument.create(); doc.setTitle(titulo); doc.setProducer('Seven Sign · Seven');
+    const L = await carregarPdfLib(); const doc = await L.PDFDocument.create(); doc.setTitle(titulo); doc.setProducer('Seven Contrato · Seven');
     const fonte = await doc.embedFont(L.StandardFonts.Helvetica), negrito = await doc.embedFont(L.StandardFonts.HelveticaBold);
     const W = 595.28, H = 841.89, M = 56, larg = W - 2 * M; let pg = doc.addPage([W, H]); let y = H - M;
     const quebrar = function (t, f, tam) { const out = []; let lin = ''; String(t).split(' ').forEach(function (p) { const tst = lin ? lin + ' ' + p : p; if (lin && f.widthOfTextAtSize(tst, tam) > larg) { out.push(lin); lin = p; } else lin = tst; }); out.push(lin); return out; };
@@ -146,7 +146,7 @@
     if (c.situacao === 'rascunho') { location.hash = '#/contratos/editar/' + c.id; return; }
     const s0 = K.situacao(c); if (s0 !== c.situacaoVista) { if (s0 === 'assinado' && !c.concluidoEm) { c.concluidoEm = new Date().toISOString(); K.evento(c, 'concluido', 'Todas as assinaturas recebidas. Documento concluído.'); } c.situacaoVista = s0; salvar(); }
     const p = K.progresso(c);
-    el.innerHTML = '<p class="migalhas"><a href="#/contratos">Seven Sign</a> › ' + esc(c.titulo) + '</p>' +
+    el.innerHTML = '<p class="migalhas"><a href="#/contratos">Seven Contrato</a> › ' + esc(c.titulo) + '</p>' +
       '<section class="cartao ct-topo"><div><h2>' + esc(c.titulo) + '</h2><p class="mini mudo">Código de verificação <b>' + esc(K.codigoVerificacao(c.documento.hash)) + '</b> · enviado ' + dataHora(c.enviadoEm) + (c.prazo ? ' · prazo ' + data(c.prazo) : '') + '</p></div>' + rotSit(c) + '<div class="ct-prog"><div class="barra"><i style="width:' + Math.round(p.pct * 100) + '%"></i></div><small>' + p.feitas + ' de ' + p.total + ' assinaturas</small></div>' +
       '<div class="grupo-botoes"><button class="btn" data-a="ver-doc">Ver original</button>' + (s0 === 'assinado' ? '<button class="btn primario" data-a="final">⬇ Baixar PDF assinado</button>' : '<button class="btn" data-a="baixar-doc">⬇ Baixar PDF para enviar</button><button class="btn" data-a="receber">↩ Registrar assinatura recebida</button>') + (s0 !== 'assinado' && s0 !== 'cancelado' ? '<button class="btn fantasma perigo" data-a="cancelar">Cancelar</button>' : '') + '</div></section>' +
       '<section class="cartao"><h3>Signatários</h3><div class="ct-sig-lista">' + c.signatarios.map(function (s) { const pode = K.podeAssinar(c, s.id); return '<div class="ct-sig-l ' + (s.assinadoEm ? 'ok' : s.recusadoEm ? 'nao' : '') + '" data-sid="' + s.id + '"><span class="ct-sig-ic">' + (s.assinadoEm ? '✓' : s.recusadoEm ? '✕' : c.sequencial ? (s.ordem || 1) + 'º' : '…') + '</span><div class="ct-sig-info"><b>' + esc(s.nome) + '</b><small>' + esc(K.PAPEIS[s.papel] || '') + (s.email ? ' · ' + esc(s.email) : '') + (s.telefone ? ' · ' + esc(s.telefone) : '') + '</small><small>' + (s.assinadoEm ? 'Assinou em ' + dataHora(s.assinadoEm) : s.recusadoEm ? 'Recusou em ' + dataHora(s.recusadoEm) + ': ' + esc(s.motivo || '') : pode ? 'Pode assinar agora' : c.sequencial ? 'Aguardando a vez' : 'Pendente') + '</small></div>' +
@@ -247,7 +247,7 @@
     let x; try { x = deB64url(codigo); } catch (err) { el.innerHTML = UI.vazio('Link inválido', 'Peça um novo link a quem enviou o documento.'); return; }
     const presencial = (function () { try { return sessionStorage.getItem('ct-presencial') === x.c; } catch (er) { return false; } })();
     const st = { conferido: false, metodo: 'digitada', tracos: [] };
-    el.innerHTML = '<div class="as"><header class="as-cab"><span class="as-selo">✍</span><div><small>Seven Sign · Assinatura eletrônica</small><h2>' + esc(x.n) + '</h2><p>Enviado por ' + esc(x.de) + ' para <b>' + esc(x.nome) + '</b> (' + esc(K.PAPEIS[x.papel] || '') + ')</p></div></header>' +
+    el.innerHTML = '<div class="as"><header class="as-cab"><span class="as-selo">✍</span><div><small>Seven Contrato · Assinatura eletrônica</small><h2>' + esc(x.n) + '</h2><p>Enviado por ' + esc(x.de) + ' para <b>' + esc(x.nome) + '</b> (' + esc(K.PAPEIS[x.papel] || '') + ')</p></div></header>' +
       '<section class="cartao as-passo" id="as-1"><h3><span>1</span> Confira o documento</h3><p>Abra o PDF que você recebeu junto com o link. O sistema calcula a impressão digital do arquivo e confere se é <b>exatamente</b> o documento enviado para você.</p><p class="mini">Código de verificação esperado: <b>' + esc(K.codigoVerificacao(x.h)) + '</b></p><button class="btn primario" data-a="pdf">Abrir o PDF recebido…</button><div id="as-conf"></div><div id="as-ver"></div></section>' +
       '<section class="cartao as-passo" id="as-2" hidden><h3><span>2</span> Seus dados</h3><div class="linha">' + campo('Nome completo', '<input id="as-nome" value="' + esc(x.nome) + '" autocomplete="name">') + campo('CPF', '<input id="as-cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00">') + campo('E-mail', '<input id="as-email" type="email" autocomplete="email">') + '</div></section>' +
       '<section class="cartao as-passo" id="as-3" hidden><h3><span>3</span> Sua assinatura</h3><div class="as-modos"><button type="button" class="btn ativo" data-m="digitada">Digitar</button><button type="button" class="btn" data-m="desenho">Desenhar</button></div><div id="as-dig"><input id="as-ass" class="as-ass" placeholder="Digite seu nome"></div><div id="as-des" hidden><canvas id="as-canvas" width="500" height="150" aria-label="Área para desenhar a assinatura"></canvas><button type="button" class="btn mini fantasma" data-a="limpar">Limpar</button></div>' +
@@ -302,7 +302,7 @@
   }
 
   Telas.contratos = {
-    titulo: 'Seven Sign',
+    titulo: 'Seven Contrato',
     render: function (el, sub, param) {
       if (sub === 'editar') return telaEditor(el, param);
       if (sub === 'ver') return telaVer(el, param);
@@ -312,5 +312,5 @@
     },
     registrar: registrar
   };
-  Telas.assinar = { titulo: 'Seven Sign · Assinar documento', render: function (el, sub) { telaAssinar(el, sub); } };
+  Telas.assinar = { titulo: 'Seven Contrato · Assinar documento', render: function (el, sub) { telaAssinar(el, sub); } };
 })();

@@ -20,9 +20,9 @@
   const DESC = {
     painel: 'Visão geral do dia: avisos novos, propostas, disputas, prazos, documentos vencendo e indicadores, em blocos que você escolhe e organiza.',
     ia: 'Assistente de IA para ler editais, tirar dúvidas da Lei 14.133, redigir peças e resumir documentos, com a sua chave da Anthropic.',
-    loja: 'Vitrine dos serviços da Seven com carrinho, cupons e pedidos. O pedido vira negócio no Seven Sales e você revisa a mensagem antes de enviar.',
+    loja: 'Vitrine dos serviços da Seven com carrinho, cupons e pedidos. O pedido vira negócio no Seven Comercial e você revisa a mensagem antes de enviar.',
     comercial: 'CRM da Seven: contas, funil de vendas, cadência de contatos, propostas com ROI e metas para vender o BPO de licitações.',
-    encontrar: 'Encontre editais no PNCP com perfis de busca, catálogo de produtos e filtros por valor, região e órgão. Envie os bons para o Seven Bid.',
+    encontrar: 'Encontre editais no PNCP com perfis de busca, catálogo de produtos e filtros por valor, região e órgão. Envie os bons para o Seven Proposta.',
     cadastrar: 'Monte as propostas: itens do PNCP, marca, modelo, custo e preço, declarações, anexos, registro do envio e proposta atualizada pós-lances.',
     disputar: 'Prepare a sessão de lances: valor limite aprovado pelo cliente, estratégia por item, checklist e simulador para ensaiar a disputa.',
     monitorar: 'Acompanhe as licitações depois da disputa: mensagens do pregoeiro, prazos detectados automaticamente, recursos e contrarrazões.',
@@ -37,11 +37,11 @@
     pleiade: 'Comunicação interna da equipe em tempo real: canais, mensagens diretas, conversas em thread, arquivos e lembretes.',
     reuniao: 'Videochamadas da equipe com tela compartilhada, chat, enquetes, quadro branco, legendas e ata da reunião.',
     agora: 'Rede social dos profissionais de licitação: publique, siga colegas, comente e acompanhe as discussões do setor.',
-    notas: 'Emita NF-e e NFS-e com orientação passo a passo, registre notas de entrada pelo XML e lance as parcelas no Seven Pay.',
+    notas: 'Emita NF-e e NFS-e com orientação passo a passo, registre notas de entrada pelo XML e lance as parcelas no Seven Financeiro.',
     contratos: 'Envie contratos e termos para assinatura eletrônica, acompanhe quem já assinou e baixe o PDF com o registro das assinaturas.',
     quadros: 'Quadros no estilo Trello para gerir cada licitação, da oportunidade ao pagamento, com checklists, prazos e a execução do contrato.',
     financas: 'Controle financeiro pessoal, da empresa e de clientes: contas, cartões, fluxo de caixa, contas a pagar e a receber e conciliação.',
-    nuvem: 'Guarde arquivos e pastas da Seven e dos clientes, e abra direto no Seven Codex, no Seven Synapse ou no Seven Music.',
+    nuvem: 'Guarde arquivos e pastas da Seven e dos clientes, e abra direto no Seven Leitor, no Seven Cadernos ou no Seven Música.',
     mercado: 'Pesquise o mercado no PNCP: valores homologados, órgãos compradores, vencedores, preço por item e desconto sobre a referência.',
     capag: 'Nota de capacidade de pagamento dos municípios (CAPAG do Tesouro Nacional) para saber quem costuma pagar em dia antes de disputar.',
     academy: 'Cursos, mentorias e dicas da Seven para a equipe e os clientes aprenderem licitação na prática.',
@@ -58,7 +58,7 @@
     const sem = r.tela === 'assinar' || (r.tela === 'design' && r.sub === 'editar') || (r.tela === 'cadernos' && r.sub === 'c');
     const d = DESC[chave];
     box.hidden = sem || !d;
-    if (!box.hidden) box.innerHTML = '<h1>' + esc(chave === 'capag' ? 'Seven Pag' : tela.titulo) + '</h1><p class="mudo">' + esc(d) + '</p>';
+    if (!box.hidden) box.innerHTML = '<h1>' + esc(chave === 'capag' ? 'Seven CAPAG' : tela.titulo) + '</h1><p class="mudo">' + esc(d) + '</p>';
   }
 
   function desenhar() {

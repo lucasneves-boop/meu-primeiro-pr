@@ -1,4 +1,4 @@
-/* Seven Sniper: preparação da sessão (valor limite, lance fechado, estratégia) e ensaio no simulador. */
+/* Seven Pregão: preparação da sessão (valor limite, lance fechado, estratégia) e ensaio no simulador. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -40,7 +40,7 @@
       itens: p.itens.filter(function (i) { return i.participar !== false; }).map(function (i) { return { numero: i.numero, lote: i.lote || '', descricao: i.descricao, quantidade: i.quantidade, proposta: i.unitario, referencia: i.refUnitaria, custo: i.custo, limite: null, lanceFechado: null, pausado: false, aprovado: false }; }),
       checklist: {}, criadaEm: new Date().toISOString()
     });
-    Dados.salvar(); aviso('Licitação enviada ao Seven Sniper. Defina o valor limite de cada item.');
+    Dados.salvar(); aviso('Licitação enviada ao Seven Pregão. Defina o valor limite de cada item.');
   }
 
   function telaLista(el) {
@@ -51,7 +51,7 @@
         l.map(function (d) {
           const ok = d.itens.filter(function (i) { return i.limite; }).length; const ck = CHECKLIST.filter(function (_, k) { return d.checklist[k]; }).length;
           return '<tr class="clicavel" data-id="' + d.id + '"><td><b>' + esc(d.titulo) + '</b></td><td>' + esc(d.portal || '') + '</td><td>' + dataHora(d.sessao) + '</td><td>' + esc((MODOS.find(function (m) { return m.v === d.config.modo; }) || {}).t) + '</td><td class="n ' + (ok < d.itens.length ? 'alerta' : '') + '">' + ok + '/' + d.itens.length + '</td><td class="' + (ck < CHECKLIST.length ? 'alerta' : '') + '">' + ck + '/' + CHECKLIST.length + '</td></tr>';
-        }).join('') + '</tbody></table></div>' : UI.vazio('Nenhuma disputa', 'Na proposta, ligue "Enviar ao Seven Sniper". Ou crie uma disputa avulsa para ensaiar no simulador.', '<button class="btn primario" data-a="nova">+ Nova disputa</button>'));
+        }).join('') + '</tbody></table></div>' : UI.vazio('Nenhuma disputa', 'Na proposta, ligue "Enviar ao Seven Pregão". Ou crie uma disputa avulsa para ensaiar no simulador.', '<button class="btn primario" data-a="nova">+ Nova disputa</button>'));
     el.onclick = async function (ev) {
       if (ev.target.closest('[data-a=nova]')) {
         const ps = daEmpresa(e().propostas).filter(function (p) { return !e().disputas.some(function (d) { return d.propostaId === p.id; }); });
@@ -177,7 +177,7 @@
   }
 
   Telas.disputar = {
-    titulo: 'Seven Sniper',
+    titulo: 'Seven Pregão',
     render: function (el, sub, param) {
       clearInterval(timer);
       el.innerHTML = abas([{ id: '', t: 'Minhas disputas' }], '', 'disputar').replace('href="#/disputar/"', 'href="#/disputar"') + '<div id="aba"></div>';

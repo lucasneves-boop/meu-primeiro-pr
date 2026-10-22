@@ -341,7 +341,7 @@ const testes = {
     await pg.waitForFunction(() => document.querySelectorAll('#dn-barras rect').length > 20, null, { timeout: 15000 }); ok(true, 'DANFE com código de barras da chave');
     ok(/2026NE000123/.test(await pg.locator('.danfe').innerText()) && await pg.locator('.dn-marca').count() === 0, 'DANFE autorizado sem marca d’água, com empenho');
     await foto('notas-danfe');
-    ok(await pg.locator('[data-v=financeiro]').count() === 0 && await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => l.tipo === 'receita' && !l.pago && /NF-e 000057/.test(l.descricao)).length === 2), 'duplicatas lançadas sozinhas a receber no Seven Pay');
+    ok(await pg.locator('[data-v=financeiro]').count() === 0 && await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => l.tipo === 'receita' && !l.pago && /NF-e 000057/.test(l.descricao)).length === 2), 'duplicatas lançadas sozinhas a receber no Seven Financeiro');
     await pg.click('[data-v=cce]'); await pg.fill('.modal [name=t]', 'Onde se lê caixa com 10 resmas, leia-se caixa com 10 resmas de 500 folhas'); await submit();
     ok(await pg.locator('.dn-cce').count() === 1, 'carta de correção registrada');
     // nota de entrada por XML

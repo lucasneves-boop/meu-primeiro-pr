@@ -70,7 +70,7 @@
       else if (s.recusadoEm) l.push('  Recusou em ' + fmt(s.recusadoEm) + ': ' + (s.motivo || ''));
       else l.push('  Pendente');
     });
-    l.push('', 'Assinatura eletrônica nos termos da Lei 14.063/2020 e da MP 2.200-2/2001, art. 10, § 2º, com as evidências acima. Para conferir, use o validador do Seven Sign com o código de verificação ou o arquivo.');
+    l.push('', 'Assinatura eletrônica nos termos da Lei 14.063/2020 e da MP 2.200-2/2001, art. 10, § 2º, com as evidências acima. Para conferir, use o validador do Seven Contrato com o código de verificação ou o arquivo.');
     return l;
   }
   function mascaraCpf(c) { const d = soDigitos(c); return d.length === 11 ? '***.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-**' : c; }

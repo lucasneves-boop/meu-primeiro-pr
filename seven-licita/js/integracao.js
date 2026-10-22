@@ -1,10 +1,10 @@
 /* Integração entre as ferramentas: o que é lançado numa aparece nas outras, sem digitar de novo.
    Regras puras sobre o estado (Dados.e), idempotentes: podem rodar a cada gravação sem duplicar nada.
-   - Seven Bid ↔ Seven Sniper: itens e preços da proposta seguem para a disputa.
-   - Resultado (ganha/perdida) vale para proposta, disputa, Seven Watch e cartão do Seven Hub.
-   - Seven NFe → Execução do cartão (NF e empenho) → Seven Pay (contas a receber), e pagamentos nos dois sentidos.
-   - Prazos de todas as ferramentas aparecem na Seven Task.
-   - Contatos: lançamentos ganham o nome do cliente/órgão; clientes herdam e-mail e telefone do Seven Sales. */
+   - Seven Proposta ↔ Seven Pregão: itens e preços da proposta seguem para a disputa.
+   - Resultado (ganha/perdida) vale para proposta, disputa, Seven Sessão e cartão do Seven Processo.
+   - Seven Faturamento → Execução do cartão (NF e empenho) → Seven Financeiro (contas a receber), e pagamentos nos dois sentidos.
+   - Prazos de todas as ferramentas aparecem na Seven Agenda.
+   - Contatos: lançamentos ganham o nome do cliente/órgão; clientes herdam e-mail e telefone do Seven Comercial. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.Integracao = fabrica();
 })(typeof self !== 'undefined' ? self : this, function () {
@@ -28,7 +28,7 @@
   }
   function cartaoDaProposta(e, p) { return cartoes(e).find(function (x) { return !x.c.arquivado && (x.c.propostaId === p.id || (p.avisoId && x.c.avisoId === p.avisoId && (!x.c.empresaId || x.c.empresaId === p.empresaId))); }); }
 
-  // Seven Bid → Seven Sniper: descrição, quantidade, preço proposto, custo e referência acompanham a proposta.
+  // Seven Proposta → Seven Pregão: descrição, quantidade, preço proposto, custo e referência acompanham a proposta.
   function syncDisputas(e) {
     let n = 0;
     lista(e.disputas).forEach(function (d) {
@@ -57,7 +57,7 @@
     p.pendenteHub = r;
     return p;
   }
-  // Descobre resultados marcados por outros caminhos (readequação no Seven Bid, resultado na disputa, etiqueta no cartão).
+  // Descobre resultados marcados por outros caminhos (readequação no Seven Proposta, resultado na disputa, etiqueta no cartão).
   function detectarResultados(e) {
     let n = 0;
     lista(e.propostas).forEach(function (p) {
@@ -76,7 +76,7 @@
     return n;
   }
 
-  // Seven NFe → Execução do cartão: a NF autorizada entra na lista de notas, com o empenho informado nela.
+  // Seven Faturamento → Execução do cartão: a NF autorizada entra na lista de notas, com o empenho informado nela.
   function syncNotas(e) {
     let n = 0;
     lista(e.notas).forEach(function (nf) {
@@ -108,7 +108,7 @@
     return n;
   }
 
-  // Execução ↔ Seven Pay: pagamento registrado num lado dá baixa no outro.
+  // Execução ↔ Seven Financeiro: pagamento registrado num lado dá baixa no outro.
   function syncPagamentos(e) {
     const f = e.financas; if (!f) return 0; let n = 0;
     const lancs = lista(f.lancamentos);
@@ -118,13 +118,13 @@
         if (!en.nfId) return;
         const ls = lancs.filter(function (l) { return l.origem === 'nota:' + en.nfId; }).sort(function (a, b) { return String(a.data).localeCompare(String(b.data)); });
         if (!ls.length) return;
-        // Baixa no Seven Pay → pagamento na Execução.
+        // Baixa no Seven Financeiro → pagamento na Execução.
         ls.forEach(function (l) {
           const ligado = x.pagamentos.find(function (pg) { return pg.lancId === l.id; });
-          if (l.pago && !ligado) { const pg = { id: 'pg-' + l.id, data: l.data, valor: cent(l.valor), notaId: en.id, lancId: l.id, obs: 'Baixa no Seven Pay' }; x.pagamentos.push(pg); l.pagamentoId = pg.id; n++; }
+          if (l.pago && !ligado) { const pg = { id: 'pg-' + l.id, data: l.data, valor: cent(l.valor), notaId: en.id, lancId: l.id, obs: 'Baixa no Seven Financeiro' }; x.pagamentos.push(pg); l.pagamentoId = pg.id; n++; }
           else if (!l.pago && ligado && ligado.id === 'pg-' + l.id) { x.pagamentos.splice(x.pagamentos.indexOf(ligado), 1); delete l.pagamentoId; n++; }
         });
-        // Pagamento lançado na Execução → baixa no Seven Pay.
+        // Pagamento lançado na Execução → baixa no Seven Financeiro.
         x.pagamentos.filter(function (pg) { return pg.notaId === en.id && !pg.lancId; }).forEach(function (pg) {
           const abertos = ls.filter(function (l) { return !l.pago; }); if (!abertos.length) return;
           const l = abertos.find(function (z) { return Math.abs(cent(z.valor) - cent(pg.valor)) < 0.01; }) || abertos[0];
@@ -144,7 +144,7 @@
       if (l.origem.indexOf('loja:') === 0 && e.loja) { const o = lista(e.loja.pedidos).find(function (z) { return 'loja:' + z.id === l.origem; }); if (o && o.cliente) nome = o.cliente.razao; }
       if (nome) { l.contato = nome; n++; }
     });
-    // Cliente ganho no Seven Sales: e-mail, telefone e representante vão para o cadastro do cliente.
+    // Cliente ganho no Seven Comercial: e-mail, telefone e representante vão para o cadastro do cliente.
     const contas = lista(e.comercial && e.comercial.contas);
     lista(e.empresas).forEach(function (emp) {
       const c = contas.find(function (z) { return dig(z.cnpj) && dig(z.cnpj) === dig(emp.cnpj); }); if (!c) return;
@@ -162,7 +162,7 @@
     return n;
   }
 
-  // Prazos de todas as ferramentas para a Seven Task (somente leitura, com link para a origem).
+  // Prazos de todas as ferramentas para a Seven Agenda (somente leitura, com link para a origem).
   function eventosAgenda(e, de, ate) {
     const out = [];
     const dentro = function (d) { d = String(d || '').slice(0, 10); return d && d >= de && d <= ate; };
@@ -178,7 +178,7 @@
       lista(x.notas).forEach(function (en) { const pago = lista(x.pagamentos).filter(function (pg) { return pg.notaId === en.id; }).reduce(function (s, pg) { return s + (Number(pg.valor) || 0); }, 0); if (en.vencimento && pago + 0.01 < (Number(en.valor) || 0)) add(en.vencimento, 'Pagamento NF ' + (en.numero || '') + ' · ' + xc.c.titulo, 'pagamento', '#/quadros/' + xc.q.id + '/' + xc.c.id); });
       if (x.vigenciaFim) add(x.vigenciaFim, 'Fim da vigência · ' + xc.c.titulo, 'contrato', '#/quadros/' + xc.q.id + '/' + xc.c.id);
     });
-    // Contas do Seven Pay (as NFs já ligadas a um contrato aparecem pelo pagamento da Execução, sem repetir).
+    // Contas do Seven Financeiro (as NFs já ligadas a um contrato aparecem pelo pagamento da Execução, sem repetir).
     const nfNaExecucao = {}; cartoes(e).forEach(function (xc) { lista(xc.c.execucao && xc.c.execucao.notas).forEach(function (en) { if (en.nfId) nfNaExecucao['nota:' + en.nfId] = 1; }); });
     if (e.financas) lista(e.financas.lancamentos).forEach(function (l) { if (!l.pago && l.data && !nfNaExecucao[l.origem]) add(l.data, (l.tipo === 'despesa' ? 'Pagar: ' : 'Receber: ') + l.descricao, 'financeiro', '#/financas'); });
     lista(e.comercial && e.comercial.atividades).forEach(function (a) { if (!a.feita && a.data) add(a.data, a.titulo, 'comercial', '#/comercial'); });

@@ -13,7 +13,7 @@ const PDFLIB = process.env.PDFLIB || path.join(__dirname, '..', 'node_modules', 
   await pg.goto(url + '#/painel'); await pg.waitForSelector('#conteudo');
   await pg.evaluate(() => { Dados.e.empresas.push({ id: 'emp1', razao: 'Cliente Teste LTDA', cnpj: '12345678000190', uf: 'GO', municipio: 'Catalão', representante: 'Maria Cliente da Silva', email: 'maria@cliente.com.br', telefone: '64999990000' }); Dados.e.empresaAtiva = 'emp1'; Dados.e.config.responsavel = 'Lucas Neves'; Dados.salvar(); });
   await pg.goto(url + '#/contratos'); await pg.waitForSelector('.vazio');
-  ok(/Seven Sign/.test(await pg.textContent('.menu a[data-rota=contratos]')) && await pg.textContent('#titulo-tela') === 'Seven Sign', 'Seven Sign no menu');
+  ok(/Seven Contrato/.test(await pg.textContent('.menu a[data-rota=contratos]')) && await pg.textContent('#titulo-tela') === 'Seven Contrato', 'Seven Contrato no menu');
   await pg.click('.vazio [data-a=novo]'); await pg.waitForSelector('.ct-passos');
   ok(await pg.locator('.ct-passo').count() === 4, '4 etapas: documento, signatários, mensagem, revisar');
   await foto('ct-novo');
@@ -57,7 +57,7 @@ const PDFLIB = process.env.PDFLIB || path.join(__dirname, '..', 'node_modules', 
   // 3. Signatário remoto: arquivo errado é recusado; o certo libera a assinatura
   await pg.goto(link); await pg.waitForSelector('.as-cab');
   ok(await pg.locator('.lateral').isHidden() && await pg.locator('.seletor-empresa').isHidden(), 'página do signatário sem o menu da plataforma');
-  ok(/Seven Sign/.test(await pg.textContent('.as-cab')), 'página do signatário identificada como Seven Sign');
+  ok(/Seven Contrato/.test(await pg.textContent('.as-cab')), 'página do signatário identificada como Seven Contrato');
   await escolher('[data-a=pdf]', arquivo('outro.pdf', '%PDF-1.4 arquivo diferente'));
   ok(await pg.locator('#as-conf .ct-invalido').count() === 1 && await pg.locator('#as-2').isHidden(), 'PDF diferente: não deixa assinar');
   await escolher('[data-a=pdf]', pdf); await pg.waitForSelector('#as-conf .ct-valido');

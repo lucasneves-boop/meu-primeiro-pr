@@ -20,7 +20,7 @@ test('liga cartão e acompanhamento à proposta pelo aviso', () => {
   assert.equal(I.cartaoDaProposta(e, e.propostas[0]).c.id, 'c1');
 });
 
-test('preço alterado no Seven Bid chega ao Seven Sniper sem perder o valor limite; item novo entra', () => {
+test('preço alterado no Seven Proposta chega ao Seven Pregão sem perder o valor limite; item novo entra', () => {
   const e = base(); I.syncDisputas(e);
   const it = e.disputas[0].itens; assert.equal(it[0].proposta, 2); assert.equal(it[0].custo, 1.2); assert.equal(it[0].limite, 1.5);
   assert.equal(it.length, 2); assert.equal(it[1].descricao, 'Lápis');
@@ -28,7 +28,7 @@ test('preço alterado no Seven Bid chega ao Seven Sniper sem perder o valor limi
   assert.equal(I.syncDisputas(e), 0, 'idempotente');
 });
 
-test('resultado ganha vale para proposta, disputa e Seven Watch, uma vez só', () => {
+test('resultado ganha vale para proposta, disputa e Seven Sessão, uma vez só', () => {
   const e = base(); I.ligar(e);
   I.registrarResultado(e, 'p1', 'ganha', { valorFinal: 180, itens: ['1'] });
   const p = e.propostas[0];
@@ -45,7 +45,7 @@ test('resultado marcado em outro lugar (readequação, disputa ou etiqueta do ca
   assert.equal(e.propostas[0].resultado, 'ganha'); assert.equal(e.propostas[0].pendenteHub, undefined, 'cartão já está marcado');
 });
 
-test('NF autorizada no Seven NFe entra na Execução com o empenho; cancelada sai', () => {
+test('NF autorizada no Seven Faturamento entra na Execução com o empenho; cancelada sai', () => {
   const e = base(); I.ligar(e);
   e.notas.push({ id: 'n1', operacao: 'saida', propostaId: 'p1', situacao: 'rascunho', numero: 15, emissao: '2030-12-01', totalNota: 200, duplicatas: [{ vencimento: '2030-12-31', valor: 200 }], contrato: { empenho: '2030NE0007' } });
   I.syncNotas(e); assert.equal(e.quadros[0].cartoes[0].execucao, undefined, 'rascunho não entra');
@@ -57,33 +57,33 @@ test('NF autorizada no Seven NFe entra na Execução com o empenho; cancelada sa
   e.notas[0].situacao = 'cancelada'; I.syncNotas(e); assert.equal(x.notas.length, 0);
 });
 
-test('pagamento nos dois sentidos entre Execução e Seven Pay, sem duplicar', () => {
+test('pagamento nos dois sentidos entre Execução e Seven Financeiro, sem duplicar', () => {
   const e = base(); I.ligar(e);
   e.notas.push({ id: 'n1', operacao: 'saida', propostaId: 'p1', situacao: 'autorizada', numero: 15, emissao: '2030-12-01', totalNota: 200, contrato: {}, destinatario: { nome: 'Prefeitura de Catalão' } });
   I.syncNotas(e);
   e.financas.lancamentos.push({ id: 'l1', tipo: 'receita', valor: 120, data: '2030-12-31', pago: false, origem: 'nota:n1' }, { id: 'l2', tipo: 'receita', valor: 80, data: '2031-01-31', pago: false, origem: 'nota:n1' });
   const x = e.quadros[0].cartoes[0].execucao;
-  // baixa no Seven Pay → pagamento na Execução
+  // baixa no Seven Financeiro → pagamento na Execução
   e.financas.lancamentos[0].pago = true; I.syncPagamentos(e);
   assert.equal(x.pagamentos.length, 1); assert.equal(x.pagamentos[0].valor, 120); assert.equal(x.pagamentos[0].notaId, 'nf-n1');
-  // pagamento lançado na Execução → baixa no Seven Pay
+  // pagamento lançado na Execução → baixa no Seven Financeiro
   x.pagamentos.push({ id: 'pgm', data: '2031-01-30', valor: 80, notaId: 'nf-n1' }); I.syncPagamentos(e);
   assert.equal(e.financas.lancamentos[1].pago, true); assert.equal(x.pagamentos[1].lancId, 'l2');
   assert.equal(I.syncPagamentos(e), 0, 'idempotente'); assert.equal(x.pagamentos.length, 2);
-  // desfazer a baixa no Seven Pay tira o pagamento que veio de lá
+  // desfazer a baixa no Seven Financeiro tira o pagamento que veio de lá
   e.financas.lancamentos[0].pago = false; I.syncPagamentos(e); assert.equal(x.pagamentos.length, 1);
   // contato preenchido a partir da NF
   I.syncContatos(e); assert.equal(e.financas.lancamentos[0].contato, 'Prefeitura de Catalão');
 });
 
-test('cliente herda e-mail, telefone e representante do Seven Sales', () => {
+test('cliente herda e-mail, telefone e representante do Seven Comercial', () => {
   const e = base(); e.comercial = { contas: [{ id: 'ct1', cnpj: '11222333000181', contatos: [{ nome: 'Ana Souza', email: 'ana@cliente.com.br', telefone: '64 99999-0000' }] }] };
   I.syncContatos(e); const emp = e.empresas[0];
   assert.equal(emp.email, 'ana@cliente.com.br'); assert.equal(emp.telefone, '64 99999-0000'); assert.equal(emp.representante, 'Ana Souza'); assert.equal(emp.contaId, 'ct1');
   emp.email = 'outro@x.com'; I.syncContatos(e); assert.equal(emp.email, 'outro@x.com', 'não sobrescreve o que foi digitado');
 });
 
-test('prazos de todas as ferramentas na Seven Task, sem repetir o que já está no cartão', () => {
+test('prazos de todas as ferramentas na Seven Agenda, sem repetir o que já está no cartão', () => {
   const e = base(); I.ligar(e);
   e.contratos = [{ id: 'k', titulo: 'Contrato BPO', situacao: 'enviado', prazo: '2030-11-16' }];
   e.comercial = { atividades: [{ titulo: 'Ligar para Ana', data: '2030-11-17', feita: false }] };

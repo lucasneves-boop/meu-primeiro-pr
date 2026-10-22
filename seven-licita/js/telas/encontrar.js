@@ -1,4 +1,4 @@
-/* Seven Radar: perfis de busca, catálogo de produtos, meus avisos e banco de licitações (PNCP). */
+/* Seven Edital: perfis de busca, catálogo de produtos, meus avisos e banco de licitações (PNCP). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -110,7 +110,7 @@
       '<button class="btn fantasma" data-a="ia" title="Abre a Seven IA com os dados deste edital">✳ Perguntar à Seven IA</button>' +
       '<button class="btn fantasma" data-a="orgao">' + (orgFav ? '☆ Desfavoritar órgão' : '☆ Órgão') + '</button>' +
       '<span class="sep"></span>' +
-      (contexto !== 'lixeira' ? '<button class="btn primario" data-a="cadastrar">Enviar para o Seven Bid</button><button class="btn" data-a="quadro">+ Quadro</button><button class="btn" data-a="monitorar">Monitorar</button>' : '') +
+      (contexto !== 'lixeira' ? '<button class="btn primario" data-a="cadastrar">Enviar para o Seven Proposta</button><button class="btn" data-a="quadro">+ Quadro</button><button class="btn" data-a="monitorar">Monitorar</button>' : '') +
       (salvo ? (salvo.lixeira ? '<button class="btn fantasma" data-a="restaurar">Restaurar</button>' : '<button class="btn fantasma" data-a="lido">' + (salvo.lido ? 'Marcar não lido' : 'Marcar lido') + '</button><button class="btn fantasma perigo" data-a="remover">Remover</button>') : '') +
       '</footer></article>';
   }
@@ -572,7 +572,7 @@
   }
 
   Telas.encontrar = {
-    titulo: 'Seven Radar',
+    titulo: 'Seven Edital',
     filtrarOrgao: function (nome) { filtros = Object.assign(avisosPadrao('todos'), { orgao: nome, situacao: 'todas' }); painelAvisosAberto = true; location.hash = '#/encontrar/avisos'; App.redesenhar(); },
     render: function (el, sub) {
       sub = sub || 'avisos';

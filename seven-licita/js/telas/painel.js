@@ -63,7 +63,7 @@
     },
     quadro: function (tam) {
       const q = (Dados.e.quadros || []).find(function (x) { return /licita/i.test(x.nome || x.titulo || '') && !x.arquivado; }) || (Dados.e.quadros || [])[0];
-      if (!q) return { corpo: '<p class="mudo">Crie o quadro de licitações em <a href="#/quadros">Seven Hub</a>.</p>' };
+      if (!q) return { corpo: '<p class="mudo">Crie o quadro de licitações em <a href="#/quadros">Seven Processo</a>.</p>' };
       const it = q.listas.filter(function (l) { return !l.arquivada; }).map(function (l) { return { r: l.nome, v: q.cartoes.filter(function (c) { return c.lista === l.id && !c.arquivado; }).length }; });
       return { link: '#/quadros/' + q.id, corpo: G.barras(it, { largura: LARG[tam], fmt: inteiro, linha: 24, titulo: 'Cartões por lista' }), tabela: G.tabela(['Lista', 'Cartões'], it.map(function (x) { return [x.r, x.v]; })) };
     },
@@ -85,7 +85,7 @@
     capag: function (tam) {
       const vistos = {}; const regs = valores((Dados.e.config || {}).capag).filter(function (v) { const k = v.ibge || (v.municipio + '-' + v.uf); if (vistos[k]) return false; vistos[k] = 1; return true; });
       const it = ['A', 'B', 'C', 'D', 'n.d.'].map(function (n) { return { r: 'CAPAG ' + n, v: regs.filter(function (r) { return String(r.nota).replace('+', '') === n; }).length }; });
-      return { link: '#/mercado/capag', corpo: regs.length ? G.barras(it, { largura: LARG[tam], fmt: inteiro, linha: 24, titulo: 'Municípios por nota CAPAG' }) : '<p class="mudo">Importe a planilha da CAPAG em <a href="#/mercado/capag">Seven Market › Seven Pag</a>.</p>', tabela: G.tabela(['Nota', 'Municípios'], it.map(function (x) { return [x.r, x.v]; })) };
+      return { link: '#/mercado/capag', corpo: regs.length ? G.barras(it, { largura: LARG[tam], fmt: inteiro, linha: 24, titulo: 'Municípios por nota CAPAG' }) : '<p class="mudo">Importe a planilha da CAPAG em <a href="#/mercado/capag">Seven Painel de Preços › Seven CAPAG</a>.</p>', tabela: G.tabela(['Nota', 'Municípios'], it.map(function (x) { return [x.r, x.v]; })) };
     },
     'com-kpis': function () {
       const c = Dados.e.comercial || {}; const m = Comercial.metricas(c.negocios || [], hoje());
@@ -96,7 +96,7 @@
     'com-funil': function (tam) {
       const m = Comercial.metricas((Dados.e.comercial || {}).negocios || [], hoje());
       const it = m.porEtapa.filter(function (x) { return x.id !== 'perdido'; }).map(function (x) { return { r: x.nome, v: x.qtd, rotuloValor: x.qtd + ' · ' + reais(x.valor), dica: x.nome + ': ' + x.qtd + ' negócio(s), ' + moeda(x.valor) }; });
-      return { link: '#/comercial/funil', corpo: it.some(function (x) { return x.v; }) ? G.barras(it, { largura: LARG[tam], linha: 26, titulo: 'Negócios por etapa' }) : '<p class="mudo">Cadastre contas no <a href="#/comercial">Seven Sales</a> para ver o funil.</p>', tabela: G.tabela(['Etapa', 'Negócios', 'Valor'], m.porEtapa.map(function (x) { return [x.nome, x.qtd, moeda(x.valor)]; })) };
+      return { link: '#/comercial/funil', corpo: it.some(function (x) { return x.v; }) ? G.barras(it, { largura: LARG[tam], linha: 26, titulo: 'Negócios por etapa' }) : '<p class="mudo">Cadastre contas no <a href="#/comercial">Seven Comercial</a> para ver o funil.</p>', tabela: G.tabela(['Etapa', 'Negócios', 'Valor'], m.porEtapa.map(function (x) { return [x.nome, x.qtd, moeda(x.valor)]; })) };
     },
     'com-ganhos': function (tam) {
       const ns = ((Dados.e.comercial || {}).negocios || []).filter(function (n) { return n.etapa === 'ganho'; });
@@ -114,14 +114,14 @@
       return { link: '#/comercial/atividades', corpo: lista(l.map(function (a) { const ct = conta(a.contaId); return '<li class="' + (a.data < h ? 'atrasado' : 'logo') + '"><b>' + (a.data < h ? 'Atrasada · ' : 'Hoje · ') + esc(a.titulo) + '</b>' + (ct ? '<br><a href="#/comercial/conta/' + ct.id + '">' + esc(ct.fantasia || ct.razao) + '</a>' : '') + '</li>'; }), 'Nada para hoje.') };
     },
     'fin-fluxo': function (tam) {
-      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Seven Pay</a>.</p>' };
+      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Seven Financeiro</a>.</p>' };
       const ls = (f.lancamentos || []).filter(function (l) { return l.perfil === f.perfilAtivo; }); const ms = PC.mesesAte(hoje(), 6);
       const rs = ms.map(function (m) { return Financas.resumo(ls, m); });
       const series = [{ nome: 'Receitas', valores: rs.map(function (r) { return r.receitas; }) }, { nome: 'Despesas', valores: rs.map(function (r) { return r.despesas; }) }];
       return { link: '#/financas', corpo: G.agrupadas(ms.map(PC.rotuloMes), series, { largura: LARG[tam], fmt: function (v) { return moeda(v); }, titulo: 'Receitas e despesas' }) + G.legenda(series.map(function (s) { return { r: s.nome, v: s.valores.reduce(function (a, b) { return a + (b || 0); }, 0), pct: false }; }), reais), tabela: G.tabela(['Mês', 'Receitas', 'Despesas', 'Resultado'], ms.map(function (m, i) { return [PC.rotuloMes(m), moeda(rs[i].receitas), moeda(rs[i].despesas), moeda(rs[i].receitas - rs[i].despesas)]; })) };
     },
     'fin-categorias': function () {
-      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Seven Pay</a>.</p>' };
+      const f = Dados.e.financas; if (!f) return { corpo: '<p class="mudo">Comece em <a href="#/financas">Seven Financeiro</a>.</p>' };
       const mes = hoje().slice(0, 7); const nomes = {}; (f.categorias || []).forEach(function (c) { nomes[c.id] = c.nome; });
       const soma = {}; (f.lancamentos || []).forEach(function (l) { if (l.perfil !== f.perfilAtivo || l.tipo !== 'despesa' || String(l.data).slice(0, 7) !== mes) return; const k = nomes[l.categoria] || 'Sem categoria'; soma[k] = (soma[k] || 0) + Number(l.valor || 0); });
       const it = Object.keys(soma).map(function (k) { return { r: k, v: Math.round(soma[k] * 100) / 100 }; }).sort(function (a, b) { return b.v - a.v; });
@@ -146,12 +146,12 @@
     },
     semanas: function (tam) {
       const s = Dados.e.semanas; const c = s && (s.ciclos || []).find(function (x) { return x.id === s.ativo; }) || (s && (s.ciclos || [])[(s.ciclos || []).length - 1]);
-      if (!c) return { corpo: '<p class="mudo">Monte seu plano em <a href="#/semanas">Seven 12S</a>.</p>' };
+      if (!c) return { corpo: '<p class="mudo">Monte seu plano em <a href="#/semanas">Seven Metas</a>.</p>' };
       const sr = Doze.serie(c);
       return { link: '#/semanas', corpo: G.linha(sr.map(function (x) { return 'S' + x.n; }), [{ nome: 'Execução', valores: sr.map(function (x) { return x.pct; }) }], { largura: LARG[tam], max: 100, ref: 85, refRotulo: 'meta 85%', fmt: function (v) { return Math.round(v) + '%'; }, fmtEixo: function (v) { return v + '%'; }, vazio: 'Pontue a primeira semana', titulo: 'Execução semanal' }), tabela: G.tabela(['Semana', 'Execução'], sr.map(function (x) { return ['S' + x.n, x.pct == null ? '—' : Math.round(x.pct) + '%']; })) };
     },
     atalhos: function () {
-      const l = [['#/encontrar', '⌕', 'Seven Radar'], ['#/cadastrar', '✎', 'Seven Bid'], ['#/disputar', '⚡', 'Seven Sniper'], ['#/monitorar', '◉', 'Seven Watch'], ['#/comercial', '📈', 'Seven Sales'], ['#/agenda', '☑', 'Seven Task'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
+      const l = [['#/encontrar', '⌕', 'Seven Edital'], ['#/cadastrar', '✎', 'Seven Proposta'], ['#/disputar', '⚡', 'Seven Pregão'], ['#/monitorar', '◉', 'Seven Sessão'], ['#/comercial', '📈', 'Seven Comercial'], ['#/agenda', '☑', 'Seven Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
       return { corpo: '<nav class="pn-atalhos">' + l.map(function (x) { return '<a href="' + x[0] + '"><span aria-hidden="true">' + x[1] + '</span>' + x[2] + '</a>'; }).join('') + '</nav>' };
     }
   };
@@ -170,7 +170,7 @@
   function render(el) {
     const d = Dados.e; const c = cfg(); const emp = Dados.empresaAtiva();
     const dataTxt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, function (c) { return c.toUpperCase(); });
-    el.innerHTML = (!d.empresas.length ? '<div class="boas-vindas cartao"><h2>Bem-vindo à Plataforma 7</h2><ol><li><a href="#/empresas">Cadastre o primeiro cliente (CNPJ)</a></li><li><a href="#/encontrar/catalogos">Monte o catálogo de produtos</a> e <a href="#/encontrar/perfis">o perfil de busca</a></li><li>Capture os avisos do PNCP e envie os bons para o Seven Hub e o Seven Bid</li></ol><p class="mini">Os dados ficam neste navegador. Faça backup em <a href="#/config">Configurações</a>.</p></div>' : '') +
+    el.innerHTML = (!d.empresas.length ? '<div class="boas-vindas cartao"><h2>Bem-vindo à Plataforma 7</h2><ol><li><a href="#/empresas">Cadastre o primeiro cliente (CNPJ)</a></li><li><a href="#/encontrar/catalogos">Monte o catálogo de produtos</a> e <a href="#/encontrar/perfis">o perfil de busca</a></li><li>Capture os avisos do PNCP e envie os bons para o Seven Processo e o Seven Proposta</li></ol><p class="mini">Os dados ficam neste navegador. Faça backup em <a href="#/config">Configurações</a>.</p></div>' : '') +
       '<div class="pn-topo"><div><p class="pn-data">' + esc(dataTxt) + '</p>' + (emp ? '<p class="mini mudo">Cliente ativo: ' + esc(emp.fantasia || emp.razao) + '</p>' : '') + '</div><div class="grupo-botoes">' +
       (editando ? '<button class="btn" data-pn="add">＋ Adicionar bloco</button><button class="btn fantasma" data-pn="padrao">Restaurar padrão</button><button class="btn primario" data-pn="editar">Concluir</button>' : '<button class="btn" data-pn="editar">✎ Personalizar painel</button>') + '</div></div>' +
       (editando ? '<p class="pn-dica-edicao mini">Arraste os blocos pela alça ⠿ (ou use ↑ ↓) para reordenar, troque o tamanho em P/M/G e retire com ✕. As mudanças ficam salvas.</p>' : '') +
@@ -226,5 +226,5 @@
     };
   }
 
-  Telas.painel = { titulo: 'Seven Dash', render: render };
+  Telas.painel = { titulo: 'Seven Painel', render: render };
 })();

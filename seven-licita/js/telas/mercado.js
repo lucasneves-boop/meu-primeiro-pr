@@ -1,4 +1,4 @@
-/* Seven Market (análise de mercado no PNCP), Concorrentes e Seven Pag (CAPAG). */
+/* Seven Painel de Preços (análise de mercado no PNCP), Concorrentes e Seven CAPAG (CAPAG). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -207,7 +207,7 @@
     const cont = {}; todos.forEach(function (r) { const k = r.nota.replace('+', ''); cont[k] = (cont[k] || 0) + 1; });
     const ufs = todos.map(function (r) { return r.uf; }).filter(function (x, i, l) { return x && l.indexOf(x) === i; }).sort();
     const hist = historicoPagamentos();
-    el.innerHTML = '<section class="cartao"><header><h3>Seven Pag: capacidade de pagamento dos municípios (CAPAG)</h3><div class="grupo-botoes"><a class="btn fantasma" href="' + LINK_CAPAG + '" target="_blank" rel="noopener">Tesouro Transparente ↗</a><button class="btn primario" data-a="importar">Importar planilha da CAPAG</button><button class="btn" data-a="capag">+ Nota manual</button></div></header>' +
+    el.innerHTML = '<section class="cartao"><header><h3>Seven CAPAG: capacidade de pagamento dos municípios</h3><div class="grupo-botoes"><a class="btn fantasma" href="' + LINK_CAPAG + '" target="_blank" rel="noopener">Tesouro Transparente ↗</a><button class="btn primario" data-a="importar">Importar planilha da CAPAG</button><button class="btn" data-a="capag">+ Nota manual</button></div></header>' +
       '<p class="mini">Nota do Tesouro Nacional sobre a situação fiscal do município. <b>A e B</b>: melhores; <b>C</b>: intermediária; <b>D</b>: maior risco; <b>n.d.</b>: sem nota. Não garante prazo de pagamento; é apoio à decisão. A nota aparece no cartão de cada aviso do município.</p>' +
       '<p class="mini mudo">Como atualizar: abra a página da CAPAG no Tesouro Transparente, baixe a planilha dos municípios (Excel ou CSV) e clique em <b>Importar planilha da CAPAG</b>. A importação substitui as notas anteriores.' + (e().config.capagImportadaEm ? ' Última importação: ' + data(e().config.capagImportadaEm) + ' (' + esc(e().config.capagArquivo || '') + ').' : '') + '</p>' +
       (todos.length ? '<div class="pilulas">' + ['A', 'B', 'C', 'D', 'n.d.'].map(function (n) { return '<button class="pilula ' + (f.nota === n ? 'ativa' : '') + '" data-nota="' + n + '">CAPAG ' + n + ' <b>' + (cont[n] || 0) + '</b></button>'; }).join('') + '</div>' +
@@ -237,13 +237,13 @@
   }
 
   Telas.mercado = {
-    titulo: 'Seven Market',
+    titulo: 'Seven Painel de Preços',
     coletar: rodar, // usado pelo estudo de mercado da área Comercial
     pesquisar: function (termo) { preTermo = termo || ''; atual = null; location.hash = '#/mercado/analise'; App.redesenhar(); aviso('Termo do item preenchido. Confira estados e período e clique em Gerar relatório.'); },
     render: function (el, sub) {
       sub = sub || 'analise';
-      if (sub === 'capag') { document.getElementById('titulo-tela').textContent = 'Seven Pag'; document.title = 'Seven Pag · Plataforma 7'; }
-      el.innerHTML = abas([{ id: 'analise', t: 'Análise de mercado' }, { id: 'concorrentes', t: 'Concorrentes' }, { id: 'capag', t: 'Seven Pag' }], sub, 'mercado') + '<div id="aba"></div>';
+      if (sub === 'capag') { document.getElementById('titulo-tela').textContent = 'Seven CAPAG'; document.title = 'Seven CAPAG · Plataforma 7'; }
+      el.innerHTML = abas([{ id: 'analise', t: 'Análise de mercado' }, { id: 'concorrentes', t: 'Concorrentes' }, { id: 'capag', t: 'Seven CAPAG' }], sub, 'mercado') + '<div id="aba"></div>';
       ({ analise: telaAnalise, concorrentes: telaConcorrentes, capag: telaCapag }[sub] || telaAnalise)(el.querySelector('#aba'));
       el.onclick = null;
     }

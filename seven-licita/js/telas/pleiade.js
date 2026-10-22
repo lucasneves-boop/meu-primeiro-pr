@@ -1,4 +1,4 @@
-/* Seven Plêiades: comunicação interna no estilo Slack. Canais, mensagens diretas, threads, menções, reações, arquivos e busca.
+/* Seven Chat: comunicação interna no estilo Slack. Canais, mensagens diretas, threads, menções, reações, arquivos e busca.
    Modo local (só este navegador) ou modo equipe, sincronizado em tempo real por um Firebase Realtime Database. */
 (function () {
   'use strict';
@@ -40,7 +40,7 @@
     enviar: function (metodo, caminho, valor) {
       if (!this.remoto()) { Dados.salvar(); return Promise.resolve(); }
       return fetch(this.url(caminho), { method: metodo, headers: { 'Content-Type': 'application/json' }, body: metodo === 'DELETE' ? undefined : JSON.stringify(valor) })
-        .then(function (r) { if (!r.ok) throw new Error('servidor respondeu ' + r.status); }).catch(function (err) { aviso('Seven Plêiades: não foi possível salvar no servidor (' + err.message + ').', 'erro'); });
+        .then(function (r) { if (!r.ok) throw new Error('servidor respondeu ' + r.status); }).catch(function (err) { aviso('Seven Chat: não foi possível salvar no servidor (' + err.message + ').', 'erro'); });
     },
     set: function (caminho, valor) { this.arv = P.definir(this.arv, caminho, valor); if (!this.remoto()) Dados.e.pleiade = this.arv; this.mudou(); return this.enviar(valor == null ? 'DELETE' : 'PUT', caminho, valor); },
     patch: function (caminho, obj) { this.arv = P.mesclar(this.arv, caminho, obj); if (!this.remoto()) Dados.e.pleiade = this.arv; this.mudou(); return this.enviar('PATCH', caminho, obj); },
@@ -81,7 +81,7 @@
   async function apresentar() {
     const nomePadrao = (Dados.e.config && Dados.e.config.responsavel) || '';
     const lista = Object.keys(membros()).map(function (k) { return Object.assign({ id: k }, membros()[k]); });
-    const r = await modal({ titulo: 'Bem-vindo à Seven Plêiades', botao: 'Entrar', semCancelar: true, corpo: '<p>A Seven Plêiades é o canal de conversa da equipe: canais por assunto, mensagens diretas, threads e menções.</p>' + (lista.length ? campo('Já tenho perfil neste espaço', '<select name="existente"><option value="">— sou novo —</option>' + opcoes(lista.map(function (m) { return { v: m.id, t: m.nome + (m.cargo ? ' · ' + m.cargo : '') }; })) + '</select>') : '') + '<div class="linha">' + campo('Seu nome', '<input name="nome" value="' + esc(nomePadrao) + '" placeholder="ex.: Lucas Neves">') + campo('Cargo', '<input name="cargo" placeholder="ex.: Analista de licitações">') + '</div><fieldset><legend>Cor</legend><div class="ag-cores">' + CORES.map(function (c, i) { return '<label><input type="radio" name="cor" value="' + c + '"' + (i === lista.length % CORES.length ? ' checked' : '') + '><i style="background:' + c + '"></i></label>'; }).join('') + '</div></fieldset>',
+    const r = await modal({ titulo: 'Bem-vindo ao Seven Chat', botao: 'Entrar', semCancelar: true, corpo: '<p>O Seven Chat é o canal de conversa da equipe: canais por assunto, mensagens diretas, threads e menções.</p>' + (lista.length ? campo('Já tenho perfil neste espaço', '<select name="existente"><option value="">— sou novo —</option>' + opcoes(lista.map(function (m) { return { v: m.id, t: m.nome + (m.cargo ? ' · ' + m.cargo : '') }; })) + '</select>') : '') + '<div class="linha">' + campo('Seu nome', '<input name="nome" value="' + esc(nomePadrao) + '" placeholder="ex.: Lucas Neves">') + campo('Cargo', '<input name="cargo" placeholder="ex.: Analista de licitações">') + '</div><fieldset><legend>Cor</legend><div class="ag-cores">' + CORES.map(function (c, i) { return '<label><input type="radio" name="cor" value="' + c + '"' + (i === lista.length % CORES.length ? ' checked' : '') + '><i style="background:' + c + '"></i></label>'; }).join('') + '</div></fieldset>',
       validar: function (fd) { return fd.get('existente') || fd.get('nome').trim() ? '' : 'Digite seu nome.'; } });
     if (!r) return false;
     const c = cfg();
@@ -91,7 +91,7 @@
     if (!Object.keys(canais()).length) {
       const base = [['geral', 'Avisos e conversas de toda a equipe'], ['licitacoes', 'Editais, sessões e resultados do dia'], ['cotacoes', 'Fornecedores, preços e cotações em andamento']];
       for (const x of base) { const membrosC = {}; membrosC[c.eu] = true; await T.set('canais/' + x[0], { nome: x[0], descricao: x[1], topico: '', criadoPor: c.eu, criadoEm: Date.now(), membros: membrosC, padrao: true }); }
-      await mensagemSistema('geral', '<@' + c.eu + '> criou o espaço da equipe na Seven Plêiades. 👋');
+      await mensagemSistema('geral', '<@' + c.eu + '> criou o espaço da equipe no Seven Chat. 👋');
     } else Object.keys(canais()).forEach(function (cid) { if (canais()[cid].padrao) T.set('canais/' + cid + '/membros/' + c.eu, true); });
     return true;
   }
@@ -110,7 +110,7 @@
     if (T.remoto()) { T.set('digitando/' + cid + '/' + eu(), null); est.digitou = 0; } // a próxima digitação volta a avisar na hora
     const cmd = P.comando(t);
     if (cmd && !opc.pai) {
-      if (cmd.nome === 'tarefa' && Telas.agenda) { const x = Telas.agenda.criar(cmd.arg || 'Nova tarefa'); aviso(x ? '☑ Tarefa criada na Seven Task: ' + x.titulo : 'Escreva a tarefa depois de /tarefa'); return; }
+      if (cmd.nome === 'tarefa' && Telas.agenda) { const x = Telas.agenda.criar(cmd.arg || 'Nova tarefa'); aviso(x ? '☑ Tarefa criada na Seven Agenda: ' + x.titulo : 'Escreva a tarefa depois de /tarefa'); return; }
       if (cmd.nome === 'status') { const m = cmd.arg.match(/^(\p{Extended_Pictographic}️?)?\s*(.*)$/u) || []; await T.set('membros/' + eu() + '/status', cmd.arg ? { emoji: m[1] || '💬', texto: m[2] || '' } : null); aviso(cmd.arg ? 'Status atualizado.' : 'Status limpo.'); return; }
       if (cmd.nome === 'me') t = '_' + cmd.arg + '_';
       else if (cmd.nome === 'ajuda' || cmd.nome === 'help') { aviso('/tarefa texto · /status 🔨 Em sessão · /me ação'); return; }
@@ -126,7 +126,7 @@
   async function anexar(arqs) {
     const out = [];
     for (const f of arqs) {
-      if (T.remoto()) { if (f.size > 750 * 1024) { aviso('"' + f.name + '" passa de 750 KB. No modo equipe, envie arquivos grandes pelo Seven Drive e cole o link.', 'erro'); continue; } const url = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(f); }); out.push({ nome: f.name, tipo: f.type, tam: f.size, dados: url }); }
+      if (T.remoto()) { if (f.size > 750 * 1024) { aviso('"' + f.name + '" passa de 750 KB. No modo equipe, envie arquivos grandes pelo Seven Arquivos e cole o link.', 'erro'); continue; } const url = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(f); }); out.push({ nome: f.name, tipo: f.type, tam: f.size, dados: url }); }
       else { const aid = 'pl-' + P.id(); await Dados.guardarArquivo(aid, f); out.push({ nome: f.name, tipo: f.type, tam: f.size, arq: aid }); }
     }
     return out;
@@ -142,7 +142,7 @@
       return '<li><a href="#/pleiade/c/' + esc(k) + '" class="' + (est.canal === k && !est.vista ? 'ativo ' : '') + (r.n ? 'nl' : '') + '">' + (c.dm ? '<span class="pl-dm-av">' + avatar(outro || eu(), 20) + '<i class="pl-pres' + (ativo(outro || eu()) ? ' on' : '') + '"></i></span>' : '<span class="pl-hash">' + (c.privado ? '🔒' : '#') + '</span>') + '<span class="pl-nome">' + esc(nomeCanal(k)) + '</span>' + (n ? '<b class="pl-cont">' + n + '</b>' : '') + '</a></li>'; };
     const th = P.minhasThreads(arv(), eu(), cfgL.threadsLidas).reduce(function (s, x) { return s + x.novas; }, 0);
     return '<aside class="pl-lado"><header class="pl-espaco"><b>' + esc((cfgL.espaco || 'Seven').replace(/^./, function (x) { return x.toUpperCase(); })) + '</b><small class="pl-con' + (T.conectado ? ' ok' : '') + '" title="' + esc(T.erro || (T.remoto() ? 'Conectado ao servidor da equipe' : 'Modo local: só este navegador')) + '">' + (T.remoto() ? (T.conectado ? '● equipe' : '○ reconectando') : '● local') + '</small><button class="icone" data-pl="nova-dm" title="Nova mensagem" aria-label="Nova mensagem">✎</button></header>' +
-      '<ul class="pl-nav"><li><a href="#/pleiade/threads" class="' + (est.vista === 'threads' ? 'ativo' : '') + '">🧵 Threads' + (th ? '<b class="pl-cont">' + th + '</b>' : '') + '</a></li><li><a href="#/pleiade/atividade" class="' + (est.vista === 'atividade' ? 'ativo' : '') + '">@ Menções e reações</a></li><li><a href="#/pleiade/salvos" class="' + (est.vista === 'salvos' ? 'ativo' : '') + '">🔖 Itens salvos</a></li><li><a href="#/pleiade/pessoas" class="' + (est.vista === 'pessoas' ? 'ativo' : '') + '">👥 Pessoas</a></li><li><a href="#/reuniao">📹 Seven Sync' + (emChamada() ? '<b class="pl-cont">ao vivo</b>' : '') + '</a></li></ul>' +
+      '<ul class="pl-nav"><li><a href="#/pleiade/threads" class="' + (est.vista === 'threads' ? 'ativo' : '') + '">🧵 Threads' + (th ? '<b class="pl-cont">' + th + '</b>' : '') + '</a></li><li><a href="#/pleiade/atividade" class="' + (est.vista === 'atividade' ? 'ativo' : '') + '">@ Menções e reações</a></li><li><a href="#/pleiade/salvos" class="' + (est.vista === 'salvos' ? 'ativo' : '') + '">🔖 Itens salvos</a></li><li><a href="#/pleiade/pessoas" class="' + (est.vista === 'pessoas' ? 'ativo' : '') + '">👥 Pessoas</a></li><li><a href="#/reuniao">📹 Seven Reunião' + (emChamada() ? '<b class="pl-cont">ao vivo</b>' : '') + '</a></li></ul>' +
       '<h4>Canais <span><button class="icone" data-pl="explorar" title="Explorar canais" aria-label="Explorar canais">⌕</button><button class="icone" data-pl="novo-canal" title="Criar canal" aria-label="Criar canal">＋</button></span></h4><ul class="pl-canais">' + meus.map(item).join('') + '</ul>' +
       '<h4>Mensagens diretas <button class="icone" data-pl="nova-dm" aria-label="Nova mensagem direta">＋</button></h4><ul class="pl-canais">' + dms.map(item).join('') + '</ul>' +
       '<footer class="pl-eu" data-pl="perfil">' + avatar(eu(), 28) + '<div><b>' + esc(meu.nome) + '</b><small>' + (meu.status ? esc(meu.status.emoji + ' ' + meu.status.texto) : 'Definir status') + '</small></div><button class="icone" data-pl="ajustes" title="Conexão e ajustes" aria-label="Ajustes">⚙</button></footer></aside>';
@@ -196,7 +196,7 @@
     const quando = await escolherHorario('Lembrar desta mensagem', 'Criar lembrete'); if (!quando) return;
     const d = new Date(quando); const dia = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); const hora = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const t = Telas.agenda.criar('Responder: ' + P.textoPuro(m.t, ctx()).slice(0, 120), { data: dia, hora: hora, tags: ['pleiade'] });
-    if (t) { t.hora = hora; t.data = dia; t.lembrete = 0; t.notas = 'Mensagem de ' + membro(m.u).nome + ' em ' + prefixo(canais()[cid]) + nomeCanal(cid) + ' · #/pleiade/c/' + cid; Dados.salvar(); aviso('⏰ Lembrete criado na Seven Task para ' + d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '.'); }
+    if (t) { t.hora = hora; t.data = dia; t.lembrete = 0; t.notas = 'Mensagem de ' + membro(m.u).nome + ' em ' + prefixo(canais()[cid]) + nomeCanal(cid) + ' · #/pleiade/c/' + cid; Dados.salvar(); aviso('⏰ Lembrete criado na Seven Agenda para ' + d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '.'); }
   }
 
   function compositor(cid, pai) {
@@ -207,7 +207,7 @@
       '<form class="pl-comp" data-comp="' + esc(chave) + '"><div class="pl-ferr"><button type="button" data-fmt="*" title="Negrito"><b>B</b></button><button type="button" data-fmt="_" title="Itálico"><i>I</i></button><button type="button" data-fmt="~" title="Riscado"><s>S</s></button><button type="button" data-fmt="`" title="Código">&lt;/&gt;</button><button type="button" data-fmt="- " title="Lista">☰</button><button type="button" data-fmt="&gt; " title="Citação">❝</button></div>' +
       '<textarea rows="1" placeholder="' + esc(pai ? 'Responder…' : 'Mensagem para ' + (c ? prefixo(c) + nomeCanal(cid) : '')) + '" aria-label="Mensagem">' + esc(est.rascunho[chave] || '') + '</textarea>' +
       (pai ? '<label class="pl-tambem"><input type="checkbox" name="tambem"> Também enviar para ' + esc(prefixo(c) + nomeCanal(cid)) + '</label>' : '') +
-      '<div class="pl-comp-pe"><span><button type="button" class="icone" data-pl="anexar" title="Anexar arquivo" aria-label="Anexar">📎</button><button type="button" class="icone" data-pl="emoji-comp" title="Emoji" aria-label="Emoji">☺</button><button type="button" class="icone" data-pl="mencionar" title="Mencionar" aria-label="Mencionar">@</button><button type="button" class="icone" data-pl="agendar" title="Agendar envio" aria-label="Agendar envio">🕒</button></span><small class="pl-dig">' + (dig.length ? esc(dig.map(function (u) { return membro(u).nome.split(' ')[0]; }).join(', ')) + (dig.length > 1 ? ' estão' : ' está') + ' digitando…' : '<span class="mudo">Enter envia · Shift+Enter quebra linha · /tarefa cria tarefa na Seven Task</span>') + '</small><button class="btn mini primario pl-enviar" aria-label="Enviar">➤</button></div><div class="pl-auto" hidden></div></form>';
+      '<div class="pl-comp-pe"><span><button type="button" class="icone" data-pl="anexar" title="Anexar arquivo" aria-label="Anexar">📎</button><button type="button" class="icone" data-pl="emoji-comp" title="Emoji" aria-label="Emoji">☺</button><button type="button" class="icone" data-pl="mencionar" title="Mencionar" aria-label="Mencionar">@</button><button type="button" class="icone" data-pl="agendar" title="Agendar envio" aria-label="Agendar envio">🕒</button></span><small class="pl-dig">' + (dig.length ? esc(dig.map(function (u) { return membro(u).nome.split(' ')[0]; }).join(', ')) + (dig.length > 1 ? ' estão' : ' está') + ' digitando…' : '<span class="mudo">Enter envia · Shift+Enter quebra linha · /tarefa cria tarefa na Seven Agenda</span>') + '</small><button class="btn mini primario pl-enviar" aria-label="Enviar">➤</button></div><div class="pl-auto" hidden></div></form>';
   }
 
   function telaCanal(cid) {
@@ -261,7 +261,7 @@
 
   function render(el, sub, param) {
     if (!T.iniciado) T.iniciar();
-    if (!eu() || !membros()[eu()]) { el.innerHTML = '<div class="pl-boas"><h2>Seven Plêiades</h2><p>Comunicação da equipe Seven.</p>' + (T.remoto() && !T.conectado ? '<p class="mudo">Conectando ao servidor da equipe…</p>' : '') + '</div>'; if (!est.apresentando && (T.conectado || !T.remoto())) { est.apresentando = true; apresentar().then(function (ok) { est.apresentando = false; if (ok) App.redesenhar(); }); } return; }
+    if (!eu() || !membros()[eu()]) { el.innerHTML = '<div class="pl-boas"><h2>Seven Chat</h2><p>Comunicação da equipe Seven.</p>' + (T.remoto() && !T.conectado ? '<p class="mudo">Conectando ao servidor da equipe…</p>' : '') + '</div>'; if (!est.apresentando && (T.conectado || !T.remoto())) { est.apresentando = true; apresentar().then(function (ok) { est.apresentando = false; if (ok) App.redesenhar(); }); } return; }
     est.vista = sub === 'c' || !sub ? null : sub;
     if (sub === 'c') est.canal = param; else if (!sub) { const C = canais(); est.canal = est.canal && vejo(C[est.canal], est.canal) ? est.canal : (C.geral ? 'geral' : Object.keys(C).find(function (k) { return vejo(C[k], k); })); }
     if (est.canal && !vejo(canais()[est.canal], est.canal) && !(canais()[est.canal] && !canais()[est.canal].privado && !canais()[est.canal].dm && !canais()[est.canal].arquivado)) est.canal = 'geral';
@@ -279,7 +279,7 @@
     if (est.vista === 'threads') main = telaThreads(); else if (est.vista === 'atividade') main = telaAtividade(); else if (est.vista === 'salvos') main = telaSalvos(); else if (est.vista === 'pessoas') main = telaPessoas(); else if (est.vista === 'busca') main = telaBusca(param);
     else if (est.canal && canais()[est.canal]) main = telaCanal(est.canal); else main = '<div class="pl-intro"><p>Nenhum canal. Crie um no ＋.</p></div>';
     const painel = est.thread ? telaThread() : (est.painel && est.canal && !est.vista ? telaDetalhes(est.canal, est.painel) : '');
-    el.innerHTML = '<div class="pl' + (painel ? ' com-painel' : '') + '"><div class="pl-barra"><form id="pl-busca"><input type="search" placeholder="Buscar na Seven Plêiades (ex.: edital in:#licitacoes from:@ana)" value="' + esc(est.vista === 'busca' ? param : '') + '"></form>' + (T.erro ? '<span class="pl-erro">⚠ ' + esc(T.erro) + '</span>' : '') + '</div>' + lateral() + '<section class="pl-main">' + main + '</section>' + painel + '</div><input type="file" id="pl-arquivo" multiple hidden>';
+    el.innerHTML = '<div class="pl' + (painel ? ' com-painel' : '') + '"><div class="pl-barra"><form id="pl-busca"><input type="search" placeholder="Buscar no Seven Chat (ex.: edital in:#licitacoes from:@ana)" value="' + esc(est.vista === 'busca' ? param : '') + '"></form>' + (T.erro ? '<span class="pl-erro">⚠ ' + esc(T.erro) + '</span>' : '') + '</div>' + lateral() + '<section class="pl-main">' + main + '</section>' + painel + '</div><input type="file" id="pl-arquivo" multiple hidden>';
     // rolagem
     const box = el.querySelector('#pl-msgs'); if (box && !est.vista) { const s = est.scroll[est.canal]; if (!s || s.fundo || est.ultimoCanal !== est.canal) { const nv = box.querySelector('.pl-novas'); if (nv && est.ultimoCanal !== est.canal) box.scrollTop = nv.offsetTop - 60; else box.scrollTop = box.scrollHeight; } else box.scrollTop = s.topo; }
     const tb = el.querySelector('.pl-msgs-th'); if (tb && thFundo) tb.scrollTop = tb.scrollHeight;
@@ -302,7 +302,7 @@
     if (m[2] === '@') itens = Object.keys(membros()).map(function (u) { return { v: '@' + membro(u).nome + ' ', t: membro(u).nome, s: membro(u).cargo || '', av: u }; }).concat([{ v: '@canal ', t: 'canal', s: 'avisa todos do canal' }]).filter(function (x) { return Cotacoes.normalizar(x.t).indexOf(q) >= 0; });
     if (m[2] === '#') itens = Object.keys(canais()).filter(function (k) { return vejo(canais()[k], k) && !canais()[k].dm; }).map(function (k) { return { v: '#' + canais()[k].nome + ' ', t: '#' + canais()[k].nome, s: canais()[k].descricao || '' }; }).filter(function (x) { return Cotacoes.normalizar(x.t).indexOf(q) >= 0; });
     if (m[2] === ':') itens = Object.keys(P.EMOJIS).filter(function (k) { return k.indexOf(m[3].toLowerCase()) === 0; }).map(function (k) { return { v: P.EMOJIS[k] + ' ', t: P.EMOJIS[k] + ' :' + k + ':', s: '' }; }).filter(function (x, i, a) { return a.findIndex(function (y) { return y.v === x.v; }) === i; });
-    if (m[2] === '/') itens = [{ v: '/tarefa ', t: '/tarefa', s: 'cria tarefa na Seven Task (entende "amanhã 14h !alta")' }, { v: '/status ', t: '/status', s: 'define seu status, ex.: /status 🔨 Em sessão' }, { v: '/me ', t: '/me', s: 'mensagem em itálico' }].filter(function (x) { return x.t.indexOf('/' + m[3]) === 0; });
+    if (m[2] === '/') itens = [{ v: '/tarefa ', t: '/tarefa', s: 'cria tarefa na Seven Agenda (entende "amanhã 14h !alta")' }, { v: '/status ', t: '/status', s: 'define seu status, ex.: /status 🔨 Em sessão' }, { v: '/me ', t: '/me', s: 'mensagem em itálico' }].filter(function (x) { return x.t.indexOf('/' + m[3]) === 0; });
     return itens.length ? { ini: pos - m[3].length - 1, itens: itens.slice(0, 8) } : null;
   }
   function mostrarAuto(form, ta) {
@@ -359,7 +359,7 @@
       const tirar = ev.target.closest('[data-tirar]'); if (tirar) { T.set('canais/' + est.canal + '/membros/' + tirar.dataset.tirar, null); mensagemSistema(est.canal, '<@' + eu() + '> removeu <@' + tirar.dataset.tirar + '> do canal.'); return; }
       const a = ev.target.closest('[data-pl]'); if (!a) { const men = ev.target.closest('.pl-men[data-u]'); if (men && men.dataset.u !== eu()) abrirDM([men.dataset.u]); return; }
       const k = a.dataset.pl; const mEl = a.closest('[data-m]'); const cid = mEl ? mEl.dataset.c : est.canal; const mid = mEl && mEl.dataset.m;
-      if (k === 'chamada') { if (!T.remoto()) { aviso('Videochamada precisa do modo equipe (servidor configurado em Configurações da Seven Plêiades).', 'erro'); return; } const sid = Telas.reuniao.criar({ canal: est.canal, nome: '' + (canais()[est.canal].dm ? 'Chamada' : 'Reunião em #' + canais()[est.canal].nome) }); location.hash = '#/reuniao/' + sid; return; }
+      if (k === 'chamada') { if (!T.remoto()) { aviso('Videochamada precisa do modo equipe (servidor configurado em Configurações do Seven Chat).', 'erro'); return; } const sid = Telas.reuniao.criar({ canal: est.canal, nome: '' + (canais()[est.canal].dm ? 'Chamada' : 'Reunião em #' + canais()[est.canal].nome) }); location.hash = '#/reuniao/' + sid; return; }
       if (k === 'thread') { est.thread = { c: cid, m: mid }; est.painel = null; est.focoThread = true; if (cid !== est.canal || est.vista) location.hash = '#/pleiade/c/' + cid; else App.redesenhar(); }
       if (k === 'fechar-painel') { est.thread = null; est.painel = null; est.focoThread = false; App.redesenhar(); }
       if (k === 'emoji') { const e = await escolherEmoji(a); if (e) reagir(cid, mid, e); }
@@ -389,7 +389,7 @@
   async function menuMensagem(cid, mid, alvo) {
     const m = msgs(cid)[mid]; const minha = m.u === eu();
     const pop = document.createElement('div'); pop.className = 'pl-menu';
-    pop.innerHTML = [minha ? ['editar', '✎ Editar mensagem'] : null, ['fixar', m.fixado ? '📌 Desafixar' : '📌 Fixar no canal'], ['copiar', '⧉ Copiar texto'], ['naolida', '◉ Marcar como não lida'], Telas.agenda ? ['tarefa', '☑ Criar tarefa na Seven Task'] : null, Telas.agenda ? ['lembrar', '⏰ Lembrar desta mensagem'] : null, minha ? ['excluir', '🗑 Excluir mensagem'] : null].filter(Boolean).map(function (x) { return '<button data-op="' + x[0] + '"' + (x[0] === 'excluir' ? ' class="perigo"' : '') + '>' + x[1] + '</button>'; }).join('');
+    pop.innerHTML = [minha ? ['editar', '✎ Editar mensagem'] : null, ['fixar', m.fixado ? '📌 Desafixar' : '📌 Fixar no canal'], ['copiar', '⧉ Copiar texto'], ['naolida', '◉ Marcar como não lida'], Telas.agenda ? ['tarefa', '☑ Criar tarefa na Seven Agenda'] : null, Telas.agenda ? ['lembrar', '⏰ Lembrar desta mensagem'] : null, minha ? ['excluir', '🗑 Excluir mensagem'] : null].filter(Boolean).map(function (x) { return '<button data-op="' + x[0] + '"' + (x[0] === 'excluir' ? ' class="perigo"' : '') + '>' + x[1] + '</button>'; }).join('');
     document.body.appendChild(pop); const r = alvo.getBoundingClientRect(); pop.style.top = Math.min(window.innerHeight - pop.offsetHeight - 8, r.bottom + 4) + 'px'; pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
     const fechar = function () { pop.remove(); document.removeEventListener('mousedown', fora, true); }; const fora = function (ev) { if (!pop.contains(ev.target)) fechar(); };
     setTimeout(function () { document.addEventListener('mousedown', fora, true); }, 0);
@@ -400,7 +400,7 @@
       if (op === 'copiar') navigator.clipboard.writeText(P.textoPuro(m.t, ctx())).then(function () { aviso('Texto copiado.'); }, function () {});
       if (op === 'naolida') { cfg().lidos[cid] = m.em - 1; est.novasDe[cid] = m.em - 1; est.segurarLido = cid; Dados.salvar(); atualizarSelo(); App.redesenhar(); aviso('Marcada como não lida.'); }
       if (op === 'lembrar') { await lembrar(cid, m); return; }
-      if (op === 'tarefa') { const x = Telas.agenda.criar(P.textoPuro(m.t, ctx()).slice(0, 140)); if (x) { x.notas = 'Da Seven Plêiades · ' + prefixo(canais()[cid]) + nomeCanal(cid) + ' · ' + membro(m.u).nome; Dados.salvar(); aviso('☑ Tarefa criada na Seven Task.'); } }
+      if (op === 'tarefa') { const x = Telas.agenda.criar(P.textoPuro(m.t, ctx()).slice(0, 140)); if (x) { x.notas = 'Da Seven Chat · ' + prefixo(canais()[cid]) + nomeCanal(cid) + ' · ' + membro(m.u).nome; Dados.salvar(); aviso('☑ Tarefa criada na Seven Agenda.'); } }
       if (op === 'excluir' && await confirmar('Excluir mensagem', 'Excluir esta mensagem? Não dá para desfazer.', 'Excluir')) { if (m.pai) { const pai = msgs(cid)[m.pai]; if (pai) T.patch('mensagens/' + cid + '/' + m.pai, { nResp: Math.max(0, (pai.nResp || 1) - 1) }); } P.respostas(msgs(cid), mid).forEach(function (r) { T.set('mensagens/' + cid + '/' + r.id, null); }); T.set('mensagens/' + cid + '/' + mid, null); if (est.thread && est.thread.m === mid) est.thread = null; }
     };
   }
@@ -432,7 +432,7 @@
   async function abrirDM(uids) { const todos = uids.concat([eu()]).filter(function (x, i, a) { return a.indexOf(x) === i; }); const id = P.dmId(todos); if (!canais()[id]) { const mem = {}; todos.forEach(function (u) { mem[u] = true; }); await T.set('canais/' + id, { nome: 'dm', dm: true, membros: mem, criadoPor: eu(), criadoEm: Date.now() }); } location.hash = '#/pleiade/c/' + id; }
   async function novaDM() {
     const outros = Object.keys(membros()).filter(function (u) { return u !== eu(); });
-    if (!outros.length) return aviso(T.remoto() ? 'Ninguém mais entrou ainda. Peça para a equipe abrir a Seven Plêiades com a mesma conexão.' : 'Modo local: só você neste navegador. Conecte o servidor da equipe em ⚙ para conversar com outras pessoas.', 'erro');
+    if (!outros.length) return aviso(T.remoto() ? 'Ninguém mais entrou ainda. Peça para a equipe abrir o Seven Chat com a mesma conexão.' : 'Modo local: só você neste navegador. Conecte o servidor da equipe em ⚙ para conversar com outras pessoas.', 'erro');
     const r = await modal({ titulo: 'Nova mensagem', botao: 'Abrir conversa', corpo: '<p class="mini mudo">Escolha uma ou mais pessoas (até 8).</p><div class="grade-checks pl-escolha">' + outros.map(function (u) { return '<label><input type="checkbox" name="u" value="' + esc(u) + '"> ' + avatar(u, 22) + ' ' + esc(membro(u).nome) + '</label>'; }).join('') + '</div>', validar: function (fd) { const n = fd.getAll('u').length; return !n ? 'Escolha alguém.' : n > 8 ? 'No máximo 8 pessoas.' : ''; } });
     if (r) abrirDM(r.getAll('u'));
   }
@@ -444,7 +444,7 @@
   }
   async function ajustes() {
     const c = cfg();
-    const r = await modal({ titulo: 'Conexão da Seven Plêiades', largo: true, corpo:
+    const r = await modal({ titulo: 'Conexão do Seven Chat', largo: true, corpo:
       '<label class="co-origem"><input type="radio" name="modo" value="local"' + (c.modo !== 'firebase' ? ' checked' : '') + '><span><b>Local (este navegador)</b><small>Funciona sem configurar, mas as mensagens ficam só neste computador. Serve para testar.</small></span></label>' +
       '<label class="co-origem"><input type="radio" name="modo" value="firebase"' + (c.modo === 'firebase' ? ' checked' : '') + '><span><b>Equipe — tempo real (Firebase Realtime Database)</b><small>Todos que usarem a mesma URL e o mesmo espaço conversam em tempo real. Passo a passo: em console.firebase.google.com crie um projeto → Realtime Database → Criar banco → copie a URL (termina em firebaseio.com ou firebasedatabase.app). Nas regras, libere leitura e escrita só para quem tiver o token, ou use regras com autenticação.</small>' + campo('URL do banco', '<input name="url" value="' + esc(c.url || '') + '" placeholder="https://seven-xxxx-default-rtdb.firebaseio.com">') + '<div class="linha">' + campo('Espaço', '<input name="espaco" value="' + esc(c.espaco || 'seven') + '">', 'Mesmo nome para toda a equipe.') + campo('Token (opcional)', '<input name="token" type="password" value="' + esc(c.token || '') + '">', 'Segredo do banco ou token de acesso. Fica só neste navegador.') + '</div></span></label>' +
       '<p class="mini mudo">Você está como <b>' + esc(membro(eu()).nome) + '</b>. <button type="button" class="btn-link" data-trocar>Trocar de pessoa</button> · Notificações: ' + ('Notification' in window ? Notification.permission : 'indisponíveis') + ('Notification' in window && Notification.permission === 'default' ? ' <button type="button" class="btn-link" data-notif>Ativar</button>' : '') + '</p>',
@@ -462,5 +462,5 @@
   setTimeout(function () { if (Dados.e.pleiadeCfg && Dados.e.pleiadeCfg.eu) { T.iniciar(); atualizarSelo(); } }, 800);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^#\/pleiade/.test(location.hash)) App.redesenhar(); });
 
-  Telas.pleiade = { titulo: 'Seven Plêiades', render: render, _t: T, enviarAgendadas: enviarAgendadas, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso } };
+  Telas.pleiade = { titulo: 'Seven Chat', render: render, _t: T, enviarAgendadas: enviarAgendadas, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso } };
 })();

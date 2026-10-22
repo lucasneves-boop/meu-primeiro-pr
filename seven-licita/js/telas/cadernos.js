@@ -1,4 +1,4 @@
-/* Seven Synapse (cadernos no estilo NotebookLM): fontes (PDF, DOCX, TXT, texto colado), chat com citações, estúdio (resumo, guia, FAQ,
+/* Seven Cadernos (cadernos no estilo NotebookLM): fontes (PDF, DOCX, TXT, texto colado), chat com citações, estúdio (resumo, guia, FAQ,
    linha do tempo, quiz, análise de edital, resumo em áudio) e notas. Respostas extrativas: só o que está nas fontes. */
 (function () {
   'use strict';
@@ -39,7 +39,7 @@
   // ---------- início ----------
   function telaInicio(el) {
     const ls = e().slice().sort(function (a, b) { return b.editadoEm - a.editadoEm; });
-    el.innerHTML = '<div class="cd-home"><header><div><h1>Seven Synapse</h1><p class="mudo">Junte editais, termos de referência, leis e atas num caderno e converse com eles. As respostas citam o trecho de onde vieram.</p></div><button class="btn primario" data-a="novo">＋ Novo caderno</button></header>' +
+    el.innerHTML = '<div class="cd-home"><header><div><h1>Seven Cadernos</h1><p class="mudo">Junte editais, termos de referência, leis e atas num caderno e converse com eles. As respostas citam o trecho de onde vieram.</p></div><button class="btn primario" data-a="novo">＋ Novo caderno</button></header>' +
       '<div class="cd-grade">' + '<button class="cd-card novo" data-a="novo"><span>＋</span><b>Criar novo caderno</b></button>' + ls.map(function (c) { return '<a class="cd-card" href="#/cadernos/c/' + c.id + '" style="--cd-cor:' + esc(c.cor || '#f5ecdb') + '"><span class="cd-emoji">' + esc(c.emoji || '📒') + '</span><b>' + esc(c.titulo) + '</b><small>' + new Date(c.editadoEm).toLocaleDateString('pt-BR') + ' · ' + c.fontes.length + ' fonte' + (c.fontes.length === 1 ? '' : 's') + '</small><button class="icone cd-del" data-del="' + c.id + '" aria-label="Excluir caderno">🗑</button></a>'; }).join('') + '</div></div>';
     el.onclick = async function (ev) {
       const del = ev.target.closest('[data-del]'); if (del) { ev.preventDefault(); const c = caderno(del.dataset.del); if (await confirmar('Excluir caderno', 'Excluir <b>' + esc(c.titulo) + '</b> e suas fontes?', 'Excluir')) { for (const f of c.fontes) await Dados.apagarArquivo(f.arq); Dados.e.cadernos = e().filter(function (x) { return x !== c; }); Dados.salvar(); App.redesenhar(); } return; }
@@ -89,7 +89,7 @@
       h += '<table class="cd-ed">' + s.dados.campos.map(function (c) { return '<tr class="' + (c.achado ? '' : 'falta') + '"><th>' + esc(c.t) + '</th><td>' + (c.achado ? (c.destaque ? '<b>' + esc(c.destaque) + '</b><br>' : '') + esc(c.frase) + ' ' + origem(c) : '<span class="mudo">Não encontrado nas fontes</span>') + '</td></tr>'; }).join('') + '</table>' +
         '<h4>Habilitação exigida</h4>' + s.dados.habilitacao.map(function (g) { return '<details' + (g.itens.length ? ' open' : '') + '><summary>' + esc(g.t) + ' <small>(' + g.itens.length + ')</small></summary>' + (g.itens.length ? '<ul>' + g.itens.map(function (i) { return '<li>' + esc(i.frase) + ' ' + origem(i) + '</li>'; }).join('') + '</ul>' : '<p class="mini mudo">Nada encontrado.</p>') + '</details>'; }).join('') +
         (s.dados.datas.length ? '<h4>Datas citadas</h4><ul>' + s.dados.datas.map(function (d) { return '<li><b>' + d.data.split('-').reverse().join('/') + '</b> — ' + esc(d.frase) + '</li>'; }).join('') + '</ul>' : '') +
-        '<p class="mini mudo">Extração automática: confira sempre no edital antes de decidir.</p><button class="btn mini" data-a="edital-agenda">🗓 Criar lembretes na Seven Task com as datas</button>';
+        '<p class="mini mudo">Extração automática: confira sempre no edital antes de decidir.</p><button class="btn mini" data-a="edital-agenda">🗓 Criar lembretes na Seven Agenda com as datas</button>';
     }
     if (s.tipo === 'resumo' || s.tipo === 'audio') h += '<ul class="cd-res">' + s.dados.map(function (x) { return '<li>' + esc(x.frase) + ' ' + origem(x) + '</li>'; }).join('') + '</ul>' + (s.tipo === 'audio' ? '<button class="btn primario" data-a="falar">' + (mem.falando ? '⏹ Parar' : '▶ Ouvir') + '</button>' : '');
     if (s.tipo === 'guia') h += '<h5>Termos-chave</h5><p class="cd-termos">' + s.dados.termos.map(function (t) { return '<button data-sug="O que diz sobre ' + esc(t) + '?">' + esc(t) + '</button>'; }).join('') + '</p><h5>Perguntas para revisar</h5><ol>' + s.dados.perguntas.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>';
@@ -99,7 +99,7 @@
     return h + '</div>';
   }
   function painelNotas(c) {
-    return '<div class="cd-notas"><button class="btn mini" data-a="nova-nota">＋ Nota</button>' + ((c.notas || []).length ? c.notas.slice().reverse().map(function (n) { return '<article class="cd-nota" data-n="' + n.id + '"><header><b>' + esc(n.titulo) + '</b><span><button class="icone" data-a="nota-anot" title="Enviar para o Seven Pad" aria-label="Enviar para o Seven Pad">🗒</button><button class="icone" data-a="nota-del" aria-label="Excluir nota">×</button></span></header><p>' + esc(n.texto).replace(/\n/g, '<br>') + '</p><small>' + new Date(n.em).toLocaleString('pt-BR') + '</small></article>'; }).join('') : '<p class="mini mudo">Salve respostas e resultados do estúdio aqui.</p>') + '</div>';
+    return '<div class="cd-notas"><button class="btn mini" data-a="nova-nota">＋ Nota</button>' + ((c.notas || []).length ? c.notas.slice().reverse().map(function (n) { return '<article class="cd-nota" data-n="' + n.id + '"><header><b>' + esc(n.titulo) + '</b><span><button class="icone" data-a="nota-anot" title="Enviar para o Seven Notas" aria-label="Enviar para o Seven Notas">🗒</button><button class="icone" data-a="nota-del" aria-label="Excluir nota">×</button></span></header><p>' + esc(n.texto).replace(/\n/g, '<br>') + '</p><small>' + new Date(n.em).toLocaleString('pt-BR') + '</small></article>'; }).join('') : '<p class="mini mudo">Salve respostas e resultados do estúdio aqui.</p>') + '</div>';
   }
   function textoSaida(s) {
     if (s.tipo === 'edital') return s.dados.campos.filter(function (c) { return c.achado; }).map(function (c) { return c.t + ': ' + (c.destaque ? c.destaque + ' — ' : '') + c.frase; }).join('\n') + '\n\nHabilitação:\n' + s.dados.habilitacao.map(function (g) { return '• ' + g.t + ': ' + g.itens.length + ' exigência(s)'; }).join('\n');
@@ -160,9 +160,9 @@
       if (a === 'saida-nota' && mem.saida) { c.notas = c.notas || []; c.notas.push({ id: Dados.id('cdn'), titulo: mem.saida.titulo, texto: textoSaida(mem.saida), em: Date.now() }); tocar(); aviso('Salvo nas notas do caderno.'); App.redesenhar(); }
       if (a === 'nova-nota') { const r = await modal({ titulo: 'Nova nota', corpo: campo('Título', '<input name="t" required>') + campo('Texto', '<textarea name="x" rows="6"></textarea>') }); if (r) { c.notas = c.notas || []; c.notas.push({ id: Dados.id('cdn'), titulo: r.get('t').trim(), texto: r.get('x'), em: Date.now() }); tocar(); App.redesenhar(); } }
       if (a === 'nota-del') { c.notas = c.notas.filter(function (n) { return n.id !== b.closest('[data-n]').dataset.n; }); tocar(); App.redesenhar(); }
-      if (a === 'nota-anot') { const n = c.notas.find(function (x) { return x.id === b.closest('[data-n]').dataset.n; }); const d = Dados.e; d.anotacoes = d.anotacoes || { notas: [], pastas: [] }; d.anotacoes.notas = d.anotacoes.notas || []; d.anotacoes.notas.push({ id: Dados.id('an'), titulo: n.titulo, html: '<p>' + esc(n.texto).replace(/\n/g, '</p><p>') + '</p><p>Caderno: ' + esc(c.titulo) + '</p>', tracos: [], fundo: 'liso', criadaEm: Date.now(), editadaEm: Date.now() }); Dados.salvar(); aviso('Enviada para o Seven Pad.'); }
+      if (a === 'nota-anot') { const n = c.notas.find(function (x) { return x.id === b.closest('[data-n]').dataset.n; }); const d = Dados.e; d.anotacoes = d.anotacoes || { notas: [], pastas: [] }; d.anotacoes.notas = d.anotacoes.notas || []; d.anotacoes.notas.push({ id: Dados.id('an'), titulo: n.titulo, html: '<p>' + esc(n.texto).replace(/\n/g, '</p><p>') + '</p><p>Caderno: ' + esc(c.titulo) + '</p>', tracos: [], fundo: 'liso', criadaEm: Date.now(), editadaEm: Date.now() }); Dados.salvar(); aviso('Enviada para o Seven Notas.'); }
       if (a === 'falar' && mem.saida) { falar(mem.saida.dados.map(function (x) { return x.frase; })); b.textContent = mem.falando ? '⏹ Parar' : '▶ Ouvir'; }
-      if (a === 'edital-agenda' && mem.saida && Telas.agenda) { const ds = mem.saida.dados.datas.filter(function (d) { return d.data >= new Date().toISOString().slice(0, 10); }); ds.forEach(function (d) { Telas.agenda.criar(d.frase.slice(0, 90) + ' #edital', { data: d.data, tags: ['edital'] }); }); Dados.salvar(); aviso(ds.length ? ds.length + ' lembrete(s) criados na Seven Task.' : 'Nenhuma data futura encontrada.'); }
+      if (a === 'edital-agenda' && mem.saida && Telas.agenda) { const ds = mem.saida.dados.datas.filter(function (d) { return d.data >= new Date().toISOString().slice(0, 10); }); ds.forEach(function (d) { Telas.agenda.criar(d.frase.slice(0, 90) + ' #edital', { data: d.data, tags: ['edital'] }); }); Dados.salvar(); aviso(ds.length ? ds.length + ' lembrete(s) criados na Seven Agenda.' : 'Nenhuma data futura encontrada.'); }
     };
   }
 
@@ -191,7 +191,7 @@
   window.addEventListener('hashchange', function () { if (!/^#\/cadernos\/c\//.test(location.hash)) { if (self.speechSynthesis) speechSynthesis.cancel(); mem.falando = false; } });
 
   Telas.cadernos = {
-    titulo: 'Seven Synapse',
+    titulo: 'Seven Cadernos',
     render: function (el, sub, param) { if (sub === 'c') return telaCaderno(el, param); mem.id = null; mem.ix = null; telaInicio(el); }
   };
 })();

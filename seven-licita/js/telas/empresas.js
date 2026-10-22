@@ -14,7 +14,7 @@
       campo('Município', '<input name="municipio" value="' + esc(x.municipio || '') + '">') + '</div>' +
       '<div class="linha">' + campo('Representante legal', '<input name="representante" value="' + esc(x.representante) + '">') +
       campo('Contato do cliente', '<input name="contato" value="' + esc(x.contato) + '" placeholder="nome de quem fala com a Seven">') + '</div>' +
-      '<div class="linha">' + campo('E-mail', '<input name="email" type="email" value="' + esc(x.email || '') + '">', 'Usado no Seven Sign e nas mensagens.') + campo('WhatsApp / telefone', '<input name="telefone" inputmode="tel" value="' + esc(x.telefone || '') + '">') + '</div>' +
+      '<div class="linha">' + campo('E-mail', '<input name="email" type="email" value="' + esc(x.email || '') + '">', 'Usado no Seven Contrato e nas mensagens.') + campo('WhatsApp / telefone', '<input name="telefone" inputmode="tel" value="' + esc(x.telefone || '') + '">') + '</div>' +
       campo('Ramo / o que vende ao governo', '<textarea name="ramo" rows="2">' + esc(x.ramo) + '</textarea>') +
       campo('Observações (logins, combinados, 2FA gov.br)', '<textarea name="obs" rows="2">' + esc(x.obs) + '</textarea>', 'Não guarde senhas aqui. Registre só quem usa cada login e o que foi combinado com o cliente.');
   }
