@@ -638,7 +638,7 @@ const testes = {
   async design(t) {
     const { pg, url, ok, foto } = t; const submit = () => pg.click('.modal [type=submit]'); const fs = require('fs');
     await pg.goto(url + '#/design'); await pg.waitForSelector('.ds-formato');
-    ok(await pg.locator('.ds-modelo').count() === 6, '6 modelos Seven na vitrine');
+    ok(await pg.locator('.ds-modelo').count() === 10, '10 modelos Seven na vitrine');
     await foto('design-inicio');
     await pg.click('.ds-modelo[data-m="post-licitacao"]'); await pg.waitForSelector('.ds-pg');
     await pg.waitForFunction(() => document.querySelectorAll('.ds-paginas .ds-pg .ds-el').length >= 7, null, { timeout: 5000 }).catch(() => {});
@@ -655,7 +655,7 @@ const testes = {
     const al = await pg.locator('.ds-alca.a-se').boundingBox(); await pg.mouse.move(al.x + al.width / 2, al.y + al.height / 2); await pg.mouse.down(); await pg.mouse.move(al.x + 80, al.y + 5, { steps: 5 }); await pg.mouse.up();
     ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).w, id) > antes.w, 'redimensionar pela alça');
     // cor pela barra
-    await pg.click('#ds-props [data-prop=cor][data-v="#800000"]'); ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).cor === '#800000', id), 'trocar cor pela barra de propriedades');
+    await pg.click('#ds-props .ds-cor-pop summary'); await pg.click('#ds-props [data-prop=cor][data-v="#800000"]'); ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).cor === '#800000', id), 'trocar cor pela barra de propriedades');
     // desfazer
     await pg.click('[data-a=desfazer]'); ok(await pg.evaluate((i) => Dados.e.design.designs[0].paginas[0].elementos.find(e => e.id === i).cor !== '#800000', id), 'desfazer');
     await pg.click('[data-a=refazer]');

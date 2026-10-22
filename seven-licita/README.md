@@ -51,7 +51,7 @@ Use **Configurações → Exportar backup** com frequência e importe em outro c
 | Cadernos | Fontes (PDF, DOCX, TXT) com perguntas respondidas por trechos citados, resumo, FAQ, linha do tempo, quiz e análise de edital, sem IA externa | NotebookLM |
 | Autoconhecimento | Big Five (IPIP-50, domínio público), estilo DISC (uso reflexivo), temperamento e prática de raciocínio, por pessoa e em equipe. Não estima QI: isso exige teste normatizado e aplicação supervisionada | — |
 | Jogos | Xadrez com IA, quiz da Lei 14.133 com repetição espaçada, n-back, memória, matrizes, lances e tabela de Schulte, com as evidências científicas de cada um | — |
-| Design | Editor de peças com modelos da Seven, formas, texto, imagens, alinhamento e exportação em PNG, JPG e PDF | Canva |
+| Design | Editor no padrão Canva Pro: 15 formatos e 10 modelos Seven; kit de marca (cores, fontes e logos); 22 fontes; formas, polígonos, ícones, linhas tracejadas, molduras para fotos e gráficos (colunas, barras, linha, pizza, rosca); efeitos de texto (sombra, neon, eco, contorno, vazado, destaque, texto curvo); gradientes; sombra, transparência, modos de mistura e espelhar; edição de fotos (filtros, brilho, contraste, saturação, recorte com zoom, remover fundo de cor uniforme); camadas com ocultar, travar e arrastar; agrupar; pincel de estilo; grade e margem de segurança; redimensionamento mágico; histórico de versões; modo apresentação; exportação PNG (com fundo transparente), JPG e PDF (inclusive alta resolução) | Canva Pro |
 | Calculadora | Científica com histórico e dezenas de calculadoras do dia a dia, incluindo custo de viagem (combustível, pedágio, diárias, paradas) | All-in-One Calculator |
 | Músicas | Biblioteca, playlists, Spotify/Deezer/Apple Music, equalizador, velocidade, volume normalizado e timer de sono | Spotify |
 
@@ -81,5 +81,5 @@ node testes/modulos.e2e.cjs   # demais módulos no navegador
 node testes/sevenai.e2e.cjs   # Seven.ia com o SDK da Anthropic simulado (não gasta créditos)
 node testes/pleiade.e2e.cjs; node testes/agora.e2e.cjs; node testes/reuniao.e2e.cjs   # tempo real com Firebase simulado
 node testes/avisos.e2e.cjs; node testes/planilha.e2e.cjs; node testes/financas.e2e.cjs; node testes/execucao.e2e.cjs; node testes/premium.e2e.cjs
-node testes/tema.e2e.cjs; node testes/nf.e2e.cjs; node testes/contratos.e2e.cjs
+node testes/tema.e2e.cjs; node testes/nf.e2e.cjs; node testes/contratos.e2e.cjs; node testes/design.e2e.cjs
 ```
