@@ -149,6 +149,7 @@
     if (fo.get('cartao') !== null) { d.cartao = fo.get('cartao'); d.conta = ''; d.pago = false; }
     if (fo.get('categoria') !== null) d.categoria = fo.get('categoria');
     ['contato', 'centroCusto', 'competencia', 'documento', 'forma'].forEach(function (k) { if (fo.get(k) !== null) d[k] = String(fo.get(k)).trim(); });
+    if (d.competencia && d.competencia === String(x.competencia || String(x.data || '').slice(0, 7)) && !x.competencia && d.data) d.competencia = d.data.slice(0, 7);
     if (d.contato) lembrarContato(d.contato, x.tipo);
     if (fo.get('pago') !== null || (!usaCartao && x.tipo !== 'pagamento-fatura')) d.pago = !!fo.get('pago');
     if (x.tipo === 'transferencia' && d.conta === d.contaDestino) { aviso('Escolha contas diferentes.', 'erro'); return; }
@@ -300,7 +301,7 @@
     return '<svg class="f-fluxo-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Saldo projetado dia a dia">' + c + '</svg>';
   }
   function telaFluxo(el) {
-    const L = lancs(); const dias = est.fluxoDias || 30; const fx = F.fluxoDiario(L, contas(), hojeISO(), dias);
+    const L = lancs(); const dias = est.fluxoDias || 30; const fx = F.fluxoDiario(L, contas(), hojeISO(), dias, cartoes());
     const ent = fx.dias.reduce(function (s, d) { return s + d.entradas; }, 0), sai = fx.dias.reduce(function (s, d) { return s + d.saidas; }, 0);
     const meses = []; for (let i = -5; i <= 6; i++) meses.push(F.addMeses(hojeISO().slice(0, 7) + '-01', i).slice(0, 7));
     const fm = F.fluxoMensal(L, meses);
@@ -362,8 +363,12 @@
         const linhas = /<OFX>|<STMTTRN>/i.test(txt) ? F.lerOFX(txt) : F.lerExtratoCSV(Nucleo.lerCSV(txt), Nucleo.lerNumeroBR);
         if (!linhas.length) { aviso('Não reconheci lançamentos no arquivo.', 'erro'); return; }
         const conta = el.querySelector('#cz-conta').value; const todos = lancs();
-        const abertos = todos.filter(function (l) { return !l.pago && !l.cartao && (l.tipo === 'receita' || l.tipo === 'despesa') && (!l.conta || l.conta === conta); });
-        const itens = F.conciliar(linhas, abertos).map(function (x) { x.dup = !x.lancamento && todos.some(function (l) { return l.pago && ((x.linha.idBanco && l.idBanco === x.linha.idBanco) || (l.data === x.linha.data && Math.abs(l.valor - x.linha.valor) < 0.005)); }); x.usar = !x.dup; return x; });
+        const abertos = todos.filter(function (l) { return !l.pago && !l.cartao && (l.tipo === 'receita' || l.tipo === 'despesa') && (!l.conta || l.conta === conta); })
+          .concat(F.faturasAbertas(cartoes(), todos, F.addDias(hojeISO(), -90), 150).map(function (f) { return Object.assign({}, f, { tipo: 'despesa', virtual: true }); }));
+        // o que já está no sistema (mesmo id do banco, ou mesma data e valor já efetivado) sai antes de procurar par
+        const ehDup = function (x) { return todos.some(function (l) { return l.pago && ((x.idBanco && l.idBanco === x.idBanco) || (l.data === x.data && Math.abs(l.valor - x.valor) < 0.005 && (l.tipo === x.tipo || (x.tipo === 'despesa' && l.tipo === 'pagamento-fatura')))); }); };
+        const dups = linhas.filter(ehDup); const novas = linhas.filter(function (x) { return !ehDup(x); });
+        const itens = F.conciliar(novas, abertos).map(function (x) { x.usar = true; return x; }).concat(dups.map(function (x) { return { linha: x, lancamento: null, dup: true, usar: false }; }));
         est.conc = { conta: conta, itens: itens }; pintar(); return;
       }
       if (b.dataset.a === 'cz-limpar') { est.conc = null; App.redesenhar(); return; }
@@ -371,7 +376,8 @@
         let baixas = 0, novos = 0; const conta = est.conc.conta;
         est.conc.itens.forEach(function (x) {
           if (!x.usar || x.dup) return;
-          if (x.lancamento) { Object.assign(x.lancamento, { pago: true, conta: conta, dataPagamento: x.linha.data, idBanco: x.linha.idBanco || '', conciliado: true }); baixas++; }
+          if (x.lancamento && x.lancamento.virtual) { const f = x.lancamento; base().lancamentos.push({ id: Dados.id('lc'), perfil: perfil().id, tipo: 'pagamento-fatura', descricao: 'Pagamento ' + f.descricao, valor: x.linha.valor, data: x.linha.data, conta: conta, cartao: f.cartao, fatura: f.fatura, pago: true, idBanco: x.linha.idBanco || '', conciliado: true }); baixas++; }
+          else if (x.lancamento) { Object.assign(x.lancamento, { pago: true, conta: conta, vencimento: x.lancamento.vencimento || x.lancamento.data, data: x.linha.data, idBanco: x.linha.idBanco || '', conciliado: true }); baixas++; }
           else { base().lancamentos.push({ id: Dados.id('lc'), perfil: perfil().id, tipo: x.linha.tipo, descricao: x.linha.descricao, valor: x.linha.valor, data: x.linha.data, conta: conta, categoria: F.sugerirCategoria(x.linha.descricao, lancs()) || '', pago: true, idBanco: x.linha.idBanco || '', conciliado: true }); novos++; }
         });
         est.conc = null; salvar(); aviso(baixas + ' baixa(s) e ' + novos + ' lançamento(s) novo(s).'); App.redesenhar();

@@ -37,7 +37,7 @@
     e().disputas.unshift({
       id: Dados.id('dsp'), propostaId: p.id, empresaId: p.empresaId, titulo: (p.modalidade || '') + ' ' + (p.numero || '') + ' · ' + (p.orgao || ''), portal: p.portal, sessao: p.encerramento, situacao: 'Agendada',
       config: cfgPadrao(modo), ativa: false,
-      itens: p.itens.filter(function (i) { return i.participar !== false; }).map(function (i) { return { numero: i.numero, descricao: i.descricao, quantidade: i.quantidade, proposta: i.unitario, referencia: i.refUnitaria, custo: i.custo, limite: null, lanceFechado: null, pausado: false, aprovado: false }; }),
+      itens: p.itens.filter(function (i) { return i.participar !== false; }).map(function (i) { return { numero: i.numero, lote: i.lote || '', descricao: i.descricao, quantidade: i.quantidade, proposta: i.unitario, referencia: i.refUnitaria, custo: i.custo, limite: null, lanceFechado: null, pausado: false, aprovado: false }; }),
       checklist: {}, criadaEm: new Date().toISOString()
     });
     Dados.salvar(); aviso('Licitação enviada ao Disputar. Defina o valor limite de cada item.');

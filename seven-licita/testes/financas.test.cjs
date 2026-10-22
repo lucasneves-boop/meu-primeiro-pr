@@ -108,3 +108,14 @@ test('modelo Conta Azul: fluxo de caixa, previsto × realizado, aging, concilia�
   const cc = F.porCampo(L, 'centroCusto');
   assert.equal(cc.find(x => x.chave === 'BPO').resultado, 200);
 });
+
+test('fluxo de caixa inclui faturas de cartão em aberto e série avança a competência', () => {
+  const F = require('../js/financas.js');
+  const k = { id: 'k1', nome: 'Visa', fechamento: 1, vencimento: 10 };
+  const L = [{ id: 'c1', tipo: 'despesa', valor: 5000, data: '2026-10-05', cartao: 'k1', pago: false }];
+  const fx = F.fluxoDiario(L, [{ id: 'cc', saldoInicial: 1000 }], '2026-10-22', 30, [k]);
+  assert.ok(fx.primeiroNegativo, 'a fatura derruba o caixa');
+  assert.equal(fx.dias[fx.dias.length - 1].saldo, -4000);
+  const s = F.gerarSerie({ descricao: 'x', valor: 300, data: '2026-11-10', competencia: '2026-11' }, 3, 'parcelada', p => p + Math.random());
+  assert.deepEqual(s.map(x => x.competencia), ['2026-11', '2026-12', '2027-01']);
+});

@@ -144,7 +144,8 @@
     if (typeof t === 'number') return t;
     let s = String(t || '').trim().replace(/[R$\s]/g, '');
     if (!s) return NaN;
-    if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    // vírgula decimal (1.234,56) ou só pontos de milhar (10.000, 1.234.567), como o Excel em português copia
+    if (s.indexOf(',') >= 0 || /^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
     return Number(s);
   }
 

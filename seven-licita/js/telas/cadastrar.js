@@ -102,7 +102,7 @@
     const acima = p.itens.filter(function (i) { return i.participar !== false && i.unitario && i.refUnitaria && i.unitario > i.refUnitaria; }).length;
     el.innerHTML = '<p><a href="#/cadastrar">← Minhas propostas</a></p>' +
       '<section class="cartao"><header><h2>' + esc((p.modalidade || '') + ' ' + (p.numero || '')) + ' · ' + esc(p.orgao || '') + '</h2><span class="tag st-' + p.status + '">' + STATUS[p.status] + '</span></header>' +
-      '<p>' + esc(p.objeto || '') + '</p><p class="mini">Cliente: <b>' + esc(emp ? emp.razao + ' · CNPJ ' + cnpj(emp.cnpj) : '—') + '</b> · Propostas até <b>' + dataHora(p.encerramento) + '</b>' + (p.edital ? ' · <a href="' + esc(p.edital) + '" target="_blank" rel="noopener">Edital ↗</a>' : '') + (p.linkOrigem ? ' · <a href="' + esc(p.linkOrigem) + '" target="_blank" rel="noopener">Portal ↗</a>' : '') + '</p>' +
+      '<p>' + esc(p.objeto || '') + '</p><p class="mini">Cliente: <b>' + esc(emp ? emp.razao + ' · CNPJ ' + cnpj(emp.cnpj) : '—') + '</b> · Propostas até <b>' + dataHora(p.encerramento) + '</b>' + (p.edital ? ' · <a href="' + esc(UI.url(p.edital)) + '" target="_blank" rel="noopener">Edital ↗</a>' : '') + (p.linkOrigem ? ' · <a href="' + esc(UI.url(p.linkOrigem)) + '" target="_blank" rel="noopener">Portal ↗</a>' : '') + '</p>' +
       '<form id="cab" class="linha">' + campo('Portal', '<select name="portal">' + opcoes(PORTAIS, p.portal) + '</select>') + campo('Validade da proposta (dias)', '<input name="validade" inputmode="numeric" value="' + esc(p.validade) + '">') + campo('Prazo de entrega', '<input name="prazoEntrega" value="' + esc(p.prazoEntrega || '') + '" placeholder="conforme edital">') +
       campo('Impostos % (para preço sugerido)', '<input name="impostos" inputmode="decimal" value="' + esc(String(p.impostos || 0).replace('.', ',')) + '">') + campo('Margem % mínima', '<input name="margem" inputmode="decimal" value="' + esc(String(p.margem || 0).replace('.', ',')) + '">') + '</form></section>' +
       '<div class="barra-acoes"><div class="grupo-botoes">' + (p.ref ? '<button class="btn" data-a="carregar">' + (p.itens.length ? 'Importar itens do portal (atualizar)' : 'Carregar itens') + '</button>' : '') + '<button class="btn fantasma" data-a="add-item">+ Item manual</button>' +
@@ -285,7 +285,7 @@
       }
       if (b.dataset.a === 'editar') { const m = await formDocumento(d); if (m) Object.assign(d, m); }
       if (b.dataset.a === 'substituir') { const f = await UI.escolherArquivo(''); if (!f) return; const m = await formDocumento(Object.assign({}, d, { emissao: '', validade: '' }), f.name); if (!m) return; await Dados.guardarArquivo(d.id, f); Object.assign(d, m, { arquivo: { nome: f.name, tamanho: f.size, tipo: f.type } }); }
-      if (b.dataset.a === 'abrir') { const blob = await Dados.lerArquivo(d.id); if (blob) window.open(URL.createObjectURL(blob), '_blank'); else aviso('Arquivo não está neste navegador.', 'erro'); return; }
+      if (b.dataset.a === 'abrir') { const blob = await Dados.lerArquivo(d.id); if (blob) UI.abrirArquivo(blob, (d.arquivo || {}).nome || d.nome); else aviso('Arquivo não está neste navegador.', 'erro'); return; }
       if (b.dataset.a === 'excluir' && await confirmar('Excluir documento', 'Excluir <b>' + esc(d.nome) + '</b>?', 'Excluir')) { await Dados.apagarArquivo(d.id); e().documentos = e().documentos.filter(function (x) { return x !== d; }); }
       Dados.salvar(); App.redesenhar();
     };

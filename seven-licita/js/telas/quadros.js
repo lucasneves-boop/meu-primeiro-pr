@@ -83,7 +83,7 @@
   function iniciais(n) { return String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p[0].toUpperCase(); }).join(''); }
   function corMembro(n) { let h = 0; String(n).split('').forEach(function (ch) { h = (h * 31 + ch.charCodeAt(0)) % 360; }); return 'hsl(' + h + ' 45% 38%)'; }
   function avatar(m, extra) { return '<i class="kav" style="background:' + corMembro(m) + '" title="' + esc(m) + '">' + esc(iniciais(m)) + (extra || '') + '</i>'; }
-  function fundoCss(q) { return FUNDOS[q.fundo] || (/^#|^linear/.test(q.fundo || '') ? q.fundo : FUNDOS.preto); }
+  function fundoCss(q) { return FUNDOS[q.fundo] || (/^#[0-9a-f]{3,8}$/i.test(q.fundo || '') ? q.fundo : FUNDOS.preto); }
   function progresso(c) { let t = 0, f = 0; (c.checklists || []).forEach(function (cl) { cl.itens.forEach(function (i) { t++; if (i.feito) f++; }); }); return { t: t, f: f }; }
   function filtroDe(q) { return est.filtros[q.id] = est.filtros[q.id] || K.vazioFiltro(); }
   function visiveis(q) { const f = filtroDe(q); const cx = { eu: eu() }; return q.cartoes.filter(function (c) { return K.passaFiltro(c, f, cx); }); }
@@ -227,6 +227,18 @@
     salvar(); location.hash = link(q);
   }
 
+  // Quadro vindo de arquivo de terceiros: ids novos, números como número e cores só da paleta (nada vira HTML/atributo cru).
+  function higienizar(q) {
+    const idOk = function (v) { return typeof v === 'string' && /^[\w-]{1,64}$/.test(v); };
+    const cor = function (v) { return CORES.indexOf(v) >= 0 ? v : ''; };
+    const mapa = {}; const novoId = function (v, pre) { if (!idOk(v)) { const n = Dados.id(pre); mapa[v] = n; return n; } return v; };
+    q.listas = (q.listas || []).map(function (l) { return Object.assign({}, l, { id: novoId(l.id, 'ls'), nome: String(l.nome || '') }); });
+    q.etiquetas = (q.etiquetas || []).map(function (x) { return Object.assign({}, x, { id: novoId(x.id, 'et'), cor: cor(x.cor) || 'cinza', nome: String(x.nome || '') }); });
+    q.cartoes = (q.cartoes || []).map(function (c) { const lista = mapa[c.lista] || c.lista; return Object.assign({}, c, { id: novoId(c.id, 'ct'), lista: idOk(lista) ? lista : (q.listas[0] || {}).id, num: Number(c.num) || 0, capa: cor(c.capa), titulo: String(c.titulo || ''), etiquetas: (c.etiquetas || []).map(function (i) { return mapa[i] || i; }).filter(idOk) }); });
+    if (!FUNDOS[q.fundo] && !/^#[0-9a-f]{3,8}$/i.test(q.fundo || '')) q.fundo = 'azul';
+    q.seq = Number(q.seq) || q.cartoes.length;
+    return q;
+  }
   async function importarArquivo() {
     const arq = await UI.escolherArquivo('.json,application/json'); if (!arq) return;
     try {
@@ -238,7 +250,7 @@
         q = { id: Dados.id('qd'), nome: r.nome, descricao: r.descricao, fundo: r.fundo || 'azul', listas: r.listas, cartoes: r.cartoes, etiquetas: r.etiquetas, campos: r.campos, seq: r.seq, criadoEm: new Date().toISOString(), automacoes: [], botoes: [], botoesCartao: [], atividade: [] };
         r.membros.forEach(function (m) { if (e().membros.indexOf(m) < 0) e().membros.push(m); });
       }
-      migrar(q); e().quadros.push(q); registrar(q, null, 'importou o quadro de ' + arq.name); salvar();
+      higienizar(q); migrar(q); e().quadros.push(q); registrar(q, null, 'importou o quadro de ' + arq.name); salvar();
       aviso('Quadro "' + q.nome + '" importado: ' + q.listas.length + ' listas, ' + q.cartoes.length + ' cartões.');
       location.hash = link(q);
     } catch (err) { aviso('Não foi possível importar: ' + err.message, 'erro'); }
@@ -593,7 +605,7 @@
     jan.innerHTML = capa + '<button class="icone kj-fechar" data-k="fechar" aria-label="Fechar">×</button>' +
       '<header class="kj-cab"><textarea class="kj-titulo" data-campo="titulo" rows="1" spellcheck="false">' + esc(c.titulo) + '</textarea>' +
       '<p class="mini">na lista <select data-campo="lista">' + opcoes(q.listas.filter(function (x) { return !x.arquivada; }).map(function (x) { return { v: x.id, t: x.nome }; }), c.lista) + '</select>' + (q.config.numeros && c.num ? ' · <b>#' + c.num + '</b>' : '') + (c.seguindo ? ' · 👁 seguindo' : '') + (c.arquivado ? ' · <span class="tag vermelho">Arquivado</span>' : '') + (c.modelo ? ' · <span class="tag ouro">Modelo</span>' : '') +
-      (c.avisoId && Dados.e.avisos[c.avisoId] ? ' · <a href="' + esc(Dados.e.avisos[c.avisoId].edital) + '" target="_blank" rel="noopener">edital no PNCP ↗</a> · <button type="button" class="link-btn" data-op-abrir="' + esc(c.avisoId) + '">✎ Anotações da oportunidade (' + Telas.oport.quantas(c.avisoId) + ')</button>' : '') + '</p></header>' +
+      (c.avisoId && Dados.e.avisos[c.avisoId] ? ' · <a href="' + esc(UI.url(Dados.e.avisos[c.avisoId].edital)) + '" target="_blank" rel="noopener">edital no PNCP ↗</a> · <button type="button" class="link-btn" data-op-abrir="' + esc(c.avisoId) + '">✎ Anotações da oportunidade (' + Telas.oport.quantas(c.avisoId) + ')</button>' : '') + '</p></header>' +
       '<div class="kj-corpo"><div class="kj-principal">' +
       (a.painel ? '<section class="kj-painel">' + painelCartao(a.painel) + '</section>' : '') +
       '<div class="kj-badges">' +
@@ -781,7 +793,7 @@
     if (k === 'execucao') { await editarExecucao(q, c); mudou(); return; }
     if (k === 'limpar-datas') { c.inicio = ''; c.prazo = ''; c.lembrete = ''; a.painel = null; mudou('removeu as datas'); return; }
     if (k === 'add-arquivo') { const fs = await UI.escolherArquivo('', true); anexarArquivos(fs); return; }
-    if (k === 'abrir-anexo') { const blob = await Dados.lerArquivo(b.dataset.anexo); if (blob) window.open(URL.createObjectURL(blob), '_blank'); else aviso('Arquivo não está neste navegador.', 'erro'); return; }
+    if (k === 'abrir-anexo') { const blob = await Dados.lerArquivo(b.dataset.anexo); if (blob) UI.abrirArquivo(blob, b.dataset.nome || 'anexo'); else aviso('Arquivo não está neste navegador.', 'erro'); return; }
     if (k === 'del-anexo') { const x = c.anexos.find(function (y) { return y.id === b.dataset.anexo; }); if (!x.link) await Dados.apagarArquivo(x.id); c.anexos = c.anexos.filter(function (y) { return y !== x; }); if (c.capaAnexo === x.id) c.capaAnexo = ''; mudou('removeu o anexo ' + x.nome); return; }
     if (k === 'capa-anexo') { c.capaAnexo = c.capaAnexo === b.dataset.anexo ? '' : b.dataset.anexo; mudou('mudou a capa'); return; }
     if (k === 'sem-capa') { c.capa = ''; c.capaAnexo = ''; mudou('removeu a capa'); return; }
@@ -1140,7 +1152,7 @@
     const p = modal({
       titulo: 'Notificações', botao: false,
       corpo: '<div class="grupo-botoes"><button type="button" class="btn mini" data-ler-todas>Marcar todas como lidas</button>' + (self.Notification && Notification.permission !== 'granted' ? '<button type="button" class="btn mini" data-permitir>Ativar notificações do navegador</button>' : '') + '<button type="button" class="btn mini fantasma" data-limpar-not>Limpar</button></div>' +
-        (l.length ? '<ul class="knotificacoes">' + l.slice(0, 80).map(function (n) { return '<li class="' + (n.lida ? '' : 'nova') + '"><a href="' + esc(n.link || '#/quadros') + '" data-not="' + n.id + '">' + esc(n.texto) + '</a><br><span class="mini mudo">' + dataHora(n.em) + '</span></li>'; }).join('') + '</ul>' : '<p class="mudo">Nenhuma notificação.</p>'),
+        (l.length ? '<ul class="knotificacoes">' + l.slice(0, 80).map(function (n) { return '<li class="' + (n.lida ? '' : 'nova') + '"><a href="' + esc(UI.url(n.link || '#/quadros')) + '" data-not="' + n.id + '">' + esc(n.texto) + '</a><br><span class="mini mudo">' + dataHora(n.em) + '</span></li>'; }).join('') + '</ul>' : '<p class="mudo">Nenhuma notificação.</p>'),
       aoAbrir: function (form) {
         form.addEventListener('click', async function (ev) {
           if (ev.target.closest('[data-ler-todas]')) { l.forEach(function (n) { n.lida = true; }); salvar(); atualizarSino(); form.querySelectorAll('.nova').forEach(function (x) { x.classList.remove('nova'); }); }

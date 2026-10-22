@@ -84,6 +84,16 @@
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
+  // Link seguro: só http(s), e-mail, telefone e rotas internas. Qualquer outro esquema (javascript:, data:…) vira '#'.
+  function url(u) { const t = String(u == null ? '' : u).replace(/[\u0000-\u0020]+/g, ''); return /^(https?:\/\/|mailto:|tel:|#\/)/i.test(t) ? String(u).trim() : '#'; }
+  // Abre um arquivo guardado sem dar a ele acesso ao app: HTML/SVG e tipos desconhecidos são baixados, não abertos.
+  const ABRIVEIS = /^(application\/pdf|image\/(png|jpe?g|gif|webp|bmp)|video\/|audio\/|text\/plain)/i;
+  function abrirArquivo(blob, nome) {
+    if (!blob) return false;
+    if (!ABRIVEIS.test(blob.type || '')) { baixar(nome || 'arquivo', blob); return true; }
+    const u = URL.createObjectURL(blob); const w = window.open(u, '_blank', 'noopener'); setTimeout(function () { URL.revokeObjectURL(u); }, 60000);
+    if (!w) baixar(nome || 'arquivo', blob); return true;
+  }
   function lerArquivoTexto(arquivo) {
     return new Promise(function (ok, erro) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = erro; r.readAsText(arquivo, 'utf-8'); });
   }
@@ -126,6 +136,6 @@
   self.UI = {
     esc: esc, moeda: moeda, num: num, pct: pct, data: data, dataHora: dataHora, cnpj: cnpj, emQuanto: emQuanto, $: $, $$: $$,
     aviso: aviso, modal: modal, confirmar: confirmar, opcoes: opcoes, campo: campo, baixar: baixar, lerArquivoTexto: lerArquivoTexto,
-    escolherArquivo: escolherArquivo, vazio: vazio, abas: abas, progresso: progresso, barras: barras
+    escolherArquivo: escolherArquivo, url: url, abrirArquivo: abrirArquivo, vazio: vazio, abas: abas, progresso: progresso, barras: barras
   };
 })();

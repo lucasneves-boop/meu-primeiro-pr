@@ -104,8 +104,8 @@
     };
   }
 
-  function linkMaterial(mt) { return mt.link ? '<a href="' + esc(mt.link) + '" target="_blank" rel="noopener">📎 ' + esc(mt.nome) + '</a>' : '<a href="#" data-material="' + mt.arquivo + '" data-nome="' + esc(mt.nome) + '">📎 ' + esc(mt.nome) + '</a>'; }
-  async function abrirMaterial(id, nome) { const b = await Dados.lerArquivo(id); if (!b) return aviso('Arquivo não está neste navegador.', 'erro'); if (/pdf|image|text/.test(b.type)) window.open(URL.createObjectURL(b), '_blank'); else UI.baixar(nome, b); }
+  function linkMaterial(mt) { return mt.link ? '<a href="' + esc(UI.url(mt.link)) + '" target="_blank" rel="noopener">📎 ' + esc(mt.nome) + '</a>' : '<a href="#" data-material="' + mt.arquivo + '" data-nome="' + esc(mt.nome) + '">📎 ' + esc(mt.nome) + '</a>'; }
+  async function abrirMaterial(id, nome) { const b = await Dados.lerArquivo(id); if (!b) return aviso('Arquivo não está neste navegador.', 'erro'); UI.abrirArquivo(b, nome); }
   function apagarArquivos(a) { if (a.arquivo) Dados.apagarArquivo(a.arquivo); (a.materiais || []).forEach(function (m) { if (m.arquivo) Dados.apagarArquivo(m.arquivo); }); }
 
   // ---------- aula ----------
@@ -139,9 +139,9 @@
         m.addEventListener('timeupdate', function () { if (Math.abs(m.currentTime - ult) > 5) { ult = m.currentTime; pr.pos = m.currentTime; if (!pr.feita && m.duration && m.currentTime / m.duration > 0.9) { pr.feita = true; pr.em = new Date().toISOString(); aviso('Aula concluída ✓'); } salvar(); } });
         m.addEventListener('ended', function () { pr.feita = true; pr.pos = 0; pr.em = pr.em || new Date().toISOString(); salvar(); if (prox) aviso('Próxima aula: ' + prox.a.titulo); });
       }
-    } else if (a.tipo === 'link') { const u = embed(a.url); box.innerHTML = u ? '<iframe src="' + esc(u) + '" title="' + esc(a.titulo) + '" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>' : '<div class="vazio"><p>Link não reconhecido. <a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir em nova aba ↗</a></p></div>'; }
+    } else if (a.tipo === 'link') { const u = embed(a.url); box.innerHTML = u ? '<iframe src="' + esc(u) + '" title="' + esc(a.titulo) + '" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>' : '<div class="vazio"><p>Link não reconhecido. <a href="' + esc(UI.url(a.url)) + '" target="_blank" rel="noopener">Abrir em nova aba ↗</a></p></div>'; }
     else if (a.tipo === 'pdf') { const u = a.arquivo ? await url(a.arquivo) : embed(a.url); box.innerHTML = u ? '<iframe class="ac-pdf" src="' + esc(u) + '" title="' + esc(a.titulo) + '"></iframe>' : '<div class="vazio"><p>Arquivo não encontrado.</p></div>'; }
-    else if (a.tipo === 'aovivo') { box.innerHTML = '<div class="ac-aovivo"><span class="ac-selo">Encontro ao vivo</span><h3>' + esc(a.titulo) + '</h3><p>' + (a.quando ? dataHora(a.quando) + ' (' + UI.emQuanto(a.quando) + ')' : 'Data a definir') + '</p>' + (a.url ? '<a class="btn primario" href="' + esc(a.url) + '" target="_blank" rel="noopener">Entrar na sala ↗</a>' : '') + (a.gravacao ? '<p><a href="' + esc(a.gravacao) + '" target="_blank" rel="noopener">Ver gravação ↗</a></p>' : '') + '</div>'; }
+    else if (a.tipo === 'aovivo') { box.innerHTML = '<div class="ac-aovivo"><span class="ac-selo">Encontro ao vivo</span><h3>' + esc(a.titulo) + '</h3><p>' + (a.quando ? dataHora(a.quando) + ' (' + UI.emQuanto(a.quando) + ')' : 'Data a definir') + '</p>' + (a.url ? '<a class="btn primario" href="' + esc(UI.url(a.url)) + '" target="_blank" rel="noopener">Entrar na sala ↗</a>' : '') + (a.gravacao ? '<p><a href="' + esc(UI.url(a.gravacao)) + '" target="_blank" rel="noopener">Ver gravação ↗</a></p>' : '') + '</div>'; }
     else box.innerHTML = '<div class="ac-texto md">' + Kanban.markdown(a.conteudo || a.descricao || '') + '</div>';
     if (a.tipo === 'texto') box.classList.add('texto');
     // eventos

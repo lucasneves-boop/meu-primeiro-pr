@@ -15,9 +15,9 @@
     if (!l) return '';
     const s = SELO[l.s] || SELO.d;
     const val = l.validade ? '<span class="hb-val">' + l.validade + ' dias</span>' : '';
-    const principal = l.u ? '<a class="hb-link" href="' + esc(l.u) + '" target="_blank" rel="noopener">' + esc(l.t || l.m) + ' ↗</a>' : '<span class="hb-link hb-sem">' + esc(l.t || l.m) + '</span>';
-    const b = (l.s === 'n' || l.s === 'd') && busca ? ' <a class="btn mini fantasma" href="' + esc(H.buscaGoogle(busca)) + '" target="_blank" rel="noopener">Buscar ↗</a>' : '';
-    const extra = l.extra ? ' · <a href="' + esc(l.extra.u) + '" target="_blank" rel="noopener">' + esc(l.extra.t) + ' ↗</a>' : '';
+    const principal = l.u ? '<a class="hb-link" href="' + esc(UI.url(l.u)) + '" target="_blank" rel="noopener">' + esc(l.t || l.m) + ' ↗</a>' : '<span class="hb-link hb-sem">' + esc(l.t || l.m) + '</span>';
+    const b = (l.s === 'n' || l.s === 'd') && busca ? ' <a class="btn mini fantasma" href="' + esc(UI.url(H.buscaGoogle(busca))) + '" target="_blank" rel="noopener">Buscar ↗</a>' : '';
+    const extra = l.extra ? ' · <a href="' + esc(UI.url(l.extra.u)) + '" target="_blank" rel="noopener">' + esc(l.extra.t) + ' ↗</a>' : '';
     return '<div class="hb-item">' + principal + extra + ' <span class="hb-selo ' + s[0] + '" title="' + s[1] + '">' + s[1] + '</span>' + val + b + (l.obs ? '<p class="mini mudo">' + esc(l.obs) + '</p>' : '') + '</div>';
   }
 
@@ -43,7 +43,7 @@
     return [];
   }
   function botoesEmitir(item, emp) {
-    return fontes(item, emp).map(function (l) { return '<a class="btn mini' + (l.s === 'n' ? ' fantasma' : '') + '" href="' + esc(l.u) + '" target="_blank" rel="noopener" title="' + esc(l.t) + '">' + (l.s === 'n' ? 'Buscar' : 'Emitir') + ' ↗</a>'; }).join(' ');
+    return fontes(item, emp).map(function (l) { return '<a class="btn mini' + (l.s === 'n' ? ' fantasma' : '') + '" href="' + esc(UI.url(l.u)) + '" target="_blank" rel="noopener" title="' + esc(l.t) + '">' + (l.s === 'n' ? 'Buscar' : 'Emitir') + ' ↗</a>'; }).join(' ');
   }
 
   // ---------- aba: cliente ----------

@@ -9,12 +9,12 @@
   function numero(v) { if (typeof v === 'number') return v; let t = String(v == null ? '' : v).replace(/[R$\s]/g, ''); if (!t) return null; if (t.indexOf(',') >= 0 || /^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '').replace(',', '.'); const n = Number(t); return isFinite(n) ? n : null; }
 
   // ---------- consulta por palavras ----------
-  // "papel a4; sulfite; -reciclado; sem colorido": casa se tiver ALGUM dos termos e NENHUM dos excluídos.
+  // "papel a4; sulfite; -reciclado": casa se tiver ALGUM dos termos e NENHUM dos excluídos (marcados com hífen).
   // Dentro de um termo, todas as palavras precisam aparecer (palavras curtas, até 3 letras, só como palavra inteira).
   function lerConsulta(q) {
     const incluir = [], excluir = [];
     String(q || '').split(/[;,]/).map(function (t) { return t.trim(); }).filter(Boolean).forEach(function (t) {
-      const m = t.match(/^(?:-|sem\s+|n[aã]o\s+)(.+)$/i); const alvo = normalizar(m ? m[1] : t); if (!alvo) return;
+      const m = t.match(/^-\s*(.+)$/); /* só o hífen exclui: "sem fio" e "não tecido" são produtos */ const alvo = normalizar(m ? m[1] : t); if (!alvo) return;
       (m ? excluir : incluir).push(alvo);
     });
     return { incluir: incluir, excluir: excluir };
@@ -38,6 +38,8 @@
     if (c.excluir.some(function (x) { return contemInteligente(t, x); })) return false;
     return !c.incluir.length || c.incluir.some(function (x) { return contemInteligente(t, x); });
   }
+  // Carimbo em UTC (toISOString) → dia no fuso de quem usa.
+  function dataLocal(iso) { if (!iso || !/T.*(Z|[+-]\d\d:?\d\d)$/.test(iso)) return iso; const d = new Date(iso); if (isNaN(d)) return iso; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function entre(valorISO, de, ate) { const v = String(valorISO || '').slice(0, 10); if (!de && !ate) return true; if (!v) return false; return (!de || v >= de) && (!ate || v <= ate); }
   // Busca de Licitações: f = { texto, inteligente, portal, numero, minhas, ids (Set/obj dos meus), aberturaDe/Ate, encerramentoDe/Ate,
   //   publicacaoDe/Ate, esferas [M,E,F,D], modalidades [ids], orgao, ufs [], cidades "a; b", + filtros de valor/ME/SRP }.
@@ -94,7 +96,7 @@
       if (!entre(a.abertura, f.aberturaDe, f.aberturaAte)) return false;
       if (!entre(a.encerramento, f.encerramentoDe, f.encerramentoAte)) return false;
       if (!entre(a.publicacao, f.publicacaoDe, f.publicacaoAte)) return false;
-      if (!entre(a.capturadoEm, f.enviadoDe, f.enviadoAte)) return false;
+      if (!entre(dataLocal(a.capturadoEm), f.enviadoDe, f.enviadoAte)) return false;
       if (f.cadastro === 'sim' && !(f.cadastrados && f.cadastrados[a.id])) return false;
       if (f.cadastro === 'nao' && f.cadastrados && f.cadastrados[a.id]) return false;
       if (capag && capag.indexOf((f.notaCapag ? f.notaCapag(a) : '') || 'sem') < 0) return false;

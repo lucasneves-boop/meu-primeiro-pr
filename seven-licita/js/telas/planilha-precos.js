@@ -219,6 +219,17 @@
     salvar(x);
   }
 
+  // Item correspondente pelo número e pelo lote. Sem lote do outro lado, só aceita o número se ele for único na planilha
+  // (evita que o item 1 do lote 2 sobrescreva o item 1 do lote 1).
+  function acharItem(lista, alvo, x) {
+    const num = String(alvo.numero), lote = String(alvo.lote || '');
+    const mesmo = lista.filter(function (q) { return String(q.numero) === num; });
+    const exato = mesmo.find(function (q) { return String(q.lote || '') === lote; });
+    if (exato) return exato;
+    const repetido = x.itens.filter(function (q) { return String(q.numero) === num; }).length > 1;
+    return !repetido && mesmo.length === 1 && (!mesmo[0].lote || !lote) ? mesmo[0] : null;
+  }
+
   // ---------- saídas ----------
   async function aplicarProposta(x) {
     const r = P.planilha(x); const ok = r.itens.filter(function (i) { return i.ok; });
@@ -234,7 +245,7 @@
     }
     const src = {}; x.itens.forEach(function (i) { src[i.id] = i; });
     ok.forEach(function (c) {
-      const i = src[c.id]; let alvo = p.itens.find(function (q) { return String(q.numero) === String(i.numero); });
+      const i = src[c.id]; let alvo = acharItem(p.itens, i, x);
       if (!alvo) { alvo = { numero: i.numero, descricao: i.descricao, quantidade: i.quantidade, unidade: i.unidade, refUnitaria: n(i.referencia) || null, participar: true, marca: '', modelo: '', custo: null, unitario: null }; p.itens.push(alvo); }
       alvo.lote = i.lote; alvo.custo = Nucleo.arredondar(c.custoDireto, 4); alvo.unitario = c.unitario; if (i.marca) alvo.marca = i.marca; if (i.modelo) alvo.modelo = i.modelo;
     });
@@ -246,8 +257,8 @@
   function limitesDisputa(x) {
     const d = x.propostaId && Dados.e.disputas.find(function (q) { return q.propostaId === x.propostaId; });
     if (!d) { aviso('Vincule uma proposta que já esteja no Disputar (ligue "Enviar ao Disputar" na proposta).', 'erro'); return; }
-    const r = P.planilha(x); const porNum = {}; r.itens.forEach(function (i) { if (i.ok) porNum[String(i.numero)] = i; });
-    let k = 0; d.itens.forEach(function (it) { const c = porNum[String(it.numero)]; if (c) { it.limite = c.minimo; it.custo = c.custoDireto; it.aprovado = false; k++; } });
+    const r = P.planilha(x);
+    let k = 0; d.itens.forEach(function (it) { const pi = acharItem(x.itens, it, x); const c = pi && r.itens.find(function (y) { return y.id === pi.id && y.ok; }); if (c) { it.limite = c.minimo; it.custo = c.custoDireto; it.aprovado = false; k++; } });
     Dados.salvar(); aviso(k + ' valor(es) limite definidos. Marque "Aprovado" depois do aceite do cliente.');
   }
 

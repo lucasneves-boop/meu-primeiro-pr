@@ -102,8 +102,8 @@
       '<div><dt>Publicado</dt><dd>' + data(x.publicacao) + '</dd></div></dl>' +
       (x.produtos && x.produtos.length ? '<p class="mini">Casou com: <b>' + esc(x.produtos.join(', ')) + '</b>' + (perfisN.length ? ' · perfil ' + esc(perfisN.join(', ')) : '') + '</p>' : '') +
       '<footer class="acoes-aviso">' +
-      '<a class="btn" href="' + esc(x.edital) + '" target="_blank" rel="noopener">Edital ↗</a>' +
-      (x.linkOrigem ? '<a class="btn fantasma" href="' + esc(x.linkOrigem) + '" target="_blank" rel="noopener">Portal ↗</a>' : '') +
+      '<a class="btn" href="' + esc(UI.url(x.edital)) + '" target="_blank" rel="noopener">Edital ↗</a>' +
+      (x.linkOrigem ? '<a class="btn fantasma" href="' + esc(UI.url(x.linkOrigem)) + '" target="_blank" rel="noopener">Portal ↗</a>' : '') +
       '<button class="btn fantasma" data-a="anexos">Anexos</button>' +
       '<button class="btn fantasma" data-a="itens">Itens</button>' +
       '<button class="btn fantasma" data-a="anotar">✎ Anotações' + (Telas.oport.quantas(x.id) ? ' (' + Telas.oport.quantas(x.id) + ')' : '') + '</button>' +
@@ -151,7 +151,7 @@
     const p = modal({ titulo: 'Anexos publicados no PNCP', corpo: '<div id="anexos-lista"><p class="mudo">Carregando…</p></div>', botao: false });
     try {
       const l = await PNCP.arquivos(a.cnpj, a.ano, a.seq);
-      document.getElementById('anexos-lista').innerHTML = l.length ? '<ul class="lista-links">' + l.map(function (x) { return '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.titulo) + '</a> <span class="mudo">· ' + esc(x.tipo) + ' · ' + data(x.data) + '</span></li>'; }).join('') + '</ul>' : '<p>Nenhum arquivo publicado. Consulte o edital no portal de origem.</p>';
+      document.getElementById('anexos-lista').innerHTML = l.length ? '<ul class="lista-links">' + l.map(function (x) { return '<li><a href="' + esc(UI.url(x.url)) + '" target="_blank" rel="noopener">' + esc(x.titulo) + '</a> <span class="mudo">· ' + esc(x.tipo) + ' · ' + data(x.data) + '</span></li>'; }).join('') + '</ul>' : '<p>Nenhum arquivo publicado. Consulte o edital no portal de origem.</p>';
     } catch (err) { document.getElementById('anexos-lista').innerHTML = '<p class="alerta">Falha ao consultar o PNCP: ' + esc(err.message) + '</p>'; }
     await p;
   }
@@ -283,7 +283,7 @@
     const tabs = [{ v: 'todos', t: 'Todos os avisos' }, { v: 'naolidos', t: 'Não lidos', n: naoLidos }, { v: 'favoritos', t: 'Favoritos' }, { v: 'orgaos', t: 'Órgãos favoritos' }, { v: 'lixeira', t: 'Lixeira' }];
     el.innerHTML = '<div class="ma-abas" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" class="ma-aba' + (f.estado === t.v ? ' on' : '') + '" aria-selected="' + (f.estado === t.v) + '" data-a="estado" data-v="' + t.v + '">' + t.t + (t.n ? ' <span class="ma-n">' + t.n + '</span>' : '') + '</button>'; }).join('') + '</div>' +
       '<form class="ma" id="filtros" autocomplete="off">' +
-      '<div class="ma-topo"><input type="search" name="texto" placeholder="Palavras no objeto, órgão ou anotações: papel a4; sulfite; -reciclado" title="Separe alternativas com ; e exclua com - ou sem" value="' + esc(f.texto) + '">' +
+      '<div class="ma-topo"><input type="search" name="texto" placeholder="Palavras no objeto, órgão ou anotações: papel a4; sulfite; -reciclado" title="Separe alternativas com ; e exclua com -" value="' + esc(f.texto) + '">' +
       '<select name="situacao" aria-label="Situação">' + opcoes([{ v: 'abertos', t: 'Recebendo propostas' }, { v: 'encerrados', t: 'Prazo encerrado' }, { v: 'todas', t: 'Qualquer situação' }], f.situacao) + '</select>' +
       '<select name="ordem" aria-label="Ordenar">' + opcoes([{ v: 'encerramento', t: 'Prazo mais próximo' }, { v: 'valor', t: 'Maior valor' }, { v: 'publicacao', t: 'Publicação mais recente' }, { v: 'captura', t: 'Enviado por último' }], f.ordem) + '</select>' +
       '<button type="button" class="btn' + (painelAvisosAberto ? ' ativo' : '') + '" data-a="painel" aria-expanded="' + painelAvisosAberto + '">⚲ Filtros' + (ativos ? ' <span class="ma-n">' + ativos + '</span>' : '') + '</button></div>' +
@@ -373,7 +373,7 @@
   const PORTAIS_BUSCA = ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Portal de Compras Públicas', 'Licitações-e', 'Licitar Digital', 'Compras GO', 'Compras MG', 'PE Integrado', 'Publinexo'];
   let buscaFiltrosAbertos = true;
   function hojeISO(d) { const x = new Date(Date.now() + (d || 0) * 864e5); return new Date(x - x.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }
-  function buscaPadrao() { const emp = Dados.empresaAtiva(); return { texto: '', inteligente: false, situacao: 'abertas', portal: '', numero: '', minhas: false, aberturaDe: '', aberturaAte: '', encerramentoDe: '', encerramentoAte: '', publicacaoDe: hojeISO(-30), publicacaoAte: hojeISO(0), esferas: [], modalidades: MODS_PADRAO.slice(), orgao: '', ufs: [emp && emp.uf ? emp.uf : 'GO'], cidades: '', valorMin: '', valorMax: '', sigiloso: false, meEpp: '', srp: '', ordem: 'encerramento' }; }
+  function buscaPadrao() { const emp = Dados.empresaAtiva(); return { texto: '', inteligente: false, situacao: 'abertas', portal: '', numero: '', minhas: false, aberturaDe: '', aberturaAte: '', encerramentoDe: '', encerramentoAte: '', publicacaoDe: '', publicacaoAte: '', esferas: [], modalidades: MODS_PADRAO.slice(), orgao: '', ufs: [emp && emp.uf ? emp.uf : 'GO'], cidades: '', valorMin: '', valorMax: '', sigiloso: false, meEpp: '', srp: '', ordem: 'encerramento' }; }
   function meusIds() { const ids = {}; Object.keys(e().avisos).forEach(function (k) { if (!e().avisos[k].lixeira) ids[k] = 1; }); e().propostas.forEach(function (p) { if (p.avisoId) ids[p.avisoId] = 1; }); e().monitor.forEach(function (m) { if (m.avisoId) ids[m.avisoId] = 1; }); return ids; }
   function lerFormBusca(form) {
     const fd = new FormData(form); const q = {};
@@ -430,7 +430,7 @@
       const nq = lerFormBusca(form); nq.ordem = bancoResultado ? bancoResultado.q.ordem : 'encerramento';
       if (!nq.ufs.length) { aviso('Escolha ao menos um estado.', 'erro'); return; }
       if (!nq.modalidades.length) { aviso('Escolha ao menos uma modalidade.', 'erro'); return; }
-      if (nq.situacao === 'publicadas' && (!nq.publicacaoDe || !nq.publicacaoAte)) { aviso('Informe o período de publicação.', 'erro'); return; }
+      if (nq.situacao === 'publicadas' && (!nq.publicacaoDe || !nq.publicacaoAte)) { nq.publicacaoDe = nq.publicacaoDe || hojeISO(-30); nq.publicacaoAte = nq.publicacaoAte || hojeISO(0); form.publicacaoDe.value = nq.publicacaoDe; form.publicacaoAte.value = nq.publicacaoAte; aviso('Período de publicação: últimos 30 dias (ajuste se quiser).'); }
       const chave = JSON.stringify([nq.situacao, nq.ufs, nq.modalidades, nq.situacao === 'publicadas' ? [nq.publicacaoDe, nq.publicacaoAte] : null]);
       const btn = form.querySelector('[data-bl=buscar]'); btn.disabled = true;
       try {
@@ -522,7 +522,7 @@
       }
       const l = pool.filter(function (c) { return Nucleo.casaProduto(c.objeto + ' ' + (c.info || ''), prod); });
       alvo.innerHTML = '<p class="mini">' + l.length + ' de ' + pool.length + ' licitações abertas já baixadas casariam com este produto.</p>' +
-        (l.length ? '<ul class="lista-previa">' + l.slice(0, 40).map(function (c) { return '<li><b>' + esc(c.uf) + '</b> · ' + esc(c.objeto.slice(0, 220)) + ' <a href="' + esc(c.edital) + '" target="_blank" rel="noopener">↗</a></li>'; }).join('') + '</ul>' : '<p>Nada casou. Afrouxe "Qual tipo" ou teste sinônimos no Banco de Licitações.</p>');
+        (l.length ? '<ul class="lista-previa">' + l.slice(0, 40).map(function (c) { return '<li><b>' + esc(c.uf) + '</b> · ' + esc(c.objeto.slice(0, 220)) + ' <a href="' + esc(UI.url(c.edital)) + '" target="_blank" rel="noopener">↗</a></li>'; }).join('') + '</ul>' : '<p>Nada casou. Afrouxe "Qual tipo" ou teste sinônimos no Banco de Licitações.</p>');
     } catch (err) { alvo.innerHTML = '<p class="alerta">Falha ao consultar o PNCP: ' + esc(err.message) + '</p>'; }
     await p;
   }

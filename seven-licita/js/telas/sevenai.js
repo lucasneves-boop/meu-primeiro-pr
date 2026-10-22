@@ -204,7 +204,7 @@
       '<div class="ia-md">' + S.markdown(S.textoDe(m.content)) + '</div>' +
       (m.parada === 'max_tokens' ? '<p class="ia-nota">A resposta chegou ao limite de tamanho. <button type="button" class="btn mini" data-ia="continuar">Continuar</button></p>' : '') +
       (m.parada === 'interrompida' ? '<p class="ia-nota">Resposta interrompida.</p>' : '') +
-      (f.length ? '<details class="ia-fontes" open><summary>Fontes (' + f.length + ')</summary><ol>' + f.map(function (x) { let h = ''; try { h = new URL(x.url).hostname.replace(/^www\./, ''); } catch (z) { } return '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">' + esc(x.titulo) + '</a> <small>' + esc(h) + '</small></li>'; }).join('') + '</ol></details>' : '') +
+      (f.length ? '<details class="ia-fontes" open><summary>Fontes (' + f.length + ')</summary><ol>' + f.map(function (x) { let h = ''; try { h = new URL(x.url).hostname.replace(/^www\./, ''); } catch (z) { } return '<li><a href="' + esc(UI.url(x.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(x.titulo) + '</a> <small>' + esc(h) + '</small></li>'; }).join('') + '</ol></details>' : '') +
       '<div class="ia-acoes">' +
       '<button type="button" class="ia-acao" data-ia="copiar" data-i="' + i + '" title="Copiar">⧉ Copiar</button>' +
       (ultimo && !mem.enviando ? '<button type="button" class="ia-acao" data-ia="regenerar" title="Gerar outra resposta">↻ Refazer</button>' : '') +

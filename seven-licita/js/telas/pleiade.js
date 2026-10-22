@@ -58,7 +58,7 @@
   function nomeCanal(cid) { const c = canais()[cid]; if (!c) return cid; if (c.dm) { const outros = Object.keys(c.membros || {}).filter(function (u) { return u !== eu(); }); return outros.length ? outros.map(function (u) { return membro(u).nome; }).join(', ') : membro(eu()).nome + ' (você)'; } return c.nome; }
   function prefixo(c) { return c.dm ? '' : c.privado ? '🔒 ' : '# '; }
   function ativo(uid) { const m = membros()[uid]; return m && m.visto && Date.now() - m.visto < 3 * 6e4; }
-  function avatar(uid, tam) { const m = membro(uid); return '<span class="pl-av" style="background:' + esc(m.cor || '#8c9bab') + (tam ? ';width:' + tam + 'px;height:' + tam + 'px;font-size:' + Math.round(tam / 2.4) + 'px' : '') + '">' + esc((m.nome || '?').split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase()) + '</span>'; }
+  function avatar(uid, tam) { const m = membro(uid); return '<span class="pl-av" style="background:' + (/^#[0-9a-f]{3,8}$/i.test(m.cor || '') ? m.cor : '#8c9bab') + (tam ? ';width:' + tam + 'px;height:' + tam + 'px;font-size:' + Math.round(tam / 2.4) + 'px' : '') + '">' + esc((m.nome || '?').split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase()) + '</span>'; }
   function hora(ts) { return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
   function diaTxt(ts) { const d = new Date(ts), h = new Date(); const o = new Date(); o.setDate(h.getDate() - 1); if (d.toDateString() === h.toDateString()) return 'Hoje'; if (d.toDateString() === o.toDateString()) return 'Ontem'; return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); }
 
@@ -131,7 +131,7 @@
     }
     return out;
   }
-  async function urlAnexo(a) { if (a.dados) return a.dados; if (a.arq) { const b = await Dados.lerArquivo(a.arq); return b ? URL.createObjectURL(b) : ''; } return ''; }
+  async function urlAnexo(a) { if (a.dados) return /^data:(image\/(png|jpe?g|gif|webp)|application\/pdf);base64,/i.test(String(a.dados)) ? a.dados : ''; if (a.arq) { const b = await Dados.lerArquivo(a.arq); return b ? URL.createObjectURL(b) : ''; } return ''; }
 
   // ---------- desenho ----------
   function lateral() {
@@ -161,7 +161,7 @@
       (m.tambemCanal && m.pai && !opc.naThread ? '<small class="mudo">respondeu numa thread</small>' : '') +
       (m.anexos ? '<div class="pl-anexos">' + m.anexos.map(function (a, i) { return /^image\//.test(a.tipo) ? '<button class="pl-img" data-anx="' + i + '"><img data-src-anx="' + i + '" alt="' + esc(a.nome) + '"></button>' : '<button class="pl-arq" data-anx="' + i + '"><span>📄</span><div><b>' + esc(a.nome) + '</b><small>' + Math.max(1, Math.round((a.tam || 0) / 1024)) + ' KB</small></div></button>'; }).join('') + '</div>' : '') +
       (reac.length ? '<div class="pl-reacoes">' + reac.map(function (e) { const us = Object.keys(m.reacoes[e]); return '<button class="pl-reac' + (us.indexOf(eu()) >= 0 ? ' minha' : '') + '" data-reac="' + esc(e) + '" title="' + esc(us.map(function (u) { return membro(u).nome; }).join(', ')) + '">' + esc(e) + ' <b>' + us.length + '</b></button>'; }).join('') + '<button class="pl-reac add" data-pl="emoji" aria-label="Adicionar reação">☺+</button></div>' : '') +
-      (m.nResp && !opc.naThread ? '<button class="pl-resp" data-pl="thread">' + avatar(m.ultU || m.u, 18) + ' <b>' + m.nResp + ' resposta' + (m.nResp > 1 ? 's' : '') + '</b> <small>última ' + (m.ultResp ? hora(m.ultResp) : '') + '</small></button>' : '') +
+      (Number(m.nResp) > 0 && !opc.naThread ? '<button class="pl-resp" data-pl="thread">' + avatar(m.ultU || m.u, 18) + ' <b>' + (Number(m.nResp) || 0) + ' resposta' + (Number(m.nResp) > 1 ? 's' : '') + '</b> <small>última ' + (m.ultResp ? hora(m.ultResp) : '') + '</small></button>' : '') +
       '</div>' + (m.sistema || editando ? '' : '<div class="pl-acoes">' + P.REACOES_RAPIDAS.slice(0, 3).map(function (e) { return '<button data-reac="' + e + '" title="Reagir">' + e + '</button>'; }).join('') + '<button data-pl="emoji" title="Mais reações">☺</button>' + (opc.naThread ? '' : '<button data-pl="thread" title="Responder em thread">💬</button>') + '<button data-pl="salvar" title="' + (salvo ? 'Remover dos salvos' : 'Salvar') + '">' + (salvo ? '🔖' : '🏷️') + '</button><button data-pl="mais" title="Mais ações">⋯</button></div>') + (salvo ? '<span class="pl-salvo-tag">🔖</span>' : '') + '</div>';
   }
 
@@ -205,7 +205,7 @@
   }
   function telaThreads() {
     const ths = P.minhasThreads(arv(), eu(), cfg().threadsLidas).filter(function (x) { return vejo(canais()[x.canal], x.canal); });
-    return telaLista('Threads', ths.map(function (x) { return '<section class="pl-th-card' + (x.novas ? ' nova' : '') + '"><header><a href="#/pleiade/c/' + esc(x.canal) + '">' + esc(prefixo(canais()[x.canal]) + nomeCanal(x.canal)) + '</a>' + (x.novas ? ' <b class="pl-cont">' + x.novas + ' nova' + (x.novas > 1 ? 's' : '') + '</b>' : '') + '</header>' + linhaMsg(x.canal, Object.assign({}, x.pai, { continua: false }), { naThread: true, semDia: true }) + x.respostas.slice(-2).map(function (r) { return linhaMsg(x.canal, r, { naThread: true, semDia: true }); }).join('') + '<button class="btn mini" data-abrir-th="' + esc(x.canal + '|' + x.pai.id) + '">Responder</button></section>'; }), 'As conversas em threads de que você participa aparecem aqui.');
+    return telaLista('Threads', ths.map(function (x) { return '<section class="pl-th-card' + (x.novas ? ' nova' : '') + '"><header><a href="#/pleiade/c/' + esc(x.canal) + '">' + esc(prefixo(canais()[x.canal]) + nomeCanal(x.canal)) + '</a>' + (x.novas ? ' <b class="pl-cont">' + (Number(x.novas) || 0) + ' nova' + (x.novas > 1 ? 's' : '') + '</b>' : '') + '</header>' + linhaMsg(x.canal, Object.assign({}, x.pai, { continua: false }), { naThread: true, semDia: true }) + x.respostas.slice(-2).map(function (r) { return linhaMsg(x.canal, r, { naThread: true, semDia: true }); }).join('') + '<button class="btn mini" data-abrir-th="' + esc(x.canal + '|' + x.pai.id) + '">Responder</button></section>'; }), 'As conversas em threads de que você participa aparecem aqui.');
   }
   function telaAtividade() {
     const at = P.atividade(arv(), eu()).filter(function (x) { return vejo(canais()[x.canal], x.canal); }).slice(0, 100);

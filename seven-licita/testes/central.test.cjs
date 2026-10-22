@@ -2,8 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const C = require('../js/central.js');
 
-test('consulta por palavras: ";" separa alternativas, "-" e "sem" excluem, palavras curtas inteiras', () => {
-  assert.deepEqual(C.lerConsulta('papel a4; sulfite; -reciclado; sem colorido'), { incluir: ['papel a4', 'sulfite'], excluir: ['reciclado', 'colorido'] });
+test('consulta por palavras: ";" separa alternativas, só "-" exclui ("sem fio" é produto), palavras curtas inteiras', () => {
+  assert.deepEqual(C.lerConsulta('papel a4; sulfite; -reciclado; - colorido'), { incluir: ['papel a4', 'sulfite'], excluir: ['reciclado', 'colorido'] });
+  assert.deepEqual(C.lerConsulta('mouse; sem fio; não tecido'), { incluir: ['mouse', 'sem fio', 'nao tecido'], excluir: [] });
   assert.equal(C.casaConsulta('Aquisição de PAPEL A4 branco', 'papel a4; sulfite; -reciclado'), true);
   assert.equal(C.casaConsulta('Papel sulfite reciclado', 'papel a4; sulfite; -reciclado'), false);
   assert.equal(C.casaConsulta('Material de limpeza', 'papel a4; sulfite'), false);

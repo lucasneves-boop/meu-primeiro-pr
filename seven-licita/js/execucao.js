@@ -25,7 +25,7 @@
 
   // hojeISO: 'AAAA-MM-DD'
   function resumo(x, hojeISO) {
-    x = x || {}; const hoje = hojeISO || new Date().toISOString().slice(0, 10);
+    x = x || {}; const agora = new Date(); const hoje = hojeISO || agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
     const soma = function (l) { return cent((l || []).reduce(function (s, i) { return s + (Number(i.valor) || 0); }, 0)); };
     const empenhos = (x.empenhos || []).map(function (e) {
       const ns = notasDoEmpenho(x, e); const faturado = soma(ns);

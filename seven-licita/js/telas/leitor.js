@@ -128,7 +128,7 @@
     const b = await Dados.lerArquivo(l.arquivo); if (!b) { aviso('O arquivo não está neste navegador.', 'erro'); location.hash = '#/leitor'; return; }
     l.abertoEm = new Date().toISOString(); salvar();
     const ov = document.createElement('div'); ov.className = 'kd-leitor'; ov.id = 'kd-leitor'; ov.tabIndex = -1;
-    ov.innerHTML = '<header class="kd-topo"><button class="kd-b" data-k="sair" aria-label="Voltar à biblioteca">‹ Biblioteca</button><b class="kd-titulo">' + esc(l.titulo) + '</b><span class="kespaco"></span><button class="kd-b" data-k="sumario" title="Sumário" aria-label="Sumário">☰</button><button class="kd-b" data-k="aa" title="Exibição" aria-label="Configurações de exibição">Aa</button><button class="kd-b" data-k="buscar" title="Buscar" aria-label="Buscar">🔍</button><button class="kd-b" data-k="caderno" title="Notas e destaques" aria-label="Notas e destaques">✎</button><button class="kd-b kd-marcar" data-k="marcar" title="Marcador" aria-label="Marcador">🔖</button></header>' +
+    ov.innerHTML = '<header class="kd-topo"><button class="kd-b" data-k="sair" aria-label="Voltar à biblioteca">‹ Biblioteca</button><b class="kd-titulo">' + esc(l.titulo) + '</b><span class="kespaco"></span><button class="kd-b" data-k="sumario" title="Sumário" aria-label="Sumário">☰</button><button class="kd-b" data-k="aa" title="Exibição" aria-label="Configurações de exibição">Aa</button><button class="kd-b" data-k="ouvir" title="Ouvir (leitura em voz alta)" aria-label="Ouvir o livro em voz alta">🔊</button><button class="kd-b" data-k="buscar" title="Buscar" aria-label="Buscar">🔍</button><button class="kd-b" data-k="caderno" title="Notas e destaques" aria-label="Notas e destaques">✎</button><button class="kd-b kd-marcar" data-k="marcar" title="Marcador" aria-label="Marcador">🔖</button></header>' +
       '<div class="kd-palco"><div class="kd-zona ant" data-k="ant"></div><div class="kd-pagina" id="kd-pagina"></div><div class="kd-zona prox" data-k="prox"></div><div class="kd-fita" hidden>🔖</div></div>' +
       '<footer class="kd-rodape"><span id="kd-local"></span><input type="range" id="kd-pos" min="0" max="1000" value="0" aria-label="Posição no livro"><span id="kd-resta"></span></footer><div class="kd-painel" id="kd-painel" hidden></div><div class="kd-pop" id="kd-pop" hidden></div><div class="kd-brilho"></div>';
     document.body.appendChild(ov); document.body.classList.add('lendo');
@@ -146,6 +146,7 @@
 
   function fechar(silencioso) {
     if (!R) return;
+    ttsParar();
     try { if (R.motor && R.motor.destruir) R.motor.destruir(); } catch (err) { /* já destruído */ }
     R.ov.remove(); document.body.classList.remove('lendo'); document.removeEventListener('keydown', tecla); window.removeEventListener('resize', redimensionar);
     R = null; if (!silencioso) { location.hash = '#/leitor'; }
@@ -176,7 +177,7 @@
   // ----- motor de texto próprio (TXT, Markdown, HTML, Word) com paginação em colunas -----
   async function motorTexto() {
     const l = R.l; let html;
-    if (l.formato === 'docx') { const mammoth = await carregar('mammoth'); html = (await mammoth.convertToHtml({ arrayBuffer: await R.blob.arrayBuffer() })).value; }
+    if (l.formato === 'docx') { const mammoth = await carregar('mammoth'); html = limparHTML((await mammoth.convertToHtml({ arrayBuffer: await R.blob.arrayBuffer() })).value); }
     else if (l.formato === 'html') { html = limparHTML(await R.blob.text()); }
     else if (l.formato === 'md') html = Kanban.markdown(await R.blob.text()).replace(/<(\/?)h([345])>/g, function (x, f, n) { return '<' + f + 'h' + (n - 2) + '>'; }); // o markdown dos cartões rebaixa títulos
     else { const t = await R.blob.text(); html = t.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join(''); }
@@ -216,12 +217,30 @@
     if (R.l.posicao != null) R.pct = R.l.posicao;
   }
 
+  // Sanitização por lista de permissão (HTML e DOCX de terceiros): só tags de texto e links http(s).
+  const TAGS_OK = { P: 1, BR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, S: 1, SUB: 1, SUP: 1, SMALL: 1, MARK: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, UL: 1, OL: 1, LI: 1, BLOCKQUOTE: 1, PRE: 1, CODE: 1, HR: 1, TABLE: 1, THEAD: 1, TBODY: 1, TFOOT: 1, TR: 1, TD: 1, TH: 1, CAPTION: 1, A: 1, IMG: 1, FIGURE: 1, FIGCAPTION: 1, DIV: 1, SPAN: 1, SECTION: 1, ARTICLE: 1, DL: 1, DT: 1, DD: 1 };
+  const DESCARTAR = { SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, SVG: 1, MATH: 1, FORM: 1, INPUT: 1, BUTTON: 1, TEXTAREA: 1, SELECT: 1, LINK: 1, META: 1, BASE: 1, NOSCRIPT: 1, TEMPLATE: 1, FRAME: 1, FRAMESET: 1, AUDIO: 1, VIDEO: 1 };
   function limparHTML(h) {
-    const d = new DOMParser().parseFromString(h, 'text/html');
-    d.querySelectorAll('script,style,iframe,object,embed,link,meta,form').forEach(function (x) { x.remove(); });
-    d.querySelectorAll('*').forEach(function (x) { Array.prototype.slice.call(x.attributes).forEach(function (a) { if (/^on/i.test(a.name) || (/^(href|src)$/i.test(a.name) && /^\s*javascript:/i.test(a.value))) x.removeAttribute(a.name); }); });
-    return d.body.innerHTML;
+    const doc = new DOMParser().parseFromString(String(h || ''), 'text/html');
+    (function limpar(no) {
+      Array.prototype.slice.call(no.childNodes).forEach(function (f) {
+        if (f.nodeType === 3) return;
+        if (f.nodeType !== 1) { f.remove(); return; }
+        const tag = f.tagName.toUpperCase();
+        if (DESCARTAR[tag]) { f.remove(); return; }
+        if (!TAGS_OK[tag]) { limpar(f); while (f.firstChild) f.parentNode.insertBefore(f.firstChild, f); f.remove(); return; }
+        Array.prototype.slice.call(f.attributes).forEach(function (at) {
+          const n = at.name.toLowerCase();
+          const ok = (n === 'href' && tag === 'A' && UI.url(at.value) !== '#') || (n === 'src' && tag === 'IMG' && /^(https?:|data:image\/(png|jpe?g|gif|webp);)/i.test(at.value.trim())) || n === 'alt' || n === 'title' || n === 'colspan' || n === 'rowspan' || (n === 'id' && /^[\w-]+$/.test(at.value));
+          if (!ok) f.removeAttribute(at.name);
+        });
+        if (tag === 'A') { f.setAttribute('target', '_blank'); f.setAttribute('rel', 'noopener noreferrer'); }
+        limpar(f);
+      });
+    })(doc.body);
+    return doc.body.innerHTML;
   }
+
 
   // ----- EPUB (epub.js) -----
   async function motorEpub() {
@@ -331,7 +350,7 @@
     if (a === 'prox') { fecharPop(); return R.motor && R.motor.proxima(); }
     if (a === 'zoom') { R.motor.zoom = R.motor.zoom === 'pagina' ? 'largura' : 'pagina'; R.motor.render(); return; }
     if (a === 'marcar') { alternarMarcador(); return; }
-    if (['aa', 'sumario', 'buscar', 'caderno'].indexOf(a) >= 0) { abrirPainel(R.painel === a ? null : a); return; }
+    if (['aa', 'sumario', 'buscar', 'caderno', 'ouvir'].indexOf(a) >= 0) { abrirPainel(R.painel === a ? null : a); return; }
     if (a === 'fechar-painel') { abrirPainel(null); return; }
     if (a === 'ir') { R.motor.irPos(JSON.parse(k.dataset.pos)); if (window.innerWidth < 900) abrirPainel(null); return; }
     if (a === 'tema') { pref().tema = k.dataset.v; salvar(); aplicarTema(); abrirPainel('aa'); return; }
@@ -341,12 +360,15 @@
     if (a === 'del-marc') { R.l.marcadores.splice(Number(k.dataset.i), 1); salvar(); atualizarProgresso(R.pct, R.ov.querySelector('#kd-local').textContent.replace(/ · \d+%$/, '')); abrirPainel('caderno'); return; }
     if (a === 'filtro-cor') { R.filtroCor = R.filtroCor === k.dataset.v ? '' : k.dataset.v; abrirPainel('caderno'); return; }
     if (a === 'exportar') { exportarNotas(R.l); return; }
+    if (a === 'tts-play') { ttsAlternar(); return; }
+    if (a === 'tts-parar') { ttsParar(); abrirPainel('ouvir'); return; }
   }
 
   function entrada(ev) {
     if (!R) return; const t = ev.target;
     if (t.id === 'kd-pos' && ev.type === 'change') R.motor.irPct(Number(t.value) / 1000);
     if (t.id === 'kd-pos' && ev.type === 'input') R.ov.querySelector('#kd-local').textContent = Math.round(Number(t.value) / 10) + '%';
+    if (t.dataset.pref && /^tts/.test(t.dataset.pref)) { pref()[t.dataset.pref] = t.dataset.pref === 'ttsVoz' ? t.value : Number(t.value); salvar(); if (ev.type === 'change' && R.painel === 'ouvir') abrirPainel('ouvir'); return; }
     if (t.dataset.pref) { pref()[t.dataset.pref] = Number(t.value); salvar(); if (t.dataset.pref === 'brilho') aplicarTema(); else { clearTimeout(entrada._t); entrada._t = setTimeout(function () { R.motor.estilo(); }, 150); } }
     if (t.id === 'kd-q' && ev.type === 'change') buscar(t.value);
   }
@@ -392,6 +414,52 @@
   function limparSelecao() { try { window.getSelection().removeAllRanges(); const f = R.pagina.querySelector('iframe'); if (f) f.contentWindow.getSelection().removeAllRanges(); } catch (err) { /* sem seleção */ } }
 
   // ----- painéis -----
+  // ---------- leitura em voz alta (como o Audible/Kindle) ----------
+  function ttsVozes() { if (!window.speechSynthesis) return []; const v = speechSynthesis.getVoices(); const pt = v.filter(function (x) { return /^pt/i.test(x.lang); }); return pt.length ? pt : v; }
+  // Blocos de texto visíveis na página atual (texto, EPUB em iframe ou PDF).
+  function blocosVisiveis() {
+    const fr = R.pagina.querySelector('iframe'); const doc = fr && fr.contentDocument ? fr.contentDocument : document;
+    const raiz = fr && fr.contentDocument ? doc.body : R.pagina;
+    const caixa = fr ? { left: 0, right: fr.clientWidth, top: 0, bottom: fr.clientHeight } : R.pagina.getBoundingClientRect();
+    let els = Array.prototype.slice.call(raiz.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, td, .textLayer span'));
+    els = els.filter(function (el) { if (el.querySelector('p, li, h1, h2, h3, h4, h5, h6, blockquote')) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.right > caixa.left + 2 && r.left < caixa.right - 2 && r.bottom > caixa.top && r.top < caixa.bottom; });
+    const textos = els.map(function (el) { return el.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    return textos.length ? textos : [String(raiz.innerText || '').replace(/\s+/g, ' ').trim()].filter(Boolean);
+  }
+  function frases(t) { return (t.match(/[^.!?;:]+[.!?;:]*\s*/g) || [t]).reduce(function (out, f) { if (out.length && (out[out.length - 1] + f).length < 220) out[out.length - 1] += f; else out.push(f); return out; }, []).map(function (f) { return f.trim(); }).filter(Boolean); }
+  function ttsLerPagina() {
+    if (!R || !R.tts || !R.tts.tocando) return;
+    const tts = R.tts; const fila = blocosVisiveis().reduce(function (a, b) { return a.concat(frases(b)); }, []);
+    // não repete o que já foi lido quando um bloco atravessa duas páginas
+    if (tts.ultimo) { const i = fila.indexOf(tts.ultimo); if (i >= 0) fila.splice(0, i + 1); }
+    tts.fila = fila; ttsProxima();
+  }
+  function ttsProxima() {
+    if (!R || !R.tts || !R.tts.tocando) return;
+    const tts = R.tts;
+    if (!tts.fila.length) {
+      const antes = R.motor.posAtual ? R.motor.posAtual() : null; R.motor.proxima();
+      setTimeout(function () { if (!R || !R.tts) return; const depois = R.motor.posAtual ? R.motor.posAtual() : null; if (antes != null && depois === antes) { ttsParar(); aviso('Fim do livro.'); if (R.painel === 'ouvir') abrirPainel('ouvir'); return; } ttsLerPagina(); }, 450);
+      return;
+    }
+    const f = tts.fila.shift(); tts.ultimo = f; tts.trecho = f;
+    const u = new SpeechSynthesisUtterance(f); const pr = pref(); u.lang = 'pt-BR'; u.rate = Number(pr.ttsVel) || 1;
+    const voz = ttsVozes().find(function (v) { return v.name === pr.ttsVoz; }); if (voz) u.voice = voz;
+    u.onend = function () { if (R && R.tts === tts && !tts.pausado) ttsProxima(); };
+    u.onerror = function (e) { if (e.error !== 'interrupted' && e.error !== 'canceled' && R && R.tts === tts) ttsProxima(); };
+    speechSynthesis.speak(u);
+    if (R.painel === 'ouvir') { const t = R.ov.querySelector('.kd-tts-trecho'); if (t) t.textContent = f.slice(0, 220); else abrirPainel('ouvir'); }
+  }
+  function ttsAlternar() {
+    if (!window.speechSynthesis) { aviso('Este navegador não tem leitura em voz alta.', 'erro'); return; }
+    if (!R.tts) { R.tts = { tocando: true, pausado: false, fila: [], ultimo: '' }; speechSynthesis.cancel(); ttsLerPagina(); }
+    else if (R.tts.pausado) { R.tts.pausado = false; speechSynthesis.resume(); if (!speechSynthesis.speaking) ttsProxima(); }
+    else { R.tts.pausado = true; speechSynthesis.pause(); }
+    abrirPainel('ouvir');
+  }
+  function ttsParar() { if (!R || !R.tts) return; R.tts = null; try { speechSynthesis.cancel(); } catch (e) { /* sem voz */ } }
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function () { if (R && R.painel === 'ouvir') abrirPainel('ouvir'); };
+
   async function abrirPainel(qual) {
     const p = R.ov.querySelector('#kd-painel'); R.painel = qual; p.hidden = !qual; R.ov.classList.toggle('chrome', !!qual); if (!qual) { mostrarChrome(); return; }
     const pr = pref(); const fechar_ = '<button class="icone kd-fechar" data-k="fechar-painel" aria-label="Fechar">×</button>';
@@ -402,6 +470,14 @@
       '<h4>Colunas</h4><div class="kd-ops">' + [['auto', 'Automático'], ['1', 'Uma'], ['2', 'Duas']].map(function (x) { return '<button class="' + (pr.colunas === x[0] ? 'sel' : '') + '" data-k="colunas" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<h4>Tema</h4><div class="kd-temas">' + Object.keys(TEMAS).map(function (t) { return '<button class="' + (pr.tema === t ? 'sel' : '') + '" data-k="tema" data-v="' + t + '" style="background:' + TEMAS[t].f + ';color:' + TEMAS[t].t + '">' + TEMAS[t].n + '</button>'; }).join('') + '</div>' +
       '<h4>Brilho</h4><input type="range" min="0.35" max="1" step="0.05" value="' + (pr.brilho == null ? 1 : pr.brilho) + '" data-pref="brilho" aria-label="Brilho">';
+    if (qual === 'ouvir') {
+      const vozes = ttsVozes(); const tts = R.tts || {};
+      p.innerHTML = fechar_ + '<h3>Ouvir o livro</h3>' + (!window.speechSynthesis ? '<p class="alerta">Este navegador não tem leitura em voz alta.</p>' :
+        '<p class="mini mudo">Lê a partir da página atual e vira as páginas sozinho. Use fones para não incomodar a equipe.</p><div class="kd-tts"><button class="btn primario" data-k="tts-play">' + (tts.tocando && !tts.pausado ? '⏸ Pausar' : tts.tocando ? '▶ Continuar' : '▶ Ouvir daqui') + '</button>' + (tts.tocando ? '<button class="btn" data-k="tts-parar">⏹ Parar</button>' : '') + '</div>' +
+        '<h4>Velocidade</h4><input type="range" min="0.6" max="2" step="0.1" value="' + (pr.ttsVel || 1) + '" data-pref="ttsVel" aria-label="Velocidade da leitura"><p class="mini mudo">' + String(pr.ttsVel || 1).replace('.', ',') + '×</p>' +
+        '<h4>Voz</h4><select data-pref="ttsVoz" aria-label="Voz">' + (vozes.length ? vozes.map(function (v) { return '<option value="' + esc(v.name) + '"' + (pr.ttsVoz === v.name ? ' selected' : '') + '>' + esc(v.name + ' (' + v.lang + ')') + '</option>'; }).join('') : '<option>Voz padrão do sistema</option>') + '</select>' +
+        (tts.trecho ? '<h4>Lendo agora</h4><p class="kd-tts-trecho">' + esc(tts.trecho.slice(0, 220)) + '</p>' : ''));
+    }
     if (qual === 'sumario') { p.innerHTML = fechar_ + '<h3>Sumário</h3><p class="mudo">Carregando…</p>'; const s = await R.motor.sumario(); if (R.painel !== 'sumario') return; p.innerHTML = fechar_ + '<h3>Sumário</h3>' + (s.length ? '<ol class="kd-sum">' + s.map(function (i) { return '<li style="padding-left:' + (i.nivel - 1) * 14 + 'px"><a href="#" data-k="ir" data-pos=\'' + esc(JSON.stringify(i.pos)) + '\'>' + esc(i.rotulo) + '</a></li>'; }).join('') + '</ol>' : '<p class="mudo">Sem sumário. Documentos com títulos (H1–H3) geram o sumário automaticamente.</p>') + '<h4>Ir para</h4><p class="mini mudo">Arraste a barra inferior para ir a qualquer posição.</p>'; }
     if (qual === 'buscar') { p.innerHTML = fechar_ + '<h3>Buscar no livro</h3><input type="search" id="kd-q" placeholder="Digite e aperte Enter" value="' + esc(R.ultimaBusca || '') + '"><div id="kd-res"></div>'; const q = p.querySelector('#kd-q'); q.focus(); q.onkeydown = function (ev) { if (ev.key === 'Enter') buscar(q.value); }; if (R.ultimaBusca) buscar(R.ultimaBusca); }
     if (qual === 'caderno') {

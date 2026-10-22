@@ -116,6 +116,7 @@
       let bruto = r.preco;
       if (x.modo === 'preco' && n(it.alvo) > 0) bruto = n(it.alvo);
       if (x.modo === 'desconto' && x.referencia) bruto = x.referencia * (1 - n(it.alvo) / 100);
+      if (x.modo === 'desconto' && !x.referencia) x.alertas.push({ nivel: 'aviso', t: 'Informe a referência para precificar por desconto (usando a margem)' });
       const unit = x.modo === 'preco' ? arred(bruto, casas) : arredCima(bruto, casas);
       const minimo = arredCima(r.precoMinimo, casas);
       const margemFinal = margemEm(r, unit);

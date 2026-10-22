@@ -1,6 +1,7 @@
 /* Ágora: rede social estilo X para profissionais de licitação. Sincroniza pela mesma infraestrutura da Plêiade (Firebase Realtime Database). */
 (function () {
   'use strict';
+  function corOk(c) { return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#8c9bab'; }
   self.Telas = self.Telas || {};
   const { esc, campo, opcoes, modal, confirmar, aviso } = UI;
   const A = self.Agora, P = self.Pleiade;
@@ -79,7 +80,7 @@
   // ---------- peças ----------
   function avatar(uid, tam) {
     const m = perfil(uid); tam = tam || 40;
-    return '<a class="go-av" href="#/agora/u/' + esc(m.handle) + '" style="background:' + esc(m.cor || '#8c9bab') + ';width:' + tam + 'px;height:' + tam + 'px;font-size:' + Math.round(tam / 2.5) + 'px" aria-label="Perfil de ' + esc(m.nome) + '">' + esc((m.nome || '?').split(' ').map(function (x) { return x[0]; }).slice(0, 2).join('').toUpperCase()) + '</a>';
+    return '<a class="go-av" href="#/agora/u/' + esc(m.handle) + '" style="background:' + corOk(m.cor) + ';width:' + tam + 'px;height:' + tam + 'px;font-size:' + Math.round(tam / 2.5) + 'px" aria-label="Perfil de ' + esc(m.nome) + '">' + esc((m.nome || '?').split(' ').map(function (x) { return x[0]; }).slice(0, 2).join('').toUpperCase()) + '</a>';
   }
   function nomeLinha(uid, extra) {
     const m = perfil(uid);
@@ -255,7 +256,7 @@
     const bloq = cfg().bloqueados[uid], sil = cfg().silenciados[uid];
     const itens = bloq ? [] : A.doPerfil(posts(), uid, est.perfilAba);
     return cab(esc(m.nome), npost + ' post' + (npost === 1 ? '' : 's'), true) +
-      '<section class="go-perfil" data-uid="' + esc(uid) + '"><div class="go-capa" style="background:linear-gradient(120deg,' + esc(m.cor) + ',#0a1929)"></div><div class="go-perfil-c">' + avatar(uid, 96) +
+      '<section class="go-perfil" data-uid="' + esc(uid) + '"><div class="go-capa" style="background:linear-gradient(120deg,' + corOk(m.cor) + ',#0a1929)"></div><div class="go-perfil-c">' + avatar(uid, 96) +
       '<div class="go-perfil-ac">' + (meu ? '<button class="btn" data-ag="editar-perfil">Editar perfil</button>' : '<button class="btn mini fantasma" data-ag="menu-perfil" aria-label="Mais opções">⋯</button>' + (bloq ? '<button class="btn perigo" data-ag="desbloquear">Desbloquear</button>' : '<button class="btn ' + (sigo(uid) ? 'go-seguindo' : 'primario') + '" data-ag="seguir">' + (sigo(uid) ? 'Seguindo' : 'Seguir') + '</button>')) + '</div>' +
       '<h2>' + esc(m.nome) + '</h2><p class="go-h">@' + esc(m.handle) + (meSegue && !meu ? ' <span class="go-segue-voce">Segue você</span>' : '') + '</p>' + (m.bio ? '<p>' + A.formatar(m.bio, handles()) + '</p>' : '') +
       '<p class="go-meta">' + [m.cargo ? '💼 ' + esc(m.cargo) : '', m.empresa ? '🏢 ' + esc(m.empresa) : '', m.uf ? '📍 ' + esc(m.uf) : '', m.criadoEm ? '📅 Entrou em ' + new Date(m.criadoEm).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : ''].filter(Boolean).join(' · ') + '</p>' +

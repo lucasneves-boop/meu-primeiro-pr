@@ -19,7 +19,7 @@
   function caminho(sid, resto) { return 'chamadas/' + sid + (resto ? '/' + resto : ''); }
   function nomeDe(uid) { return api().membro(uid).nome || 'Participante'; }
   function iniciais(uid) { return nomeDe(uid).split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
-  function corDe(uid) { return api().membro(uid).cor || '#8c9bab'; }
+  function corDe(uid) { const c = api().membro(uid).cor; return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#8c9bab'; }
   function hhmm() { return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
   function linkSala(sid) { return location.href.split('#')[0] + '#/reuniao/' + sid; }
 

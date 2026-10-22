@@ -69,6 +69,7 @@ test('CSV ida e volta com vírgula decimal', () => {
   const csv = N.paraCSV([['item', 'valor'], ['Papel; A4', 12.5]]);
   assert.deepEqual(N.lerCSV(csv), [['item', 'valor'], ['Papel; A4', '12,5']]);
   assert.equal(N.lerNumeroBR('R$ 1.234,56'), 1234.56);
+  assert.equal(N.lerNumeroBR('10.000'), 10000); assert.equal(N.lerNumeroBR('1.234.567'), 1234567); assert.equal(N.lerNumeroBR('2.5'), 2.5);
 });
 
 test('ranking e concentração', () => {

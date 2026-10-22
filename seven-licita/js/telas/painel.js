@@ -42,7 +42,7 @@
       const l = valores(d.avisos).filter(function (a) { return a.favorito && a.encerramento && new Date(a.encerramento) > Date.now(); })
         .concat(d.propostas.filter(function (p) { return p.encerramento && new Date(p.encerramento) > Date.now() && p.status !== 'perdida'; }).map(function (p) { return { encerramento: p.encerramento, objeto: p.objeto, orgao: p.orgao, link: '#/cadastrar/proposta/' + p.id, tipo: 'Proposta ' + (p.status === 'enviada' ? 'enviada' : 'em preparo') }; }))
         .sort(function (a, b) { return new Date(a.encerramento) - new Date(b.encerramento); }).slice(0, 8);
-      return { link: '#/encontrar', corpo: lista(l.map(function (a) { return '<li class="' + (new Date(a.encerramento) - Date.now() < 864e5 ? 'logo' : '') + '"><b>' + dataHora(a.encerramento) + '</b> (' + emQuanto(a.encerramento) + ')<br><a href="' + esc(a.link || '#/encontrar') + '">' + esc(String(a.objeto || '').slice(0, 110)) + '</a><br><span class="mini mudo">' + esc(a.tipo || 'Aviso favorito') + ' · ' + esc(a.orgao || '') + '</span></li>'; }), 'Favorite avisos ou crie propostas para ver aqui.') };
+      return { link: '#/encontrar', corpo: lista(l.map(function (a) { return '<li class="' + (new Date(a.encerramento) - Date.now() < 864e5 ? 'logo' : '') + '"><b>' + dataHora(a.encerramento) + '</b> (' + emQuanto(a.encerramento) + ')<br><a href="' + esc(UI.url(a.link || '#/encontrar')) + '">' + esc(String(a.objeto || '').slice(0, 110)) + '</a><br><span class="mini mudo">' + esc(a.tipo || 'Aviso favorito') + ' · ' + esc(a.orgao || '') + '</span></li>'; }), 'Favorite avisos ou crie propostas para ver aqui.') };
     },
     prazos: function () {
       const p = Telas.monitorar.prazosAbertos().slice(0, 8);

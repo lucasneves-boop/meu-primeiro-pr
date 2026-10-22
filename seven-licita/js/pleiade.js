@@ -5,16 +5,21 @@
   'use strict';
 
   // ---------- árvore (espelho do servidor, no formato do Firebase Realtime Database) ----------
+  // Chaves que nunca podem virar caminho (evita poluir Object.prototype vindo do servidor).
+  const PROIBIDAS = { __proto__: 1, constructor: 1, prototype: 1 };
   function partes(caminho) { return String(caminho || '').split('/').filter(Boolean); }
-  function obter(arv, caminho) { let x = arv; for (const p of partes(caminho)) { if (x == null || typeof x !== 'object') return undefined; x = x[p]; } return x; }
+  function seguro(ps) { return ps.every(function (p) { return !Object.prototype.hasOwnProperty.call(PROIBIDAS, p) && p !== '__proto__'; }); }
+  // Cópia sem chaves perigosas (o JSON.parse cria "__proto__" como propriedade própria).
+  function limpo(v) { if (v == null || typeof v !== 'object') return v; if (Array.isArray(v)) return v.map(limpo); const o = {}; Object.keys(v).forEach(function (k) { if (k === '__proto__' || k === 'constructor' || k === 'prototype') return; o[k] = limpo(v[k]); }); return o; }
+  function obter(arv, caminho) { let x = arv; if (!seguro(partes(caminho))) return undefined; for (const p of partes(caminho)) { if (x == null || typeof x !== 'object') return undefined; x = x[p]; } return x; }
   function vazio(o) { return o == null || (typeof o === 'object' && !Object.keys(o).length); }
   function definir(arv, caminho, valor) {
-    const ps = partes(caminho); if (!ps.length) return valor == null ? {} : JSON.parse(JSON.stringify(valor));
+    const ps = partes(caminho); if (!seguro(ps)) return arv; if (!ps.length) return valor == null ? {} : limpo(JSON.parse(JSON.stringify(valor)));
     let x = arv; const pilha = [];
     for (let i = 0; i < ps.length - 1; i++) { if (x[ps[i]] == null || typeof x[ps[i]] !== 'object') { if (valor == null) return arv; x[ps[i]] = {}; } pilha.push([x, ps[i]]); x = x[ps[i]]; }
     const k = ps[ps.length - 1];
     if (valor == null) { delete x[k]; for (let i = pilha.length - 1; i >= 0; i--) { const pai = pilha[i][0], ch = pilha[i][1]; if (vazio(pai[ch])) delete pai[ch]; else break; } }
-    else x[k] = JSON.parse(JSON.stringify(valor));
+    else x[k] = limpo(JSON.parse(JSON.stringify(valor)));
     return arv;
   }
   function mesclar(arv, caminho, obj) { Object.keys(obj || {}).forEach(function (k) { arv = definir(arv, (caminho ? caminho.replace(/\/$/, '') + '/' : '') + k, obj[k]); }); return arv; }

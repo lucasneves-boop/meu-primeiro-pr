@@ -74,11 +74,19 @@
   }
 
   // ---------- backup ----------
-  function exportar() { return JSON.stringify({ app: 'seven-licita', versao: 1, exportadoEm: new Date().toISOString(), dados: estado }, null, 1); }
+  // Tokens de servidores (Plêiade, Ágora) não saem no backup: quem recebe o arquivo não ganha acesso à equipe.
+  function exportar() {
+    const copia = JSON.parse(JSON.stringify(estado));
+    ['pleiadeCfg', 'agoraCfg'].forEach(function (k) { if (copia[k] && copia[k].token) copia[k].token = ''; });
+    return JSON.stringify({ app: 'seven-licita', versao: 1, exportadoEm: new Date().toISOString(), dados: copia }, null, 1);
+  }
   function importar(texto) {
     const j = JSON.parse(texto);
     if (!j || j.app !== 'seven-licita' || !j.dados) throw new Error('Arquivo não é um backup da Plataforma 7.');
-    estado = Object.assign(vazio(), j.dados); salvar();
+    const dados = JSON.parse(JSON.stringify(j.dados), function (k, v) { return k === '__proto__' || k === 'constructor' || k === 'prototype' ? undefined : v; });
+    // anotações guardam HTML: no backup de terceiros, só texto passa
+    if (dados.anotacoes && Array.isArray(dados.anotacoes.notas)) dados.anotacoes.notas.forEach(function (n) { if (n && typeof n.html === 'string' && /<\s*(script|iframe|object|embed|svg|math)|\son\w+\s*=|javascript:/i.test(n.html)) n.html = n.html.replace(/<[^>]*>/g, ' '); });
+    estado = Object.assign(vazio(), dados); salvar();
   }
 
   function empresa(idEmp) { return estado.empresas.find(function (e) { return e.id === idEmp; }); }

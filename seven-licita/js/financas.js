@@ -67,7 +67,7 @@
     const valorParcela = modo === 'parcelada' ? r2(Number(base.valor) / n) : r2(base.valor);
     const resto = modo === 'parcelada' ? r2(Number(base.valor) - valorParcela * n) : 0;
     for (let i = 0; i < n; i++) {
-      const l = Object.assign({}, base, { id: id('lc'), data: addMeses(base.data, i), valor: r2(valorParcela + (i === 0 ? resto : 0)), serie: { grupo: grupo, i: i + 1, n: n, modo: modo }, pago: i === 0 ? !!base.pago : false });
+      const l = Object.assign({}, base, { id: id('lc'), data: addMeses(base.data, i), competencia: base.competencia ? addMeses(base.competencia + '-01', i).slice(0, 7) : base.competencia, valor: r2(valorParcela + (i === 0 ? resto : 0)), serie: { grupo: grupo, i: i + 1, n: n, modo: modo }, pago: i === 0 ? !!base.pago : false });
       if (modo === 'parcelada') l.descricao = base.descricao + ' (' + (i + 1) + '/' + n + ')';
       out.push(l);
     }
@@ -182,7 +182,19 @@
     return 0;
   }
   // Fluxo de caixa diário projetado: saldo de hoje (efetivado) + previstos de cada dia. Atrasados entram no 1º dia.
-  function fluxoDiario(lancs, contas, inicio, dias) {
+  // Faturas de cartão em aberto viram saídas na data de vencimento (as vencidas entram como atrasadas).
+  function faturasAbertas(cartoes, lancs, inicio, dias) {
+    const out = []; const fim = addDias(inicio, dias);
+    (cartoes || []).forEach(function (k) {
+      for (let i = -3; i <= Math.ceil(dias / 28) + 1; i++) {
+        const mes = addMeses(inicio.slice(0, 7) + '-01', i).slice(0, 7); const f = fatura(k, lancs, mes);
+        if (f.aberto > 0.004 && f.vencimento <= fim) out.push({ id: 'fat:' + k.id + ':' + mes, tipo: 'pagamento-fatura', valor: f.aberto, data: f.vencimento, pago: false, cartao: k.id, fatura: mes, descricao: 'Fatura ' + (k.nome || '') + ' ' + mes });
+      }
+    });
+    return out;
+  }
+  function fluxoDiario(lancs, contas, inicio, dias, cartoes) {
+    lancs = lancs.concat(faturasAbertas(cartoes, lancs, inicio, dias));
     const ontem = addDias(inicio, -1);
     let saldo = r2((contas || []).reduce(function (s, c) { return s + saldoConta(c, lancs, ontem); }, 0));
     const abertoAntes = lancs.filter(function (l) { return !l.pago && l.data < inicio; });
@@ -245,5 +257,5 @@
     return Object.keys(m).map(function (k) { const o = m[k]; o.receitas = r2(o.receitas); o.despesas = r2(o.despesas); o.resultado = r2(o.receitas - o.despesas); return o; }).sort(function (a, b) { return b.receitas + b.despesas - a.receitas - a.despesas; });
   }
 
-  return { efeitoCaixa: efeitoCaixa, fluxoDiario: fluxoDiario, fluxoMensal: fluxoMensal, aging: aging, conciliar: conciliar, porCampo: porCampo, CATEGORIAS_PADRAO: CATEGORIAS_PADRAO, addMeses: addMeses, addDias: addDias, mesDe: mesDe, mesFatura: mesFatura, fatura: fatura, limiteUsado: limiteUsado, saldoConta: saldoConta, gerarSerie: gerarSerie, doMes: doMes, resumo: resumo, porCategoria: porCategoria, orcamentos: orcamentos, dre: dre, analise: analise, lerOFX: lerOFX, lerExtratoCSV: lerExtratoCSV, sugerirCategoria: sugerirCategoria };
+  return { faturasAbertas: faturasAbertas, efeitoCaixa: efeitoCaixa, fluxoDiario: fluxoDiario, fluxoMensal: fluxoMensal, aging: aging, conciliar: conciliar, porCampo: porCampo, CATEGORIAS_PADRAO: CATEGORIAS_PADRAO, addMeses: addMeses, addDias: addDias, mesDe: mesDe, mesFatura: mesFatura, fatura: fatura, limiteUsado: limiteUsado, saldoConta: saldoConta, gerarSerie: gerarSerie, doMes: doMes, resumo: resumo, porCategoria: porCategoria, orcamentos: orcamentos, dre: dre, analise: analise, lerOFX: lerOFX, lerExtratoCSV: lerExtratoCSV, sugerirCategoria: sugerirCategoria };
 });
