@@ -1,4 +1,4 @@
-/* SevenHub: clone funcional do Trello para gerir as licitações, do edital ao pagamento. */
+/* Seven Hub: clone funcional do Trello para gerir as licitações, do edital ao pagamento. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -1231,7 +1231,7 @@
   setInterval(function () { if (varrerTudo() && App.rota().tela === 'quadros' && !document.getElementById('kov') && !document.querySelector('.modal-fundo')) App.redesenhar(); }, 60000);
 
   Telas.quadros = {
-    titulo: 'SevenHub',
+    titulo: 'Seven Hub',
     render: function (el, sub, param) {
       if (aberto && (!document.getElementById('kov'))) aberto = null;
       garantirQuadroPadrao();
