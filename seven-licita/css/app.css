@@ -2598,3 +2598,30 @@ body.modo-publico .lateral, body.modo-publico .abrir-menu, body.modo-publico .se
 .rn-pill-dr button { background: #3c4043; color: #e8eaed; border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
 .rn-pill-dr .sair { background: #ea4335; }
 @media (max-width: 640px) { .dr-local { width: 38%; right: 20px; bottom: 20px; } .dr-status { font-size: 16px; } }
+
+/* fundo animado (estilo PS4) */
+html { background: var(--fundo); }
+html.com-fundo-animado body { background: transparent; }
+#fundo-animado { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.casca { position: relative; z-index: 1; }
+.fundo-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.fundo-op { position: relative; display: grid; gap: 4px; padding: 10px; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie); cursor: pointer; }
+.fundo-op input { position: absolute; opacity: 0; pointer-events: none; }
+.fundo-op:has(input:checked) { border-color: var(--ouro); box-shadow: 0 0 0 2px rgba(182, 141, 64, .35); }
+.fundo-op:has(input:focus-visible) { outline: 2px solid var(--ouro); outline-offset: 2px; }
+.fundo-op small { color: var(--mudo); font-size: 12px; line-height: 1.3; }
+.fundo-amostra { height: 54px; border-radius: 6px; background: #0b0905; overflow: hidden; position: relative; }
+.fundo-amostra.ondas { background: repeating-linear-gradient(170deg, transparent 0 6px, rgba(183,141,66,.35) 6px 7px), linear-gradient(#17120a, #050505); }
+.fundo-amostra.particulas { background: radial-gradient(circle at 25% 60%, rgba(183,141,66,.6), transparent 22%), radial-gradient(circle at 70% 35%, rgba(183,141,66,.45), transparent 18%), radial-gradient(circle at 85% 80%, rgba(183,141,66,.35), transparent 14%), #0b0905; }
+.fundo-amostra.constelacao { background: radial-gradient(circle at 20% 30%, #b78d42 0 2px, transparent 3px), radial-gradient(circle at 55% 65%, #b78d42 0 2px, transparent 3px), radial-gradient(circle at 80% 25%, #b78d42 0 2px, transparent 3px), linear-gradient(28deg, transparent 47%, rgba(183,141,66,.4) 48% 49%, transparent 50%), #0b0905; }
+.fundo-amostra.aurora { background: radial-gradient(ellipse at 30% 40%, rgba(183,141,66,.55), transparent 55%), radial-gradient(ellipse at 75% 70%, rgba(70,90,120,.6), transparent 55%), #0b0905; }
+.fundo-amostra.nenhum { background: var(--fundo); border: 1px dashed var(--borda); }
+@media print { #fundo-animado { display: none !important; } }
+/* com o fundo animado, as superfícies ficam translúcidas para a animação aparecer por trás (efeito vidro) */
+:root.com-fundo-animado { --superficie: rgba(255, 255, 255, .84); --superficie-2: rgba(241, 238, 232, .86); }
+:root.com-fundo-animado[data-theme="light"] { --superficie: rgba(255, 255, 255, .84); --superficie-2: rgba(241, 238, 232, .86); }
+@media (prefers-color-scheme: dark) { :root.com-fundo-animado:not([data-theme="light"]) { --superficie: rgba(17, 17, 17, .80); --superficie-2: rgba(26, 26, 26, .82); } }
+:root.com-fundo-animado[data-theme="dark"] { --superficie: rgba(17, 17, 17, .80); --superficie-2: rgba(26, 26, 26, .82); }
+:root.com-fundo-animado[data-theme="gold"] { --superficie: rgba(12, 10, 6, .80); --superficie-2: rgba(22, 18, 10, .82); }
+:root.com-fundo-animado .topo { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+:root.com-fundo-animado[data-theme="gold"] .topo { background: rgba(0, 0, 0, .78); }

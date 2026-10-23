@@ -4,7 +4,7 @@ const { abrir } = require('./apoio.cjs');
 (async () => {
   const t = await abrir(path.join(process.env.SAIDA || '/tmp', 'tema'), { colorScheme: 'light' });
   const { pg, url, ok, foto } = t;
-  const fundo = () => pg.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const fundo = () => pg.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
   await pg.goto(url + '#/painel'); await pg.waitForSelector('#botao-tema');
   ok(await pg.evaluate(() => !document.documentElement.hasAttribute('data-theme')) && (await pg.getAttribute('#botao-tema', 'aria-label')).startsWith('Tema automático'), 'começa no automático');
   const claroSistema = await fundo();

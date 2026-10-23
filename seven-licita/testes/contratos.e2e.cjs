@@ -59,6 +59,7 @@ const PDFLIB = process.env.PDFLIB || path.join(__dirname, '..', 'node_modules', 
   ok(await pg.locator('.lateral').isHidden() && await pg.locator('.seletor-empresa').isHidden(), 'página do signatário sem o menu da plataforma');
   ok(/Seven Contrato/.test(await pg.textContent('.as-cab')), 'página do signatário identificada como Seven Contrato');
   await escolher('[data-a=pdf]', arquivo('outro.pdf', '%PDF-1.4 arquivo diferente'));
+  await pg.waitForSelector('#as-conf .ct-invalido', { timeout: 8000 }).catch(() => {});
   ok(await pg.locator('#as-conf .ct-invalido').count() === 1 && await pg.locator('#as-2').isHidden(), 'PDF diferente: não deixa assinar');
   await escolher('[data-a=pdf]', pdf); await pg.waitForSelector('#as-conf .ct-valido');
   ok(await pg.locator('#as-2').isVisible(), 'mesmo PDF: libera os dados e a assinatura');
