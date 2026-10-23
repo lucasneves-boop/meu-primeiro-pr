@@ -160,11 +160,12 @@
       el.innerHTML = '<div class="cl"><aside class="cl-menu"><input type="search" id="cl-busca" placeholder="Buscar calculadora…" value="' + esc(est.busca) + '">' +
         (favs.length ? '<h4>★ Favoritas</h4>' + itens.filter(function (t) { return favs.indexOf(t.id) >= 0 && visiveis(t); }).map(function (t) { return '<a href="#/calculadora/' + t.id + '" class="' + (t.id === sub ? 'ativa' : '') + '">' + esc(t.ic) + ' ' + esc(t.nome) + '</a>'; }).join('') : '') +
         Object.keys(grupos).map(function (g) { const l = grupos[g].filter(visiveis); return l.length ? '<h4>' + esc(g) + '</h4>' + l.map(function (t) { return '<a href="#/calculadora/' + t.id + '" class="' + (t.id === sub ? 'ativa' : '') + '">' + esc(t.ic) + ' ' + esc(t.nome) + '</a>'; }).join('') : ''; }).join('') + '</aside>' +
-        '<section class="cl-area"><div class="cl-cab"><h2>' + esc((itens.find(function (t) { return t.id === sub; }) || itens[0]).nome) + '</h2><button class="icone estrela ' + (favs.indexOf(sub) >= 0 ? 'on' : '') + '" data-fav aria-label="Favoritar">★</button></div><div id="cl-corpo"></div></section></div>';
+        '<section class="cl-area"><div class="cl-cab"><h2>' + esc((itens.find(function (t) { return t.id === sub; }) || itens[0]).nome) + '</h2><button class="icone estrela ' + (favs.indexOf(sub) >= 0 ? 'on' : '') + '" data-fav aria-label="Favoritar">★</button><button type="button" class="btn mini cl-janela" data-janela title="Calculadora em janela que fica por cima de qualquer tela (Alt+C)">⧉ Abrir em janela flutuante</button></div><div id="cl-corpo"></div></section></div>';
       const corpo = el.querySelector('#cl-corpo');
       if (sub === 'cientifica') telaBasica(corpo); else if (sub === 'conversor') telaConversor(corpo); else if (sub === 'cambio') telaCambio(corpo);
       else { const t = FERRAMENTAS.find(function (x) { return x.id === sub; }); if (t) telaFerramenta(corpo, t); else telaBasica(corpo); }
       const b = el.querySelector('#cl-busca'); b.oninput = function () { est.busca = b.value; clearTimeout(b._t); b._t = setTimeout(function () { App.redesenhar(); const i = document.getElementById('cl-busca'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+      el.querySelector('[data-janela]').onclick = function () { CalcFlutuante.abrir(); };
       el.querySelector('[data-fav]').onclick = function () { const l = Dados.e.config.calcFavoritas = Dados.e.config.calcFavoritas || []; const i = l.indexOf(sub); if (i >= 0) l.splice(i, 1); else l.push(sub); Dados.salvar(); App.redesenhar(); };
     }
   };
