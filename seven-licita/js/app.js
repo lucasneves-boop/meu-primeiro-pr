@@ -97,10 +97,23 @@
   if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (temaAtual === 'auto') aplicarTema('auto'); });
   aplicarTema(temaAtual);
 
-  self.App = { redesenhar: desenhar, rota: rotaAtual, tema: function (t) { if (t) aplicarTema(t); return temaAtual; }, iconeTema: function (t) { return TEMAS[t].ic; } };
+  self.App = { menuRecolhido: function (sim) { return menuRecolhido(sim); }, redesenhar: desenhar, rota: rotaAtual, tema: function (t) { if (t) aplicarTema(t); return temaAtual; }, iconeTema: function (t) { return TEMAS[t].ic; } };
 
   window.addEventListener('hashchange', function () { desenhar(); $('#conteudo').focus({ preventScroll: true }); window.scrollTo(0, 0); });
   $('#empresa-ativa').addEventListener('change', function () { Dados.e.empresaAtiva = this.value; Dados.salvar(); desenhar(); });
+  // ---------- menu lateral retrátil (computador): recolhido mostra só os ícones, com o nome ao passar o mouse ----------
+  function menuRecolhido(sim) {
+    const html = document.documentElement;
+    if (typeof sim === 'boolean') { html.classList.toggle('lateral-recolhida', sim); try { if (sim) localStorage.setItem('seven-menu', 'recolhido'); else localStorage.removeItem('seven-menu'); } catch (e) { /* sem armazenamento */ } }
+    const r = html.classList.contains('lateral-recolhida'); const b = $('#recolher-menu');
+    if (b) { b.setAttribute('aria-expanded', String(!r)); b.title = r ? 'Expandir menu' : 'Recolher menu'; b.querySelector('.rot').textContent = r ? 'Expandir menu' : 'Recolher menu'; }
+    $$('.menu a').forEach(function (a) { const t = a.querySelector('.rot'); if (r && t) a.title = t.textContent; else a.removeAttribute('title'); });
+    window.dispatchEvent(new Event('resize'));
+    return r;
+  }
+  $('#recolher-menu').addEventListener('click', function () { menuRecolhido(!document.documentElement.classList.contains('lateral-recolhida')); });
+  menuRecolhido();
+
   $('#abrir-menu').addEventListener('click', function () {
     const aberto = document.body.classList.toggle('menu-aberto');
     this.setAttribute('aria-expanded', String(aberto));

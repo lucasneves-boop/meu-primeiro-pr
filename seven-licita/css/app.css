@@ -46,7 +46,31 @@ p { margin: 0 0 .7em; }
 .lateral { width: var(--lateral); flex: none; background: #050505; color: #ececec; border-right: 1px solid #1f1a10; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .marca { display: flex; gap: 12px; align-items: center; padding: 22px 22px 20px; color: #fff; text-decoration: none; border-bottom: 1px solid #1f1a10; margin-bottom: 6px; }
 .marca img { width: 40px; height: auto; flex: none; }
-.marca .marca-logo { width: 100%; max-width: 200px; height: auto; display: block; }
+.marca .marca-logo { width: 100%; max-width: 168px; height: auto; display: block; }
+.marca .marca-7 { display: none; width: 30px; height: 30px; }
+.lateral { position: sticky; }
+.recolher { position: absolute; top: 15px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #9a9a9a; cursor: pointer; }
+.recolher:hover, .recolher:focus-visible { background: rgba(182, 141, 64, .14); color: var(--ouro); }
+.recolher .rot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lateral { transition: width .18s ease; }
+/* menu recolhido: só os ícones */
+@media (min-width: 901px) {
+  html.lateral-recolhida { --lateral: 68px; }
+  html.lateral-recolhida .lateral { overflow-x: hidden; }
+  html.lateral-recolhida .marca { justify-content: center; padding: 18px 0 12px; border-bottom: 0; margin-bottom: 0; }
+  html.lateral-recolhida .marca .marca-logo { display: none; }
+  html.lateral-recolhida .marca .marca-7 { display: block; }
+  html.lateral-recolhida .recolher { position: static; margin: 0 auto 8px; transform: scaleX(-1); }
+  html.lateral-recolhida .menu { padding: 4px 10px; border-top: 1px solid #1f1a10; }
+  html.lateral-recolhida .menu a { justify-content: center; padding: 10px 0; position: relative; }
+  html.lateral-recolhida .menu a .rot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  html.lateral-recolhida .menu a.ativo { box-shadow: inset 3px 0 0 var(--ouro); }
+  html.lateral-recolhida .menu .grupo { height: 0; margin: 8px 6px; border-top: 1px solid #2a2112; font-size: 0; overflow: hidden; }
+  html.lateral-recolhida .menu-sep { margin: 8px 6px; }
+  html.lateral-recolhida .menu a .pl-selo { position: absolute; top: 3px; right: 4px; margin: 0; font-size: 10px; min-width: 16px; padding: 0 4px; }
+  html.lateral-recolhida .rodape-lateral { display: none; }
+}
+@media (max-width: 900px) { .recolher { display: none; } }
 .marca small { display: block; font-size: 9px; font-weight: 600; letter-spacing: .22em; color: var(--ouro); margin-top: 5px; }
 .menu { display: flex; flex-direction: column; padding: 4px 8px; gap: 1px; }
 .menu a { color: #cfcfcf; font-weight: 500; text-decoration: none; padding: 8px 10px; border-radius: 8px; display: flex; gap: 10px; align-items: center; }
