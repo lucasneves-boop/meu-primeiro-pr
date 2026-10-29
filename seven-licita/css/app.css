@@ -2743,3 +2743,10 @@ tr.cm-total th, tr.cm-total td { font-weight: 700; border-top: 2px solid var(--o
 .cm-faixas[hidden] { display: none; }
 .cm-linha-av { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; } .cm-linha-av input { width: 130px; } .cm-linha-av input[name^=parc_nome] { width: 220px; } .cm-linha-av input[name^=faixa_pct], .cm-linha-av input[name^=parc_pct] { width: 70px; } .cm-linha-av span { font-size: 13px; color: var(--mudo); }
 .cm-auto { margin: 6px 0 10px; }
+/* PDF dos relatórios: sempre claro e legível, em qualquer tema */
+.gerando-pdf .cm-relatorio { --texto: #111111; --mudo: #555555; --superficie: #ffffff; --superficie-2: #f4f1ea; --borda: #dddddd; --marca: #7a5a1e; background: #ffffff; color: #111111; padding: 8px; }
+.gerando-pdf .cm-relatorio .cartao { background: #ffffff !important; box-shadow: none !important; border: 1px solid #dddddd; backdrop-filter: none !important; }
+.gerando-pdf .cm-relatorio .tabela-rolagem { overflow: visible !important; }
+.gerando-pdf .cm-relatorio a { color: #111111; text-decoration: none; }
+.cm-ganha > summary { cursor: pointer; } .cm-ganha form { margin-top: 12px; } .cm-exec-ini { margin: 6px 0 10px; } .cm-exec-ini summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+.cm-acoes { white-space: nowrap; } .cm-acoes .btn { margin: 1px; }

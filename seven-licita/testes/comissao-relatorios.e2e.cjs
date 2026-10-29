@@ -4,6 +4,8 @@ const path = require('path'); const { abrir } = require('./apoio.cjs');
 const saida = process.argv[2] || path.join(__dirname, 'capturas');
 (async () => {
   const t = await abrir(saida); const { pg, ok, url, foto } = t;
+  // bibliotecas de PDF: cópia local quando LIBS_PDF aponta para a pasta (sem internet no navegador de teste)
+  if (process.env.LIBS_PDF) await pg.context().route(/cdnjs\.cloudflare\.com\/ajax\/libs\/(html2canvas|jspdf)\//, r => { const f = /html2canvas/.test(r.request().url()) ? 'html2canvas.min.js' : 'jspdf.umd.min.js'; r.fulfill({ status: 200, contentType: 'text/javascript', body: require('fs').readFileSync(path.join(process.env.LIBS_PDF, f)) }); });
   const preencher = async (sel, v) => { await pg.fill(sel, v); await pg.press(sel, 'Tab'); await pg.waitForTimeout(120); };
   try {
     await pg.goto(url + '#/quadros'); await pg.waitForSelector('#botao-tema'); await pg.waitForTimeout(300);
@@ -19,7 +21,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
         execucao: { valor: 120000, empenhos: [{ id: 'e1', numero: '2026NE001', valor: 120000 }], notas: [{ id: 'n1', numero: '501', data: hoje, valor: 60000, vencimento: '2099-12-31' }, { id: 'n2', numero: '502', data: hoje, valor: 30000, vencimento: '2000-01-01' }], pagamentos: [{ id: 'g1', notaId: 'n1', data: hoje, valor: 60000 }] } });
       Dados.e.comissao = { base: 'venda', pct: '5', venda: '120.000', alvo: '5.000' }; Dados.salvar();
     });
-    await pg.goto(url + '#/comissao'); await pg.waitForSelector('.cm-abas'); ok(await pg.locator('.cm-abas a').count() === 4, 'abas: simulador, performance, relatório do mês e extrato');
+    await pg.goto(url + '#/comissao'); await pg.waitForSelector('.cm-abas'); ok(await pg.locator('.cm-abas a').count() === 5, 'abas: simulador, licitações ganhas, performance, relatório do mês e extrato');
     // performance
     await pg.click('.cm-abas a[href="#/comissao/performance"]'); await pg.waitForSelector('#cm-perf-f');
     ok(await pg.inputValue('#cm-perf-f [name=cliente]') === 'cliA', 'abre no cliente ativo');
@@ -46,6 +48,9 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     // impressão
     await pg.evaluate(() => { window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; });
     await pg.click('[data-a=imprimir]'); await pg.waitForTimeout(300); ok(await pg.evaluate(() => window.__imprimiu) === 1, 'imprime o relatório do mês');
+    // PDF (no claude.ai a impressão é bloqueada; o PDF é o caminho)
+    const [arq] = await Promise.all([pg.waitForEvent('download', { timeout: 60000 }), pg.click('[data-a=pdf]')]);
+    const bin = require('fs').readFileSync(await arq.path()); ok(bin.slice(0, 4).toString() === '%PDF' && bin.length > 20000 && /^seven-comissao-mes-/.test(arq.suggestedFilename()), 'baixa o relatório do mês em PDF (' + Math.round(bin.length / 1024) + ' KB)');
     await pg.emulateMedia({ media: 'print' }); ok(await pg.locator('.lateral').isHidden() && await pg.locator('.cm-rel-form').isHidden() && await pg.locator('.cm-relatorio').isVisible(), 'na impressão só aparece o relatório'); await pg.emulateMedia({ media: 'screen' });
     // envio do resumo do mês (texto para revisão antes de abrir o WhatsApp)
     await pg.selectOption('#cm-mes-f [name=cliente]', 'cliA'); await pg.waitForSelector('[data-a=enviar-whatsapp]:not([disabled])');

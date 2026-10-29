@@ -1253,8 +1253,23 @@
 
   setInterval(function () { if (varrerTudo() && App.rota().tela === 'quadros' && !document.getElementById('kov') && !document.querySelector('.modal-fundo')) App.redesenhar(); }, 60000);
 
+  // Licitação já ganha lançada fora do funil (Seven Comissão → Licitações ganhas): cartão com etiqueta Ganha,
+  // campos preenchidos e a execução (contrato, empenhos, notas e pagamentos) pronta.
+  function lancarGanha(o) {
+    o = o || {}; const q = quadroLicitacoes(); if (!q) return null;
+    const l = q.listas.find(function (x) { return x.nome === (o.etapa || 'Contrato'); }) || q.listas.find(function (x) { return x.nome === 'Contrato'; }) || q.listas[0];
+    const et = function (n) { const t = q.etiquetas.find(function (x) { return x.nome === n; }); return t ? [t.id] : []; };
+    const etiquetas = [].concat(et('Ganha'), /preg/i.test(o.modalidade || '') ? et('Pregão') : [], /dispensa/i.test(o.modalidade || '') ? et('Dispensa') : []);
+    const x = Execucao.normalizar(Object.assign({ numero: o.contrato || '', valor: Number(o.valor) || 0, vigenciaFim: o.vigencia || '', empenhos: [], notas: [], pagamentos: [] }, o.execucao || {}));
+    const c = criarCartao(q, l.id, { titulo: o.titulo || 'Licitação ganha', descricao: o.objeto || '', empresaId: o.empresaId || null, etiquetas: etiquetas, valores: { valor: Number(o.valor) || 0, orgao: o.orgao || '', numero: o.numero || '', portal: o.portal || '' }, execucao: x, modalidade: o.modalidade || '', lancadaManual: true });
+    const quando = (o.dataGanho || new Date().toISOString().slice(0, 10)) + 'T12:00:00.000Z';
+    c.atividade.push({ em: quando, por: eu(), texto: 'ganha em ' + quando.slice(0, 10).split('-').reverse().join('/') + ' (lançada na Seven Comissão)' });
+    salvar(); return { quadro: q, cartao: c };
+  }
+
   Telas.quadros = {
     titulo: 'Seven Processo',
+    lancarGanha: lancarGanha,
     render: function (el, sub, param) {
       if (aberto && (!document.getElementById('kov'))) aberto = null;
       garantirQuadroPadrao();
