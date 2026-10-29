@@ -48,9 +48,9 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.click('[data-a=add-nf]'); await pg.waitForSelector('.modal [name=venc]'); ok(/^\d{4}-\d{2}-\d{2}$/.test(await pg.inputValue('.modal [name=venc]')), 'NF sugere vencimento pelo prazo de pagamento'); await pg.click('.modal .cancelar');
     await foto('comissao-ganhas');
     // integração com as outras abas
-    await pg.goto(url + '#/comissao/mes'); await pg.waitForSelector('#cm-mes-f'); await pg.selectOption('#cm-mes-f [name=cliente]', ''); await pg.waitForTimeout(150);
-    ok(/Ganhas no mês\s*2/.test(await pg.innerText('.cm-relatorio')) && /Recebido no mês\s*R\$\s?120\.000,00/.test(await pg.innerText('.cm-relatorio')), 'relatório do mês conta as licitações lançadas');
-    await pg.goto(url + '#/comissao/extrato'); await pg.waitForSelector('#cm-ext-f'); ok(await pg.locator('.cm-relatorio tbody tr').count() === 2, 'extrato com a comissão de cada pagamento');
+    await pg.goto(url + '#/relatorios/base'); await pg.waitForSelector('#rl-f'); await pg.waitForTimeout(150);
+    ok(/Ganhas no período\s*2/.test(await pg.innerText('.cm-relatorio')) && /Recebido no período\s*R\$\s?120\.000,00/.test(await pg.innerText('.cm-relatorio')), 'Seven Relatórios conta as licitações lançadas');
+    await pg.goto(url + '#/comissao/extrato'); await pg.waitForSelector('#cm-ext-f'); await pg.selectOption('#cm-ext-f [name=cliente]', ''); await pg.waitForTimeout(150); ok(await pg.locator('.cm-relatorio tbody tr').count() === 2, 'extrato com a comissão de cada pagamento');
     // busca e PDF
     await pg.goto(url + '#/comissao/ganhas'); await pg.waitForSelector('#cm-gf'); await pg.fill('#cm-gf [name=busca]', 'catalão'); await pg.waitForTimeout(500);
     ok(await pg.locator('.cm-relatorio tbody tr:not(.cm-total)').count() === 1, 'busca por órgão');
