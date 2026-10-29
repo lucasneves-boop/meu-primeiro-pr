@@ -2714,3 +2714,27 @@ html.com-fundo-animado body { background: transparent; }
 .cm-funil-res { margin: 8px 0 0; }
 .cm-funil td .cm-un { display: inline-block; min-width: 42px; text-align: left; margin-left: 6px; color: var(--mudo); font-size: 12px; }
 .cm-funil-usar { margin: 6px 0 0; } .cm-funil-usar .btn { margin-left: 6px; }
+/* Seven Comissão: performance e relatórios */
+.cm-rel-form h4 { margin: 6px 0 8px; }
+.cm-rel-form details summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+.cm-cab-rel { align-items: center; }
+.cm-cab-rel .cm-logo-rel { height: 18px; width: auto; filter: none; }
+.cm-cab-rel div { flex: 1; } .cm-cab-rel b { display: block; font-size: 17px; letter-spacing: 0; } .cm-cab-rel small { letter-spacing: 0; font-size: 12px; text-transform: none; }
+.cm-gerado { font-size: 11px; color: var(--mudo); white-space: nowrap; }
+.cm-kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.cm-meta { margin: 6px 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--borda); }
+.cm-meta-txt { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.cm-meta-barra { height: 12px; border-radius: 99px; background: var(--superficie-2); overflow: hidden; } .cm-meta-barra i { display: block; height: 100%; background: var(--ouro); border-radius: 99px; } .cm-meta-barra i.ok { background: var(--c-verde, #1baf7a); }
+.cm-meta p { margin: 6px 0 0; }
+tr.cm-atrasada td { color: var(--c-vermelho, #e34948); }
+tr.cm-total th, tr.cm-total td { font-weight: 700; border-top: 2px solid var(--ouro); }
+.cm-rel-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .cm-rel-2 { grid-template-columns: 1fr; } }
+@media print {
+  .cm-relatorio .cartao { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; background: #fff !important; color: #111; }
+  .cm-relatorio .cm-numeros div, .cm-relatorio .cm-destaque { background: #f4f1ea !important; }
+  .cm-relatorio a { color: #111; text-decoration: none; }
+  .cm-relatorio .tabela-rolagem { overflow: visible; }
+  .cm-relatorio .cm-tab, .cm-relatorio .tabela { font-size: 10px; }
+  .cm-rel-2 { grid-template-columns: 1fr 1fr; }
+}

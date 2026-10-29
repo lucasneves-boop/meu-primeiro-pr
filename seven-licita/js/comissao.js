@@ -114,7 +114,7 @@
     return {
       linhas: linhas, custoMes: custoMes, receitaMes: d * q * cv, lucroMes: lucroMes, atrasoMeses: atraso,
       mesPrimeiraVitoria: Math.ceil(1 / (q * d)), mesPrimeiroRecebimento: Math.ceil(1 / (q * d)) + atraso,
-      mesRetorno: mesRetorno, investimentoMaximo: -menor, mesInvestimentoMaximo: mesMenor, viavel: lucroMes > 0
+      mesRetorno: mesRetorno, investimentoMaximo: menor < 0 ? -menor : 0, mesInvestimentoMaximo: mesMenor, viavel: lucroMes > 0
     };
   }
 

@@ -189,7 +189,7 @@
     atualizar();
   }
   // a janela flutuante mudou algo: redesenha a tela se ela estiver aberta
-  document.addEventListener('comissao:mudou', function (ev) { if (ev.detail && ev.detail.origem === 'janela' && /^#\/comissao/.test(location.hash) && document.querySelector('#cm-form')) render(document.getElementById('conteudo')); });
+  document.addEventListener('comissao:mudou', function (ev) { if (ev.detail && ev.detail.origem === 'janela' && /^#\/comissao\/?$/.test(location.hash) && document.querySelector('#cm-form')) App.redesenhar(); });
 
-  Telas.comissao = { titulo: 'Seven Comissão', render: render, estado: estado, entrada: entrada, camposBase: camposBase, resumo: resumo, lerForm: lerForm, extras: extras, resumoExtra: resumoExtra, salvarDepois: salvarDepois, avisarMudanca: avisarMudanca };
+  Telas.comissao = { titulo: 'Seven Comissão', render: render, simulador: render, tabelaCenarios: tabelaCenarios, secoesExtras: secoesExtras, calcFunil: calcFunil, dataBR: dataBR, pc: pc, hoje: hoje, estado: estado, entrada: entrada, camposBase: camposBase, resumo: resumo, lerForm: lerForm, extras: extras, resumoExtra: resumoExtra, salvarDepois: salvarDepois, avisarMudanca: avisarMudanca };
 })();

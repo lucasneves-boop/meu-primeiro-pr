@@ -102,3 +102,8 @@ test('funil por quantidades do histórico', () => {
   perto(f.taxaDisputa, 20, '8 contratos em 40 disputas'); assert.strictEqual(f.etapas[0].necessarios, 25);
   assert.strictEqual(C.funil([{ id: 'encontrados', qtd: 0 }, { id: 'disputas', qtd: 3 }], 'qtd').etapas[1].conversao, null);
 });
+
+test('sem custos o caixa necessário é zero (não -0)', () => {
+  const r = C.retorno({ taxa: 20, disputasMes: 5, comissaoPorVitoria: 1000, diasRecebimento: 60 });
+  assert.ok(Object.is(r.investimentoMaximo, 0));
+});
