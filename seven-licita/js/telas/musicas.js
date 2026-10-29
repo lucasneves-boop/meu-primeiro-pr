@@ -135,7 +135,7 @@
   function embed(u) { const r = Plataformas.reconhecer(u); return r && r.embed ? { tipo: Plataformas.plataforma(r.plataforma).nome, url: r.embed, alt: r.alt } : null; }
 
   Telas.musicas = {
-    titulo: 'Seven Música',
+    titulo: 'Seven Music',
     render: function (el, sub, param) {
       el.onclick = null;
       const nav = [['', '⌂ Início'], ['biblioteca', '♫ Sua biblioteca'], ['curtidas', '♥ Curtidas'], ['plataformas', '🎧 Plataformas']];

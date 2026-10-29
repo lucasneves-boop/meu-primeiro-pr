@@ -113,9 +113,12 @@
     const t = function (titulo, l) { return '<div><h4>' + titulo + '</h4>' + R().tabela([[titulo], ['Decididas', 1], ['Ganhas', 1], ['Taxa', 1], ['Valor ganho', 1]], l.map(function (k) { return '<tr><td>' + esc(k.nome) + '</td><td class="n">' + k.decididas + '</td><td class="n">' + k.ganhas + '</td><td class="n">' + pc(k.taxa, 0) + '</td><td class="n">' + moeda(k.valorGanho) + '</td></tr>'; }), '') + '</div>'; };
     return '<section class="cartao"><h3>Onde ganhamos</h3><p class="mini mudo">Licitações decididas no período (' + x.decididas + ').</p><div class="rl-dist">' + t('Órgão', x.orgao) + t('Portal', x.portal) + t('UF', x.uf) + '</div></section>';
   }
+  // mesma fonte da Seven Agenda (Integração): sessões, prazos, cotações, contratos, NFs e documentos do cliente
+  const TIPO_AG = { sessao: 'Sessão', prazo: 'Prazo do pregoeiro', cotacao: 'Cotação', quadro: 'Prazo', contrato: 'Contrato', documento: 'Documento', pagamento: 'Recebimento', financeiro: 'Financeiro', comercial: 'Comercial' };
   function secAgenda(id) {
-    const l = P.agenda(Dados.e, { empresaId: id, hoje: hoje(), dias: 30 });
-    return '<section class="cartao"><h3>Agenda dos próximos 30 dias</h3>' + R().tabela([['Data'], ['Tipo'], ['Licitação'], ['Órgão'], ['Portal'], ['Valor estimado', 1]], l.slice(0, 25).map(function (a) { return '<tr><td>' + dataBR(a.data) + (a.hora ? ' ' + esc(a.hora) : '') + '</td><td>' + esc(a.tipo) + '</td><td>' + esc(a.titulo) + '</td><td>' + esc(a.orgao) + '</td><td>' + esc(a.portal) + '</td><td class="n">' + (a.valor ? moeda(a.valor) : '—') + '</td></tr>'; }), 'Nenhuma sessão ou prazo marcado nos próximos 30 dias.') + '</section>';
+    const h = hoje(); const d = new Date(h + 'T12:00:00'); d.setDate(d.getDate() + 30); const fim = d.toISOString().slice(0, 10);
+    const l = (Telas.agenda ? Telas.agenda.eventosLicita(h, fim, { empresaId: id, todos: true }) : []).filter(function (a) { return a.tipo !== 'financeiro' && a.tipo !== 'comercial'; }).sort(function (a, b) { return (a.data + (a.hora || '')) < (b.data + (b.hora || '')) ? -1 : 1; });
+    return '<section class="cartao"><h3>Agenda dos próximos 30 dias</h3>' + R().tabela([['Data'], ['Tipo'], ['Compromisso']], l.slice(0, 25).map(function (a) { return '<tr><td>' + dataBR(a.data) + (a.hora ? ' ' + esc(a.hora) : '') + '</td><td>' + esc(TIPO_AG[a.tipo] || a.tipo) + '</td><td>' + esc(a.titulo) + '</td></tr>'; }), 'Nenhum compromisso nos próximos 30 dias.') + '<p class="mini mudo">Os mesmos compromissos da Seven Agenda.</p></section>';
   }
   function secHabilitacao(id) {
     if (!id) return ''; const h = P.habilitacao(Dados.e, { empresaId: id, hoje: hoje(), dias: 30 });
@@ -253,7 +256,7 @@
     l.push('• A receber: ' + moeda(d.totais.aReceber) + (d.totais.atrasado ? ' (em atraso: ' + moeda(d.totais.atrasado) + ')' : ''));
     d.periodo.ganhas.slice(0, 5).forEach(function (k) { l.push('   ✓ ' + k.titulo + (k.orgao ? ' · ' + k.orgao : '') + ' · ' + moeda(k.valor)); });
     const pa = parecerDe(prefs(), id, per); if (pa.proximos) { l.push('', 'Próximos passos:'); pa.proximos.split(/\n+/).filter(function (x) { return x.trim(); }).forEach(function (x) { l.push('• ' + x.replace(/^\s*[-•*]\s*/, '')); }); }
-    l.push('', 'O relatório completo vai em PDF. Qualquer dúvida, estou à disposição.', '', 'Lucas Neves | Seven', '(61) 98347-2232');
+    l.push('', 'O relatório completo vai em PDF. Qualquer dúvida, estou à disposição.', '', Pref.assinatura(), Pref.telefone());
     return l.join('\n');
   }
   async function enviar(via, id, per, ant, atual, c, d) {

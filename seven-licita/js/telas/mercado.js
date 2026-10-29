@@ -1,4 +1,4 @@
-/* Seven Painel de Preços (análise de mercado no PNCP), Concorrentes e Seven CAPAG (CAPAG). */
+/* Seven Preços (análise de mercado no PNCP), Concorrentes e Seven CAPAG (CAPAG). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -237,7 +237,7 @@
   }
 
   Telas.mercado = {
-    titulo: 'Seven Painel de Preços',
+    titulo: 'Seven Preços',
     coletar: rodar, // usado pelo estudo de mercado da área Comercial
     pesquisar: function (termo) { preTermo = termo || ''; atual = null; location.hash = '#/mercado/analise'; App.redesenhar(); aviso('Termo do item preenchido. Confira estados e período e clique em Gerar relatório.'); },
     render: function (el, sub) {

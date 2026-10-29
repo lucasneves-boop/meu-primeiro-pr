@@ -126,7 +126,7 @@
   async function anexar(arqs) {
     const out = [];
     for (const f of arqs) {
-      if (T.remoto()) { if (f.size > 750 * 1024) { aviso('"' + f.name + '" passa de 750 KB. No modo equipe, envie arquivos grandes pelo Seven Arquivos e cole o link.', 'erro'); continue; } const url = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(f); }); out.push({ nome: f.name, tipo: f.type, tam: f.size, dados: url }); }
+      if (T.remoto()) { if (f.size > 750 * 1024) { aviso('"' + f.name + '" passa de 750 KB. No modo equipe, envie arquivos grandes pelo Seven Drive e cole o link.', 'erro'); continue; } const url = await new Promise(function (ok) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.readAsDataURL(f); }); out.push({ nome: f.name, tipo: f.type, tam: f.size, dados: url }); }
       else { const aid = 'pl-' + P.id(); await Dados.guardarArquivo(aid, f); out.push({ nome: f.name, tipo: f.type, tam: f.size, arq: aid }); }
     }
     return out;
@@ -462,5 +462,5 @@
   setTimeout(function () { if (Dados.e.pleiadeCfg && Dados.e.pleiadeCfg.eu) { T.iniciar(); atualizarSelo(); } }, 800);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^#\/pleiade/.test(location.hash)) App.redesenhar(); });
 
-  Telas.pleiade = { titulo: 'Seven Chat', render: render, _t: T, enviarAgendadas: enviarAgendadas, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso } };
+  Telas.pleiade = { titulo: 'Seven Chat', render: render, _t: T, enviarAgendadas: enviarAgendadas, api: { eu: eu, membro: membro, membros: membros, arv: arv, cfg: cfg, avatar: avatar, canais: canais, nomeCanal: nomeCanal, aviso: aviso, msgs: msgs, enviar: enviar, vejo: vejo, souMembro: souMembro, prefixo: prefixo, ctx: ctx, hora: hora, totalNaoLidas: totalNaoLidas, atualizarSelo: atualizarSelo, ouvir: function (f) { T.ouvintes.push(f); } } };
 })();

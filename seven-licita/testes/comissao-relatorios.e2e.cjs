@@ -80,7 +80,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     ok(/Propostas enviadas\s*1/.test(txt) && /Impugnações\s*1/.test(txt) && /Oportunidades avaliadas\s*4/.test(txt), 'trabalho da Seven no período');
     ok(/Onde ganhamos/.test(txt) && /Prefeitura de Catalão/.test(txt) && /GO/.test(txt), 'licitações por órgão, portal e UF');
     ok(/Deságio médio nas ganhas\s*20%/.test(txt), 'deságio sobre o estimado');
-    ok(/Agenda dos próximos 30 dias/.test(txt) && /PE 20\/2026/.test(txt) && /UFG/.test(txt), 'agenda com a próxima sessão');
+    ok(/Agenda dos próximos 30 dias/.test(txt) && /Sessão 20\/2026 · UFG/.test(txt) && /Vence: CND Estadual/.test(txt), 'agenda com a próxima sessão e o vencimento (mesma fonte da Seven Agenda)');
     ok(/Vencem em 30 dias\s*1/.test(txt) && /Vencidos\s*1/.test(txt) && /CRF FGTS/.test(txt), 'situação da habilitação');
     await pg.click('[data-perda]'); await pg.waitForSelector('.modal [name=motivo]');
     await pg.selectOption('.modal [name=motivo]', 'preco'); await pg.fill('.modal [name=vencedor]', 'Concorrente X'); await pg.fill('.modal [name=valorVencedor]', '9.000'); await pg.fill('.modal [name=nossoValor]', '10.000'); await pg.click('.modal [type=submit]'); await pg.waitForTimeout(200);

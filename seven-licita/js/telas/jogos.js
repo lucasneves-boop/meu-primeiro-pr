@@ -1,4 +1,4 @@
-/* Seven Jogos: treino cognitivo com tema de licitações (quiz da Lei 14.133, n-back, memória, xadrez, matrizes, cálculo de lances e atenção). */
+/* Seven Games: treino cognitivo com tema de licitações (quiz da Lei 14.133, n-back, memória, xadrez, matrizes, cálculo de lances e atenção). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -25,7 +25,7 @@
   };
   const PECAS = { k: ['♔', '♚', 'Autoridade competente (Rei)'], q: ['♕', '♛', 'Pregoeiro (Dama)'], r: ['♖', '♜', 'Órgão (Torre)'], b: ['♗', '♝', 'Assessoria jurídica (Bispo)'], n: ['♘', '♞', 'Licitante (Cavalo)'], p: ['♙', '♟', 'Item (Peão)'] };
 
-  function cab(jogo, extra) { const g = JOGOS[jogo]; return '<header class="jg-cab"><a class="btn mini fantasma" href="#/jogos">← Seven Jogos</a><div><h2>' + esc(g.ic + ' ' + g.t) + '</h2><small>' + esc(g.hab) + ' · recorde: ' + J.recorde(e().hist, jogo) + '</small></div>' + (extra || '') + '</header>'; }
+  function cab(jogo, extra) { const g = JOGOS[jogo]; return '<header class="jg-cab"><a class="btn mini fantasma" href="#/jogos">← Seven Games</a><div><h2>' + esc(g.ic + ' ' + g.t) + '</h2><small>' + esc(g.hab) + ' · recorde: ' + J.recorde(e().hist, jogo) + '</small></div>' + (extra || '') + '</header>'; }
 
   // ---------- painel ----------
   function telaInicio(el) {
@@ -231,7 +231,7 @@
   }
 
   Telas.jogos = {
-    titulo: 'Seven Jogos',
+    titulo: 'Seven Games',
     render: function (el, sub) {
       limparTimers(); el.onkeydown = null;
       const telas = { quiz: telaQuiz, nback: telaNBack, memoria: telaMemoria, xadrez: telaXadrez, matrizes: telaMatrizes, lances: telaLances, schulte: telaSchulte };

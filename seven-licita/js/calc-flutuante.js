@@ -10,8 +10,6 @@
 
   function fmt(v) { return v == null || !isFinite(v) ? '—' : Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 10 }); }
   function paraCampo(v) { return String(Math.round(v * 1e10) / 1e10).replace('.', ','); }
-  function lerPos() { try { return JSON.parse(localStorage.getItem(CHAVE)) || {}; } catch (e) { return {}; } }
-  function salvarPos(p) { try { localStorage.setItem(CHAVE, JSON.stringify(p)); } catch (e) { /* sem armazenamento */ } }
 
   // lembra o último campo de texto da página (fora da calculadora) para inserir o resultado nele
   document.addEventListener('focusin', function (ev) {
@@ -49,19 +47,12 @@
     alvo.focus(); aviso('Valor ' + fmt(v) + ' inserido no campo.');
   }
 
-  function posicionar(p) {
-    const w = jan.offsetWidth, h = jan.offsetHeight; const x = Math.max(8, Math.min(innerWidth - w - 8, p.x == null ? innerWidth - w - 24 : p.x)); const y = Math.max(8, Math.min(innerHeight - 48, p.y == null ? 84 : p.y));
-    jan.style.left = x + 'px'; jan.style.top = y + 'px'; return { x: x, y: y };
-  }
-  function criar() {
-    jan = document.createElement('section'); jan.id = 'calc-flutuante'; jan.className = 'cf no-print'; jan.setAttribute('role', 'dialog'); jan.setAttribute('aria-label', 'Calculadora');
-    jan.innerHTML = '<header class="cf-barra"><b>🧮 Calculadora</b><span class="cf-dica">arraste para mover</span><button type="button" class="cf-b" data-cf="min" title="Minimizar" aria-label="Minimizar">–</button><a class="cf-b" href="#/calculadora" data-cf="completa" title="Abrir a Seven Calculadora completa" aria-label="Abrir a calculadora completa">⤢</a><button type="button" class="cf-b" data-cf="fechar" title="Fechar (Esc)" aria-label="Fechar">×</button></header>' +
-      '<div class="cf-corpo"><div class="cf-visor"><input class="cf-expr" aria-label="Conta" autocomplete="off" spellcheck="false" inputmode="decimal"><div class="cf-prev" aria-live="polite"></div></div>' +
+  function montar(corpo, api) {
+    jan = api.el;
+    corpo.innerHTML = '<div class="cf-visor"><input class="cf-expr" aria-label="Conta" autocomplete="off" spellcheck="false" inputmode="decimal"><div class="cf-prev" aria-live="polite"></div></div>' +
       '<div class="cf-teclas">' + TECLAS.map(function (t) { return '<button type="button" class="cl-t ' + t[1] + '" data-t="' + esc(t[0]) + '">' + esc(t[0]) + '</button>'; }).join('') + '</div>' +
       '<div class="cf-acoes"><button type="button" class="btn mini primario" data-cf="inserir">↵ Inserir no campo</button><button type="button" class="btn mini" data-cf="copiar">Copiar</button></div>' +
-      '<ul class="cf-hist"></ul></div>';
-    document.body.appendChild(jan);
-    const p = lerPos(); if (p.min) jan.classList.add('min'); posicionar(p);
+      '<ul class="cf-hist"></ul>';
     const inp = jan.querySelector('.cf-expr'); inp.value = est.expr;
     inp.oninput = previa;
     inp.onkeydown = function (ev) { if (ev.key === 'Enter' || ev.key === '=') { ev.preventDefault(); calcular(); } if (ev.key === 'Escape') { ev.preventDefault(); if (inp.value) { inp.value = ''; previa(); } else fechar(); } };
@@ -70,8 +61,6 @@
       const c = ev.target.closest('[data-cf]');
       if (c) {
         const k = c.dataset.cf;
-        if (k === 'fechar') fechar();
-        if (k === 'min') { jan.classList.toggle('min'); const q = lerPos(); q.min = jan.classList.contains('min'); salvarPos(q); c.title = q.min ? 'Expandir' : 'Minimizar'; if (!q.min) inp.focus(); }
         if (k === 'inserir') colocarNoCampo();
         if (k === 'copiar') { const v = valorAtual(); if (v == null) return; const s = paraCampo(v); (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(function () { aviso('Copiado: ' + s); }, function () { aviso(s); }); }
         return;
@@ -85,33 +74,13 @@
     });
     // não roubar o foco do campo da página ao clicar nas teclas (só o visor recebe foco)
     jan.addEventListener('mousedown', function (ev) { if (ev.target.closest('.cl-t, [data-cf=inserir]')) ev.preventDefault(); });
-    // arrastar pela barra
-    const barra = jan.querySelector('.cf-barra');
-    barra.addEventListener('pointerdown', function (ev) {
-      if (ev.target.closest('.cf-b')) return; ev.preventDefault();
-      const r = jan.getBoundingClientRect(), dx = ev.clientX - r.left, dy = ev.clientY - r.top; barra.setPointerCapture(ev.pointerId); jan.classList.add('arrastando');
-      const mover = function (e) { posicionar({ x: e.clientX - dx, y: e.clientY - dy }); };
-      const soltar = function () { barra.removeEventListener('pointermove', mover); barra.removeEventListener('pointerup', soltar); barra.removeEventListener('pointercancel', soltar); jan.classList.remove('arrastando'); const q = lerPos(); const r2 = jan.getBoundingClientRect(); q.x = Math.round(r2.left); q.y = Math.round(r2.top); salvarPos(q); };
-      barra.addEventListener('pointermove', mover); barra.addEventListener('pointerup', soltar); barra.addEventListener('pointercancel', soltar);
-    });
     desenharHist(); previa();
   }
-  function abrir(restaurar) {
-    if (!jan) criar(); jan.hidden = false; const q = lerPos(); q.aberta = true; if (!restaurar) { q.min = false; jan.classList.remove('min'); } salvarPos(q); posicionar(q);
-    marcarBotao(); atualizarInserir(); if (restaurar) return;
-    const inp = jan.querySelector('.cf-expr'); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
-  }
-  function fechar() { if (!jan) return; jan.hidden = true; const q = lerPos(); q.aberta = false; salvarPos(q); marcarBotao(); if (alvo && document.body.contains(alvo)) alvo.focus(); }
-  function alternar() { if (jan && !jan.hidden) fechar(); else abrir(); }
-  function marcarBotao() { const b = document.getElementById('botao-calc'); if (b) b.setAttribute('aria-pressed', String(!!(jan && !jan.hidden))); }
+  const J = Janela.criar({ id: 'calc-flutuante', titulo: '🧮 Calculadora', rotulo: 'Calculadora', rota: '#/calculadora', rotaTitulo: 'Abrir a Seven Calculadora completa', chave: CHAVE, botao: 'botao-calc', tecla: 'KeyC', montar: montar,
+    aoAbrir: function (api, restaurar) { atualizarInserir(); if (restaurar) return; const inp = jan.querySelector('.cf-expr'); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); },
+    aoFechar: function () { if (alvo && document.body.contains(alvo)) alvo.focus(); },
+    aoMinimizar: function (api, min) { if (!min) jan.querySelector('.cf-expr').focus(); } });
+  function fechar() { J.fechar(); }
 
-  document.addEventListener('keydown', function (ev) { if (ev.altKey && !ev.ctrlKey && !ev.metaKey && (ev.key === 'c' || ev.key === 'C' || ev.code === 'KeyC')) { ev.preventDefault(); alternar(); } });
-  window.addEventListener('resize', function () { if (jan && !jan.hidden) posicionar(lerPos()); });
-  function ligar() {
-    const b = document.getElementById('botao-calc'); if (b) b.addEventListener('click', alternar);
-    if (lerPos().aberta) abrir(true); // continua aberta (ou minimizada) depois de recarregar
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ligar); else ligar();
-
-  self.CalcFlutuante = { abrir: function () { abrir(); }, fechar: fechar, alternar: alternar, aberta: function () { return !!(jan && !jan.hidden); } };
+  self.CalcFlutuante = { abrir: function () { J.abrir(); }, fechar: fechar, alternar: J.alternar, aberta: J.aberta };
 })();

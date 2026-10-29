@@ -193,18 +193,8 @@
   }
 
   // ---------- calendário ----------
-  function eventosLicita(de, ate) {
-    if (!e().pref.licita) return []; const out = [];
-    (Dados.e.cotacoes || []).forEach(function (c) {
-      if (c.status === 'cancelada') return;
-      if (c.prazoResposta && c.prazoResposta >= de && c.prazoResposta <= ate && c.status !== 'concluida') out.push({ data: c.prazoResposta, titulo: 'Prazo cotação ' + c.numero, tipo: 'cotacao', link: '#/cotacoes/ver/' + c.id });
-      const s = c.licitacao && c.licitacao.dataSessao; if (s && s.slice(0, 10) >= de && s.slice(0, 10) <= ate) out.push({ data: s.slice(0, 10), hora: s.length > 10 ? s.slice(11, 16) : null, titulo: 'Sessão ' + (c.licitacao.numero || c.titulo), tipo: 'sessao', link: '#/cotacoes/ver/' + c.id });
-    });
-    try { Telas.quadros.todosCartoes().forEach(function (x) { const c = x.cartao; if (!c.prazo || c.concluido || c.arquivado || x.quadro.arquivado) return; const dt = new Date(c.prazo); const s = A.hojeLocal(dt); if (s < de || s > ate) return; const hh = ('0' + dt.getHours()).slice(-2) + ':' + ('0' + dt.getMinutes()).slice(-2); out.push({ data: s, hora: hh === '00:00' ? null : hh, titulo: c.titulo || c.nome || 'Cartão', tipo: 'quadro', link: '#/quadros/' + x.quadro.id }); }); } catch (err) { /* sem quadros */ }
-    // Prazos de todas as outras ferramentas (Seven Proposta, Sniper, Watch, Sign, Docs, Hub, Pay e Sales), sem lançar de novo.
-    if (self.Integracao) Integracao.eventosAgenda(Dados.e, de, ate).forEach(function (x) { out.push(x); });
-    return out;
-  }
+  // compromissos de licitação: a fonte é a Integração (a mesma dos relatórios e da janela da Agenda)
+  function eventosLicita(de, ate, o) { if (!e().pref.licita && !(o && o.todos)) return []; return self.Integracao ? Integracao.eventosAgenda(Dados.e, de, ate, o) : []; }
   function itensPeriodo(de, ate) {
     const out = [];
     e().tarefas.forEach(function (t) { if (t.excluida || !t.data) return; if (t.feita) { if (t.data >= de && t.data <= ate) out.push({ t: t, data: t.data }); return; } A.ocorrencias(t, de, ate).forEach(function (x, i) { out.push({ t: t, data: x, repeticao: i > 0 || x !== t.data }); }); });
@@ -363,6 +353,6 @@
       return telaTarefas(el, param || est.lista);
     },
     _pomo: Pomo, _lembretes: verificarLembretes, // usados pelos testes
-    criar: criar, hoje: function () { const h = hoje(); return e().tarefas.filter(function (t) { return A.naLista(t, 'hoje', h); }).sort(A.comparar); }
+    criar: criar, concluir: concluir, dados: e, rotuloData: rotuloData, nomeLista: nomeLista, eventosLicita: eventosLicita, hoje: function () { const h = hoje(); return e().tarefas.filter(function (t) { return A.naLista(t, 'hoje', h); }).sort(A.comparar); }
   };
 })();

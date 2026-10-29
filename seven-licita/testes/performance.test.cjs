@@ -106,14 +106,10 @@ test('Relatórios: motivos de perda, deságio, concorrentes e distribuição', (
   const di = P.distribuicao(d, '2026-10-01', '2026-10-31'); assert.strictEqual(di.decididas, 2); assert.strictEqual(di.orgao[0].nome, 'Prefeitura de Catalão'); assert.strictEqual(di.uf[0].nome, 'GO'); perto(di.portal[0].taxa, 100);
 });
 
-test('Relatórios: metas proporcionais ao período, agenda e habilitação', () => {
+test('Relatórios: metas proporcionais ao período e habilitação', () => {
   const m = P.metas({ valorGanho: 50000, ganhas: 1 }, { de: '2026-10-01', ate: '2026-12-31', valorGanho: 120000, ganhas: 2 });
   assert.strictEqual(m.length, 2); perto(m[0].alvo, 150000); perto(m[0].pct, 80); assert.strictEqual(m[1].alvo, 3); assert.strictEqual(m[0].atingida, false);
-  const e = estado(); e.quadros[0].cartoes.find(c => c.id === 'dis').prazo = '2026-11-20';
-  e.propostas.push({ id: 'p9', empresaId: 'A', avisoId: 'a9', encerramento: '2026-11-15T10:00:00', orgao: 'UFG', itens: [{ refUnitaria: 10, quantidade: 100 }] });
-  e.disputas = [{ id: 'd9', empresaId: 'A', propostaId: 'p9', sessao: '2026-11-15T10:00:00', titulo: 'PE 9' }];
-  const ag = P.agenda(e, { empresaId: 'A', hoje: '2026-11-10', dias: 30 });
-  assert.strictEqual(ag.length, 2); assert.strictEqual(ag[0].tipo, 'Sessão'); perto(ag[0].valor, 1000); assert.strictEqual(ag[1].tipo, 'Prazo');
+  const e = estado();
   e.documentos = [{ empresaId: 'A', nome: 'CRF', validade: '2026-11-05' }, { empresaId: 'A', nome: 'CND', validade: '2026-11-25' }, { empresaId: 'A', nome: 'Balanço', validade: '2027-05-01' }, { empresaId: 'A', nome: 'Contrato social' }];
   const h = P.habilitacao(e, { empresaId: 'A', hoje: '2026-11-10' });
   assert.strictEqual(h.vencidos.length, 1); assert.strictEqual(h.vencendo[0].nome, 'CND'); assert.strictEqual(h.validos, 1); assert.strictEqual(h.semValidade, 1);

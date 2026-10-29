@@ -8,7 +8,7 @@
   const C = self.Chamada;
   const PEERJS = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.browser.min.js';
   const PREFIXO = 'seven7-';
-  const ASSINATURA = 'Lucas Neves | Seven';
+  const ASS = function () { return self.Pref ? Pref.assinatura() : 'Lucas Neves | Seven'; };
   let ch = null;        // chamada direta em andamento
   let preparado = null; // convidado vindo do Seven Chat
 
@@ -176,7 +176,7 @@
 
   // ---------- convite (sempre com o texto aberto para revisão; quem envia é você) ----------
   function textoConvite(c) {
-    return 'Olá' + (c.convidado ? ', ' + c.convidado.split(' ')[0] : '') + '! Vamos conversar por vídeo agora na Plataforma 7.\n\nEntre pelo link: ' + link(c.cod) + '\nOu abra Seven Reunião → Chamada direta e digite o código: ' + c.cod + '\n\nFunciona no navegador do computador ou do celular; é só permitir a câmera e o microfone.\n\n' + ASSINATURA;
+    return 'Olá' + (c.convidado ? ', ' + c.convidado.split(' ')[0] : '') + '! Vamos conversar por vídeo agora na Plataforma 7.\n\nEntre pelo link: ' + link(c.cod) + '\nOu abra Seven Reunião → Chamada direta e digite o código: ' + c.cod + '\n\nFunciona no navegador do computador ou do celular; é só permitir a câmera e o microfone.\n\n' + ASS();
   }
   async function convidar(via) {
     const c = ch; if (!c) return;

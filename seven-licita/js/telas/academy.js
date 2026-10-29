@@ -1,4 +1,4 @@
-/* Seven Academia: área de membros com cursos, mentorias e dicas (estilo plataforma de cursos). */
+/* Seven Academy: área de membros com cursos, mentorias e dicas (estilo plataforma de cursos). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -67,7 +67,7 @@
     const p = progresso(c); const l = aulas(c);
     const prox = l.find(function (x) { return !(e().progresso[x.a.id] || {}).feita && !bloqueada(x.a); }) || l[0];
     const nota = e().avaliacoes[c.id] || 0;
-    el.innerHTML = '<div class="academy"><p><a href="#/academy">← Seven Academia</a></p>' +
+    el.innerHTML = '<div class="academy"><p><a href="#/academy">← Seven Academy</a></p>' +
       '<header class="ac-banner" style="' + capaEstilo(c) + '">' + (c.capaArquivo ? '<img data-arq="' + c.capaArquivo + '" alt="">' : '') + '<div class="ac-banner-txt"><span class="ac-selo">' + esc(c.categoria || 'Cursos') + '</span><h2>' + esc(c.titulo) + '</h2>' + (c.subtitulo ? '<p>' + esc(c.subtitulo) + '</p>' : '') + '<p class="mini">' + (c.autor ? 'Com ' + esc(c.autor) + ' · ' : '') + p.total + ' aula(s)' + (cargaHoraria(c) ? ' · ' + fmtMin(cargaHoraria(c)) : '') + '</p>' +
       '<div class="grupo-botoes">' + (prox ? '<a class="btn primario" href="#/academy/aula/' + c.id + '/' + prox.a.id + '">▶ ' + (p.feitas ? 'Continuar' : 'Começar') + '</a>' : '') + (p.pct === 100 ? '<button class="btn" data-a="certificado">🎓 Certificado</button>' : '') + (est.gerenciar ? '<button class="btn" data-a="editar">Editar</button><button class="btn" data-a="modulo">+ Módulo</button><button class="btn perigo" data-a="excluir">Excluir</button>' : '') + '</div></div></header>' +
       '<div class="ac-curso"><section>' +
@@ -212,12 +212,12 @@
   function certificado(c) {
     const w = window.open('', '_blank'); if (!w) return aviso('Permita pop-ups para gerar o certificado.', 'erro');
     const base = location.href.replace(/#.*$/, '').replace(/[^/]*$/, ''); const fim = aulas(c).map(function (x) { return (e().progresso[x.a.id] || {}).em; }).filter(Boolean).sort().pop();
-    w.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Certificado — ' + esc(c.titulo) + '</title><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:0}body{margin:0;font-family:Montserrat,Arial,sans-serif}.cert{width:297mm;height:210mm;box-sizing:border-box;padding:22mm;background:#050505;color:#f2f2f2;display:flex;flex-direction:column;justify-content:space-between;border:10mm solid #050505;outline:2px solid #b68d40;outline-offset:-14mm}.topo{display:flex;align-items:center;gap:14px}.topo img{height:60px}.topo b{color:#b68d40;font-size:26px;letter-spacing:.06em}.topo small{display:block;color:#b68d40;letter-spacing:.3em;font-size:10px}h1{font-size:40px;color:#b68d40;margin:0;letter-spacing:.1em}.nome{font-size:34px;font-weight:800;margin:8px 0}p{font-size:16px;line-height:1.6;margin:0}.rodape{display:flex;justify-content:space-between;font-size:13px;color:#bbb}</style></head><body><div class="cert"><div class="topo"><img src="' + base + 'img/seven-marca.png" alt=""><div><b>SEVEN</b><small>ACADEMY</small></div></div><div><h1>CERTIFICADO</h1><p>Certificamos que</p><div class="nome">' + esc(eu()) + '</div><p>concluiu <b>' + esc(c.titulo) + '</b>' + (cargaHoraria(c) ? ', com carga horária de ' + fmtMin(cargaHoraria(c)) : '') + ', na Seven Academia.</p></div><div class="rodape"><span>Concluído em ' + (fim ? new Date(fim).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')) + '</span><span>' + esc(c.autor || 'Seven · BPO de Licitações') + '</span></div></div><script>setTimeout(function(){print()},700)<\/script></body></html>');
+    w.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Certificado — ' + esc(c.titulo) + '</title><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:0}body{margin:0;font-family:Montserrat,Arial,sans-serif}.cert{width:297mm;height:210mm;box-sizing:border-box;padding:22mm;background:#050505;color:#f2f2f2;display:flex;flex-direction:column;justify-content:space-between;border:10mm solid #050505;outline:2px solid #b68d40;outline-offset:-14mm}.topo{display:flex;align-items:center;gap:14px}.topo img{height:60px}.topo b{color:#b68d40;font-size:26px;letter-spacing:.06em}.topo small{display:block;color:#b68d40;letter-spacing:.3em;font-size:10px}h1{font-size:40px;color:#b68d40;margin:0;letter-spacing:.1em}.nome{font-size:34px;font-weight:800;margin:8px 0}p{font-size:16px;line-height:1.6;margin:0}.rodape{display:flex;justify-content:space-between;font-size:13px;color:#bbb}</style></head><body><div class="cert"><div class="topo"><img src="' + base + 'img/seven-marca.png" alt=""><div><b>SEVEN</b><small>ACADEMY</small></div></div><div><h1>CERTIFICADO</h1><p>Certificamos que</p><div class="nome">' + esc(eu()) + '</div><p>concluiu <b>' + esc(c.titulo) + '</b>' + (cargaHoraria(c) ? ', com carga horária de ' + fmtMin(cargaHoraria(c)) : '') + ', na Seven Academy.</p></div><div class="rodape"><span>Concluído em ' + (fim ? new Date(fim).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')) + '</span><span>' + esc(c.autor || 'Seven · BPO de Licitações') + '</span></div></div><script>setTimeout(function(){print()},700)<\/script></body></html>');
     w.document.close();
   }
 
   Telas.academy = {
-    titulo: 'Seven Academia',
+    titulo: 'Seven Academy',
     render: function (el, sub, param) {
       el.onclick = null;
       if (sub === 'curso') telaCurso(el, param);

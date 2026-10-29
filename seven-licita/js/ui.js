@@ -30,7 +30,7 @@
     el.setAttribute('role', 'status');
     el.textContent = texto;
     box.appendChild(el);
-    setTimeout(function () { el.classList.add('sai'); setTimeout(function () { el.remove(); }, 400); }, tipo === 'erro' ? 7000 : 3500);
+    setTimeout(function () { el.classList.add('sai'); setTimeout(function () { el.remove(); }, 400); }, tipo === 'erro' ? 7000 : (self.Pref ? Math.max(2, Number(Pref.obter().avisosSegundos) || 4) * 1000 : 3500));
   }
 
   // Modal: devolve Promise com o FormData (ou null se cancelado).

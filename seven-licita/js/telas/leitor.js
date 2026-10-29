@@ -1,4 +1,4 @@
-/* Seven Leitor (leitor no estilo Kindle): biblioteca, leitura paginada de EPUB, PDF, Word e texto, destaques, notas e marcadores. */
+/* Seven Leitura (leitor no estilo Kindle): biblioteca, leitura paginada de EPUB, PDF, Word e texto, destaques, notas e marcadores. */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -71,14 +71,14 @@
     });
     lista.sort(function (a, b) { if (est.ordem === 'titulo') return a.titulo.localeCompare(b.titulo, 'pt-BR'); if (est.ordem === 'autor') return (a.autor || '~').localeCompare(b.autor || '~', 'pt-BR'); if (est.ordem === 'progresso') return (b.progresso || 0) - (a.progresso || 0); return new Date(b.abertoEm || b.adicionadoEm) - new Date(a.abertoEm || a.adicionadoEm); });
     const ultimo = L.livros.filter(function (l) { return l.abertoEm; }).sort(function (a, b) { return new Date(b.abertoEm) - new Date(a.abertoEm); })[0];
-    el.innerHTML = '<div class="kd-bib"><header class="kd-cab"><h1>Seven Leitor</h1><p class="mudo">Leia editais, leis, atas e livros com conforto. Destaque prazos e exigências por cor, anote, busque no texto, ouça em voz alta e exporte suas notas.</p></header>' +
+    el.innerHTML = '<div class="kd-bib"><header class="kd-cab"><h1>Seven Leitura</h1><p class="mudo">Leia editais, leis, atas e livros com conforto. Destaque prazos e exigências por cor, anote, busque no texto, ouça em voz alta e exporte suas notas.</p></header>' +
       (ultimo ? '<section class="kd-continuar" data-abrir="' + ultimo.id + '"><div class="kd-capa mini" style="background:' + corCapa(ultimo.titulo) + '"><img data-capa="' + ultimo.id + '" alt=""><span>' + esc(ultimo.titulo) + '</span></div><div><small>Continuar lendo</small><b>' + esc(ultimo.titulo) + '</b><span class="mudo">' + esc(ultimo.autor || '') + '</span><div class="barra"><i style="width:' + Math.round((ultimo.progresso || 0) * 100) + '%"></i></div><small>' + Math.round((ultimo.progresso || 0) * 100) + '% lido</small></div></section>' : '') +
       '<div class="kd-barra"><div class="pilulas">' + [['', 'Todos'], ['livros', 'Livros'], ['documentos', 'Documentos'], ['lendo', 'Lendo'], ['lidos', 'Lidos']].concat(L.colecoes.map(function (c) { return ['col:' + c, '▤ ' + c]; })).map(function (x) { return '<button class="pilula ' + (est.filtro === x[0] ? 'ativa' : '') + '" data-filtro="' + esc(x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '<button class="pilula" data-a="colecao">＋ Coleção</button></div>' +
       '<div class="grupo-botoes"><input type="search" id="kd-busca" placeholder="Buscar na biblioteca" value="' + esc(est.busca) + '"><select id="kd-ordem">' + opcoes([{ v: 'recentes', t: 'Recentes' }, { v: 'titulo', t: 'Título' }, { v: 'autor', t: 'Autor' }, { v: 'progresso', t: 'Progresso' }], est.ordem) + '</select><button class="btn" data-a="modo">' + (est.modo === 'grade' ? '☰' : '▦') + '</button><button class="btn primario" data-a="adicionar">+ Adicionar</button></div></div>' +
       (lista.length ? (est.modo === 'grade' ? '<div class="kd-grade">' + lista.map(function (l) {
         return '<article class="kd-item" data-abrir="' + l.id + '" tabindex="0"><div class="kd-capa" style="background:' + corCapa(l.titulo) + '"><img data-capa="' + l.id + '" alt=""><span>' + esc(l.titulo) + '</span>' + (!l.abertoEm ? '<em class="kd-novo">NOVO</em>' : '') + '<i class="kd-fmt">' + esc(l.formato.toUpperCase()) + '</i></div><b>' + esc(l.titulo) + '</b><small>' + esc(l.autor || ' ') + '</small><div class="kd-prog"><div class="barra"><i style="width:' + Math.round((l.progresso || 0) * 100) + '%"></i></div><span>' + (l.terminado ? 'Lido' : Math.round((l.progresso || 0) * 100) + '%') + '</span><button class="icone" data-menu="' + l.id + '" aria-label="Opções">⋯</button></div></article>';
       }).join('') + '</div>' : '<table class="tabela"><thead><tr><th>Título</th><th>Autor</th><th>Formato</th><th class="n">Progresso</th><th>Último acesso</th><th></th></tr></thead><tbody>' + lista.map(function (l) { return '<tr class="clicavel" data-abrir="' + l.id + '"><td><b>' + esc(l.titulo) + '</b></td><td>' + esc(l.autor || '') + '</td><td>' + esc(l.formato.toUpperCase()) + '</td><td class="n">' + Math.round((l.progresso || 0) * 100) + '%</td><td>' + (l.abertoEm ? dataHora(l.abertoEm) : '—') + '</td><td><button class="icone" data-menu="' + l.id + '" aria-label="Opções">⋯</button></td></tr>'; }).join('') + '</tbody></table>')
-        : UI.vazio(L.livros.length ? 'Nada encontrado' : 'Sua biblioteca está vazia', L.livros.length ? 'Tente outro filtro.' : 'Adicione livros e documentos: EPUB, PDF, Word (.docx), TXT, Markdown ou HTML. Também dá para arrastar os arquivos para cá ou abrir arquivos do Seven Arquivos.', !L.livros.length ? '<button class="btn primario" data-a="adicionar">+ Adicionar</button>' : '')) +
+        : UI.vazio(L.livros.length ? 'Nada encontrado' : 'Sua biblioteca está vazia', L.livros.length ? 'Tente outro filtro.' : 'Adicione livros e documentos: EPUB, PDF, Word (.docx), TXT, Markdown ou HTML. Também dá para arrastar os arquivos para cá ou abrir arquivos do Seven Drive.', !L.livros.length ? '<button class="btn primario" data-a="adicionar">+ Adicionar</button>' : '')) +
       '<input type="file" id="kd-up" multiple hidden accept=".epub,.pdf,.docx,.txt,.md,.markdown,.html,.htm"></div>';
     el.querySelectorAll('img[data-capa]').forEach(async function (img) { const u = await urlCapa(livro(img.dataset.capa)); if (u) { img.src = u; img.parentNode.classList.add('com-img'); } else img.remove(); });
     el.querySelector('#kd-up').onchange = function () { adicionar(Array.prototype.slice.call(this.files)); };
@@ -113,7 +113,7 @@
   }
 
   function exportarNotas(l) {
-    const linhas = ['# ' + l.titulo + (l.autor ? ' — ' + l.autor : ''), '', 'Notas e destaques exportados do Seven Leitor em ' + new Date().toLocaleString('pt-BR'), ''];
+    const linhas = ['# ' + l.titulo + (l.autor ? ' — ' + l.autor : ''), '', 'Notas e destaques exportados do Seven Leitura em ' + new Date().toLocaleString('pt-BR'), ''];
     l.destaques.slice().sort(function (a, b) { return (a.pct || 0) - (b.pct || 0); }).forEach(function (d) { linhas.push('> ' + d.texto.replace(/\n+/g, ' ')); linhas.push('— ' + (d.local || '') + ' · destaque ' + d.cor + (d.nota ? '\n\n**Nota:** ' + d.nota : '')); linhas.push(''); });
     if (l.marcadores.length) { linhas.push('## Marcadores'); l.marcadores.forEach(function (m) { linhas.push('- ' + (m.rotulo || '') + ' (' + Math.round((m.pct || 0) * 100) + '%)'); }); }
     UI.baixar(Nucleo.normalizar(l.titulo).replace(/ /g, '-').slice(0, 60) + '-notas.md', linhas.join('\n'), 'text/markdown;charset=utf-8');
@@ -495,7 +495,7 @@
   }
 
   Telas.leitor = {
-    titulo: 'Seven Leitor',
+    titulo: 'Seven Leitura',
     render: function (el, sub, param) {
       el.onclick = null;
       if (sub === 'ler') { biblioteca(el); abrir(param); return; }

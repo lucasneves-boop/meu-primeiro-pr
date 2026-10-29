@@ -4,8 +4,8 @@
   const { $, $$, esc } = UI;
 
   function rotaAtual() {
-    const partes = (location.hash.replace(/^#\/?/, '') || 'painel').split('/');
-    return { tela: partes[0] || 'painel', sub: partes[1] || '', param: decodeURIComponent(partes.slice(2).join('/')) };
+    const inicial = self.Pref ? Pref.telaInicial() : 'painel'; const partes = (location.hash.replace(/^#\/?/, '') || inicial).split('/');
+    return { tela: partes[0] || inicial, sub: partes[1] || '', param: decodeURIComponent(partes.slice(2).join('/')) };
   }
 
   function preencherEmpresas() {
@@ -43,7 +43,7 @@
     contratos: 'Envie contratos e termos para assinatura eletrônica, acompanhe quem já assinou e baixe o PDF com o registro das assinaturas.',
     quadros: 'Quadros no estilo Trello para gerir cada licitação, da oportunidade ao pagamento, com checklists, prazos e a execução do contrato.',
     financas: 'Controle financeiro pessoal, da empresa e de clientes: contas, cartões, fluxo de caixa, contas a pagar e a receber e conciliação.',
-    nuvem: 'Guarde arquivos e pastas da Seven e dos clientes, e abra direto no Seven Leitor, no Seven Cadernos ou no Seven Música.',
+    nuvem: 'Guarde arquivos e pastas da Seven e dos clientes, e abra direto no Seven Leitura, no Seven Cadernos ou no Seven Music.',
     mercado: 'Pesquise o mercado no PNCP: valores homologados, órgãos compradores, vencedores, preço por item e desconto sobre a referência.',
     capag: 'Nota de capacidade de pagamento dos municípios (CAPAG do Tesouro Nacional) para saber quem costuma pagar em dia antes de disputar.',
     academy: 'Cursos, mentorias e dicas da Seven para a equipe e os clientes aprenderem licitação na prática.',
@@ -52,7 +52,7 @@
     calculadora: 'Calculadora científica e dezenas de cálculos do dia a dia, incluindo o custo de viagem com combustível, pedágio e diárias.',
     musicas: 'Ouça suas músicas e playlists enquanto trabalha, com equalizador, velocidade e timer de sono.',
     empresas: 'Cadastre os clientes atendidos (CNPJs). O cliente ativo filtra propostas, documentos, disputas e monitoramento.',
-    config: 'Ajuste a aparência, o responsável, o backup e as integrações da plataforma.'
+    config: 'Ajuste a aparência (tema, cor, tamanho, espaçamento), o menu e a tela inicial, as janelas flutuantes e os atalhos, a assinatura das mensagens, os avisos e o backup.'
   };
   function descricao(r, tela) {
     const box = $('#desc-tela'); if (!box) return;
@@ -114,7 +114,7 @@
     return r;
   }
   $('#recolher-menu').addEventListener('click', function () { menuRecolhido(!document.documentElement.classList.contains('lateral-recolhida')); });
-  menuRecolhido();
+  menuRecolhido(self.Pref && Pref.obter().menuRecolhidoAoAbrir ? true : undefined);
 
   $('#abrir-menu').addEventListener('click', function () {
     const aberto = document.body.classList.toggle('menu-aberto');

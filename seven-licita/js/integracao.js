@@ -163,25 +163,31 @@
   }
 
   // Prazos de todas as ferramentas para a Seven Agenda (somente leitura, com link para a origem).
-  function eventosAgenda(e, de, ate) {
-    const out = [];
+  // Fonte única dos compromissos de licitação (Seven Agenda, janela da Agenda e Seven Relatórios).
+  // o: { empresaId } filtra pelos compromissos daquele cliente.
+  function eventosAgenda(e, de, ate, o) {
+    o = o || {}; const out = []; let emp = null;
     const dentro = function (d) { d = String(d || '').slice(0, 10); return d && d >= de && d <= ate; };
     const hora = function (d) { d = String(d || ''); return d.length > 10 && d.slice(11, 16) !== '00:00' ? d.slice(11, 16) : null; };
-    const add = function (d, titulo, tipo, link) { if (dentro(d)) out.push({ data: String(d).slice(0, 10), hora: hora(d), titulo: titulo, tipo: tipo, link: link }); };
-    lista(e.propostas).forEach(function (p) { const cart = cartaoDaProposta(e, p); if (cart && cart.c.prazo && String(cart.c.prazo).slice(0, 10) === String(p.encerramento).slice(0, 10)) return; if (!p.resultado && p.encerramento) add(p.encerramento, 'Sessão ' + (p.numero || '') + ' · ' + (p.orgao || ''), 'sessao', '#/cadastrar/proposta/' + p.id); });
-    lista(e.disputas).forEach(function (d) { const p = proposta(e, d.propostaId); if (!d.resultado && d.sessao && (!p || p.encerramento !== d.sessao)) add(d.sessao, 'Disputa ' + d.titulo, 'sessao', '#/disputar/disputa/' + d.id); });
-    lista(e.monitor).forEach(function (m) { lista(m.prazos).forEach(function (pz) { if (!pz.feito && pz.ate) add(pz.ate, (pz.tipo || 'Prazo') + ' · ' + m.titulo, 'prazo', '#/monitorar/licitacao/' + m.id); }); });
-    lista(e.contratos).forEach(function (c) { if (c.situacao === 'enviado' && c.prazo) add(c.prazo, 'Assinaturas: ' + c.titulo, 'contrato', '#/contratos/ver/' + c.id); });
-    lista(e.documentos).forEach(function (d) { if (d.validade) add(d.validade, 'Vence: ' + d.nome, 'documento', '#/habilitacao'); });
+    const add = function (d, titulo, tipo, link) { if (dentro(d) && (!o.empresaId || emp === o.empresaId)) out.push({ data: String(d).slice(0, 10), hora: hora(d), titulo: titulo, tipo: tipo, link: link, empresaId: emp }); };
+    const de_ = function (x) { emp = (x && x.empresaId) || null; return x; };
+    lista(e.propostas).forEach(function (p) { de_(p); const cart = cartaoDaProposta(e, p); if (cart && cart.c.prazo && String(cart.c.prazo).slice(0, 10) === String(p.encerramento).slice(0, 10)) return; if (!p.resultado && p.encerramento) add(p.encerramento, 'Sessão ' + (p.numero || '') + ' · ' + (p.orgao || ''), 'sessao', '#/cadastrar/proposta/' + p.id); });
+    lista(e.disputas).forEach(function (d) { de_(d); const p = proposta(e, d.propostaId); if (!d.resultado && d.sessao && (!p || p.encerramento !== d.sessao)) add(d.sessao, 'Disputa ' + d.titulo, 'sessao', '#/disputar/disputa/' + d.id); });
+    lista(e.monitor).forEach(function (m) { de_(m); lista(m.prazos).forEach(function (pz) { if (!pz.feito && pz.ate) add(pz.ate, (pz.tipo || 'Prazo') + ' · ' + m.titulo, 'prazo', '#/monitorar/licitacao/' + m.id); }); });
+    lista(e.contratos).forEach(function (c) { de_(c); if (c.situacao === 'enviado' && c.prazo) add(c.prazo, 'Assinaturas: ' + c.titulo, 'contrato', '#/contratos/ver/' + c.id); });
+    lista(e.documentos).forEach(function (d) { de_(d); if (d.validade) add(d.validade, 'Vence: ' + d.nome, 'documento', '#/habilitacao'); });
+    // cotações (prazo de resposta e sessão) e prazos dos cartões do Seven Processo
+    lista(e.cotacoes).forEach(function (c) { de_(c); if (c.status === 'cancelada') return; if (c.prazoResposta && c.status !== 'concluida') add(c.prazoResposta, 'Prazo cotação ' + c.numero, 'cotacao', '#/cotacoes/ver/' + c.id); const s = c.licitacao && c.licitacao.dataSessao; if (s) add(s, 'Sessão ' + (c.licitacao.numero || c.titulo), 'sessao', '#/cotacoes/ver/' + c.id); });
+    lista(e.quadros).forEach(function (q) { if (q.arquivado) return; lista(q.cartoes).forEach(function (c) { de_(c); if (!c.prazo || c.concluido || c.arquivado) return; if (/^\d{4}-\d{2}-\d{2}$/.test(c.prazo)) { add(c.prazo, c.titulo || c.nome || 'Cartão', 'quadro', '#/quadros/' + q.id); return; } const dt = new Date(c.prazo); if (isNaN(dt)) return; const p2 = function (n) { return ('0' + n).slice(-2); }; const loc = dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()); const hh = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); add(loc + (hh === '00:00' ? '' : 'T' + hh), c.titulo || c.nome || 'Cartão', 'quadro', '#/quadros/' + q.id); }); });
     cartoes(e).forEach(function (xc) {
-      const x = xc.c.execucao; if (!x || xc.c.arquivado) return;
+      de_(xc.c); const x = xc.c.execucao; if (!x || xc.c.arquivado) return;
       lista(x.notas).forEach(function (en) { const pago = lista(x.pagamentos).filter(function (pg) { return pg.notaId === en.id; }).reduce(function (s, pg) { return s + (Number(pg.valor) || 0); }, 0); if (en.vencimento && pago + 0.01 < (Number(en.valor) || 0)) add(en.vencimento, 'Pagamento NF ' + (en.numero || '') + ' · ' + xc.c.titulo, 'pagamento', '#/quadros/' + xc.q.id + '/' + xc.c.id); });
       if (x.vigenciaFim) add(x.vigenciaFim, 'Fim da vigência · ' + xc.c.titulo, 'contrato', '#/quadros/' + xc.q.id + '/' + xc.c.id);
     });
     // Contas do Seven Financeiro (as NFs já ligadas a um contrato aparecem pelo pagamento da Execução, sem repetir).
     const nfNaExecucao = {}; cartoes(e).forEach(function (xc) { lista(xc.c.execucao && xc.c.execucao.notas).forEach(function (en) { if (en.nfId) nfNaExecucao['nota:' + en.nfId] = 1; }); });
-    if (e.financas) lista(e.financas.lancamentos).forEach(function (l) { if (!l.pago && l.data && !nfNaExecucao[l.origem]) add(l.data, (l.tipo === 'despesa' ? 'Pagar: ' : 'Receber: ') + l.descricao, 'financeiro', '#/financas'); });
-    lista(e.comercial && e.comercial.atividades).forEach(function (a) { if (!a.feita && a.data) add(a.data, a.titulo, 'comercial', '#/comercial'); });
+    if (e.financas) lista(e.financas.lancamentos).forEach(function (l) { de_(l); if (!l.pago && l.data && !nfNaExecucao[l.origem]) add(l.data, (l.tipo === 'despesa' ? 'Pagar: ' : 'Receber: ') + l.descricao, 'financeiro', '#/financas'); });
+    lista(e.comercial && e.comercial.atividades).forEach(function (a) { de_(null); if (!a.feita && a.data) add(a.data, a.titulo, 'comercial', '#/comercial'); });
     return out;
   }
 

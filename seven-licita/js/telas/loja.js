@@ -13,7 +13,7 @@
     const d = Dados.e; d.loja = d.loja || {}; const l = d.loja;
     if (!l.produtos) l.produtos = L.CATALOGO.map(function (p, i) { return Object.assign({ preco: null, precoDe: null, ativo: true, destaque: i < 4, prazo: '', criadoEm: '2026-10-21' }, JSON.parse(JSON.stringify(p))); });
     ['cupons', 'carrinho', 'desejos', 'pedidos', 'avaliacoes', 'perguntas', 'vistos'].forEach(function (k) { l[k] = l[k] || []; });
-    l.cfg = Object.assign({ nome: 'Seven Loja', whatsapp: '(61) 98347-2232', parcelasMax: 12, parcelaMin: 100, assinatura: 'Lucas Neves | Seven', pix: '' }, l.cfg || {});
+    l.cfg = Object.assign({ nome: 'Seven Loja', whatsapp: '(61) 98347-2232', parcelasMax: 12, parcelaMin: 100, assinatura: Pref.assinatura(), pix: '' }, l.cfg || {});
     if (l.cfg.nome === 'Loja Seven' || l.cfg.nome === 'Seven Shop') l.cfg.nome = 'Seven Loja'; // nomes antigos da loja
     return l;
   }

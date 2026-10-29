@@ -70,7 +70,10 @@
     };
     el.onkeydown = function (ev) { const card = ev.target.closest('.an-card'); if (card && ev.key === 'Enter') location.hash = '#/anotacoes/nota/' + card.dataset.id; };
   }
-  function novaNota(pastaId) { const n = { id: Dados.id('an'), titulo: '', html: '', tracos: [], fundo: 'liso', cor: '', pasta: pastaId || null, criadaEm: Date.now(), editadaEm: Date.now() }; e().notas.push(n); Dados.salvar(); return n; }
+  // única forma de criar uma anotação (tela, janela flutuante, Seven IA, Seven Cadernos, oportunidades)
+  function criar(o) { o = o || {}; const n = { id: Dados.id('an'), titulo: o.titulo || '', html: o.html != null ? o.html : (o.texto ? textoParaHtml(o.texto) : ''), tracos: [], fundo: 'liso', cor: o.cor || '', pasta: o.pasta || null, origem: o.origem || null, criadaEm: Date.now(), editadaEm: Date.now() }; e().notas.push(n); Dados.salvar(); return n; }
+  function textoParaHtml(t) { return String(t).split(/\n/).map(function (l) { return '<p>' + (esc(l) || '<br>') + '</p>'; }).join(''); }
+  function novaNota(pastaId) { return criar({ pasta: pastaId }); }
   async function apagarDeVez(n) { for (const m of String(n.html || '').matchAll(/data-arq="([^"]+)"/g)) await Dados.apagarArquivo(m[1]); e().notas = e().notas.filter(function (x) { return x !== n; }); Dados.salvar(); }
   async function editarPasta(p) {
     const r = await modal({ titulo: p ? 'Editar pasta' : 'Nova pasta', corpo: campo('Nome', '<input name="nome" required value="' + esc(p ? p.nome : '') + '">') + campo('Cor', '<input type="color" name="cor" value="' + esc(p && p.cor || '#b68d40') + '">') + (p ? '<label class="check"><input type="checkbox" name="apagar"> Apagar pasta (as anotações voltam para “Todas”)</label>' : '') });
@@ -274,7 +277,7 @@
   window.addEventListener('hashchange', function () { if (!/^#\/anotacoes\/nota\//.test(location.hash)) { est.notaAtual = null; Object.keys(est.abertas).forEach(function (k) { delete est.abertas[k]; delete est.senhas[k]; }); } });
 
   Telas.anotacoes = {
-    titulo: 'Seven Notas',
+    titulo: 'Seven Not', criar: criar, dados: e, textoParaHtml: textoParaHtml, quando: quando,
     render: function (el, sub, param) { e(); if (sub === 'nota') return telaNota(el, param); telaLista(el, sub, param); }
   };
 })();

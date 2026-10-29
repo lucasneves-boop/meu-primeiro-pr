@@ -118,7 +118,7 @@
   }
 
   Telas.pecas = {
-    titulo: 'Seven Recurso',
+    titulo: 'Seven Jur',
     render: function (el, sub, param) {
       el.onclick = null;
       if (sub === 'categoria') { filtro.cat = param || ''; telaLista(el); }

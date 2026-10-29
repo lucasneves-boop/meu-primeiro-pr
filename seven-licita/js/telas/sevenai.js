@@ -75,10 +75,12 @@
 
   // ---------- envio ----------
   function quandoRedesenhar(id) { return location.hash === '#/ia/c/' + id; }
+  // a janela flutuante da Seven IA acompanha a mesma conversa
+  function avisarJanela() { document.dispatchEvent(new CustomEvent('ia:mudou')); }
   async function enviar(conv) {
     const pref = e().pref;
     const env = { id: conv.id, texto: '', raciocinio: '', status: 'Conectando…', stream: null, parado: false, fallback: false };
-    mem.enviando = env; desenharConversa();
+    mem.enviando = env; desenharConversa(); avisarJanela();
     let Anthropic = null; let acumulado = []; let uso = null; let parar = null;
     try {
       Anthropic = await sdk();
@@ -126,24 +128,26 @@
     await gravarMsgs(conv.id, mem.msgs.filter(function (m) { return !m.erro; }));
     Dados.salvar();
     if (quandoRedesenhar(conv.id)) desenharConversa();
+    avisarJanela();
   }
 
-  async function novaPergunta(texto, projId) {
+  async function novaPergunta(texto, projId, opc) {
+    opc = opc || {};
     if (mem.enviando) return;
     if (!chave()) { await configurar(true); if (!chave()) return; }
     const anexos = mem.anexos.slice();
     if (!texto.trim() && !anexos.length) return;
     let conv = mem.id && conversa(mem.id);
-    if (!conv || location.hash.indexOf('#/ia/c/') !== 0) {
+    if (!conv || (!opc.janela && location.hash.indexOf('#/ia/c/') !== 0)) {
       conv = { id: Dados.id('ia'), titulo: S.tituloDe(texto || (anexos[0] && anexos[0].nome)), criadaEm: Date.now(), editadaEm: Date.now(), modelo: e().pref.modelo, projeto: projId || null, custo: 0 };
       e().conversas.push(conv); Dados.salvar(); mem.id = conv.id; mem.msgs = []; mem.carregando = false;
     }
     mem.msgs = mem.msgs.filter(function (m) { return !m.erro; });
     mem.msgs.push(S.mensagemUsuario(texto, anexos)); mem.msgs[mem.msgs.length - 1].em = Date.now();
     if (S.tamanhoMensagens(mem.msgs) > S.LIMITE_BYTES) { mem.msgs.pop(); aviso('A conversa passou do tamanho que a API aceita (32 MB). Remova anexos ou comece uma conversa nova.', 'erro'); return; }
-    mem.anexos = []; mem.rascunho = ''; const ta = document.querySelector('.ia-comp textarea'); if (ta) ta.value = '';
+    mem.anexos = []; mem.rascunho = ''; const ta = document.querySelector('#conteudo .ia-comp textarea'); if (ta && !opc.janela) ta.value = '';
     await gravarMsgs(conv.id, mem.msgs);
-    if (location.hash !== '#/ia/c/' + conv.id) { location.hash = '#/ia/c/' + conv.id; }
+    if (!opc.janela && location.hash !== '#/ia/c/' + conv.id) { location.hash = '#/ia/c/' + conv.id; }
     enviar(conv);
   }
 
@@ -164,7 +168,7 @@
   function chipsHTML() {
     return mem.anexos.map(function (a, i) { return '<span class="ia-chip"><span>' + (a.tipo === 'imagem' ? '🖼' : a.tipo === 'pdf' ? '📕' : '📄') + '</span><b>' + esc(a.nome) + '</b><small>' + Math.max(1, Math.round((a.tam || 0) / 1024)) + ' KB</small><button type="button" data-ia="tirar-anexo" data-i="' + i + '" aria-label="Remover anexo ' + esc(a.nome) + '">×</button></span>'; }).join('');
   }
-  function desenharChips() { const c = document.querySelector('.ia-chips'); if (c) c.innerHTML = chipsHTML(); }
+  function desenharChips() { const c = document.querySelector('#conteudo .ia-chips'); if (c) c.innerHTML = chipsHTML(); }
 
   // ---------- compositor ----------
   function compositorHTML(conv) {
@@ -208,7 +212,7 @@
       '<div class="ia-acoes">' +
       '<button type="button" class="ia-acao" data-ia="copiar" data-i="' + i + '" title="Copiar">⧉ Copiar</button>' +
       (ultimo && !mem.enviando ? '<button type="button" class="ia-acao" data-ia="regenerar" title="Gerar outra resposta">↻ Refazer</button>' : '') +
-      '<button type="button" class="ia-acao" data-ia="nota" data-i="' + i + '" title="Salvar no Seven Notas">🗒 Salvar nota</button>' +
+      '<button type="button" class="ia-acao" data-ia="nota" data-i="' + i + '" title="Salvar no Seven Not">🗒 Salvar nota</button>' +
       '<span class="ia-meta">' + esc(S.modelo(m.modelo).nome) + (m.uso ? ' · ' + S.dolar(S.custo(m.uso, m.modelo)) : '') + '</span></div>' +
       '</div></div>';
   }
@@ -223,8 +227,8 @@
   function atualizarAoVivo() {
     if (quadro) return;
     quadro = requestAnimationFrame(function () {
-      quadro = 0; const el = document.querySelector('.ia-msg.ao-vivo'); if (!el || !mem.enviando) return;
-      const rol = document.querySelector('.ia-rolagem'); const noFim = rol && rol.scrollHeight - rol.scrollTop - rol.clientHeight < 80;
+      quadro = 0; avisarJanela(); const el = document.querySelector('#conteudo .ia-msg.ao-vivo'); if (!el || !mem.enviando) return;
+      const rol = document.querySelector('#conteudo .ia-rolagem'); const noFim = rol && rol.scrollHeight - rol.scrollTop - rol.clientHeight < 80;
       el.outerHTML = aoVivoHTML();
       if (rol && noFim) rol.scrollTop = rol.scrollHeight;
     });
@@ -398,20 +402,23 @@
       await gravarMsgs(conv.id, mem.msgs); enviar(conv);
     };
   }
-  function redesenharMantendo() { if (mem.id && quandoRedesenhar(mem.id)) desenharConversa(); else { const t = document.querySelector('.ia-comp textarea'); if (t) mem.rascunho = t.value; App.redesenhar(); } }
+  function redesenharMantendo() { if (mem.id && quandoRedesenhar(mem.id)) desenharConversa(); else { const t = document.querySelector('#conteudo .ia-comp textarea'); if (t) mem.rascunho = t.value; App.redesenhar(); } }
   function copiar(texto, b) {
     const ok = function () { const o = b.textContent; b.textContent = '✓ Copiado'; setTimeout(function () { b.textContent = o; }, 1500); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(ok, function () { aviso('Não consegui copiar.', 'erro'); }); else aviso('Copiar não é permitido neste navegador.', 'erro');
   }
   function salvarNota(m, conv) {
-    const d = Dados.e; d.anotacoes = d.anotacoes || {}; d.anotacoes.notas = d.anotacoes.notas || [];
     const html = S.markdown(S.textoDe(m.content)).replace(/<div class="ia-codigo-topo">.*?<\/div>/g, '') + '<p><small>Seven IA · ' + esc(conv ? conv.titulo : '') + '</small></p>';
-    d.anotacoes.notas.push({ id: Dados.id('an'), titulo: conv ? conv.titulo : 'Seven IA', html: html, tracos: [], fundo: 'liso', cor: '', pasta: null, criadaEm: Date.now(), editadaEm: Date.now() });
-    Dados.salvar(); aviso('Salvo no Seven Notas.');
+    Telas.anotacoes.criar({ titulo: conv ? conv.titulo : 'Seven IA', html: html, origem: conv ? { tipo: 'ia', id: conv.id } : null }); aviso('Salvo no Seven Not.');
   }
 
   Telas.ia = {
     titulo: 'Seven IA',
+    // usado pela janela flutuante: o mesmo estado, as mesmas conversas e o mesmo envio da tela completa
+    api: { mem: mem, dados: e, conversa: conversa, abrirConversa: abrirConversa, mensagemHTML: mensagemHTML, aoVivoHTML: aoVivoHTML, chave: chave, configurar: configurar, salvarNota: salvarNota, copiar: copiar,
+      perguntar: function (texto) { return novaPergunta(texto, null, { janela: true }); },
+      nova: function () { if (mem.enviando) return; mem.id = null; mem.msgs = []; mem.editando = -1; avisarJanela(); },
+      parar: function () { if (mem.enviando && mem.enviando.stream) { mem.enviando.parado = true; mem.enviando.stream.abort(); } } },
     // Abre uma conversa nova com a pergunta já escrita (o usuário revisa, anexa o edital e envia).
     perguntar: function (texto) { mem.id = null; mem.msgs = []; mem.anexos = []; mem.rascunho = texto || ''; location.hash = '#/ia'; App.redesenhar(); },
     render: function (el, sub, param) {

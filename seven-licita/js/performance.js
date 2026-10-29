@@ -225,19 +225,6 @@
     const k = fr();
     return METAS.filter(function (m) { return Number(meta[m[0]]) > 0; }).map(function (m) { const alvo = m[0] === 'ganhas' ? Math.round(Number(meta[m[0]]) * k * 10) / 10 : cent(Number(meta[m[0]]) * k); const at = Number(resumo[m[0]]) || 0; return { chave: m[0], nome: m[1], atual: at, alvo: alvo, pct: alvo ? at / alvo * 100 : null, atingida: at >= alvo }; });
   }
-  // próximas sessões e prazos do cliente (de hoje até `dias` à frente)
-  function agenda(e, o) {
-    o = o || {}; const hoje = o.hoje || new Date().toISOString().slice(0, 10); const fim = somaDia(hoje, o.dias || 30);
-    const doCli = function (x) { return !o.empresaId || x.empresaId === o.empresaId; }; const dentro = function (d) { return d && d >= hoje && d <= fim; };
-    const props = lista(e.propostas); const out = []; const vistas = {};
-    const add = function (k, it) { if (k && vistas[k]) return; if (k) vistas[k] = 1; out.push(it); };
-    const totalProp = function (p) { return p ? cent(lista(p.itens).reduce(function (s, i) { return s + (Number(i.refUnitaria) || Number(i.unitario) || 0) * (Number(i.quantidade) || 0); }, 0)) : 0; };
-    lista(e.disputas).filter(doCli).forEach(function (x) { const d = dataDe(x.sessao); if (!dentro(d)) return; const p = props.find(function (y) { return y.id === x.propostaId; }); add((p && p.avisoId) || x.id, { data: d, hora: String(x.sessao || '').slice(11, 16), tipo: 'Sessão', titulo: x.titulo || '', orgao: (p && p.orgao) || '', portal: x.portal || (p && p.portal) || '', valor: totalProp(p) }); });
-    lista(e.monitor).filter(doCli).forEach(function (x) { const d = dataDe(x.sessao); if (!dentro(d)) return; add(x.avisoId || x.id, { data: d, hora: String(x.sessao || '').slice(11, 16), tipo: 'Sessão', titulo: x.titulo || '', orgao: '', portal: x.portal || '', valor: 0 }); });
-    props.filter(doCli).forEach(function (p) { const d = dataDe(p.encerramento); if (!dentro(d)) return; add(p.avisoId || p.id, { data: d, hora: String(p.encerramento || '').slice(11, 16), tipo: 'Sessão', titulo: [p.modalidade, p.numero].filter(Boolean).join(' ') || p.objeto || 'Proposta', orgao: p.orgao || '', portal: p.portal || '', valor: totalProp(p) }); });
-    cartoes(e, o.empresaId).filter(function (c) { return !c.ganha && !c.perdida && !c.arquivado && dentro(c.prazo); }).forEach(function (c) { add('c:' + c.id, { data: c.prazo, hora: '', tipo: 'Prazo', titulo: c.titulo, orgao: c.orgao, portal: c.portal, valor: c.valorEstimado || c.valor || 0 }); });
-    return out.sort(function (a, b) { return (a.data + a.hora) < (b.data + b.hora) ? -1 : 1; });
-  }
   // documentos de habilitação do cliente: vencidos, vencendo em `dias` e válidos
   function habilitacao(e, o) {
     o = o || {}; const hoje = o.hoje || new Date().toISOString().slice(0, 10); const dias = o.dias || 30; const h = new Date(hoje + 'T12:00:00');
@@ -251,5 +238,5 @@
   // primeiro e último dia do mês 'AAAA-MM'
   function mes(aaaamm) { const m = String(aaaamm || '').match(/^(\d{4})-(\d{2})$/); if (!m) return null; const ult = new Date(Number(m[1]), Number(m[2]), 0).getDate(); return { de: m[1] + '-' + m[2] + '-01', ate: m[1] + '-' + m[2] + '-' + String(ult).padStart(2, '0') }; }
 
-  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, trabalho: trabalho, perdas: perdas, concorrencia: concorrencia, distribuicao: distribuicao, metas: metas, agenda: agenda, habilitacao: habilitacao, MOTIVOS_PERDA: MOTIVOS_PERDA, METAS: METAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
+  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, trabalho: trabalho, perdas: perdas, concorrencia: concorrencia, distribuicao: distribuicao, metas: metas, habilitacao: habilitacao, MOTIVOS_PERDA: MOTIVOS_PERDA, METAS: METAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
 });
