@@ -2712,3 +2712,5 @@ html.com-fundo-animado body { background: transparent; }
 .cm-barra { display: block; height: 10px; border-radius: 99px; background: var(--superficie-2); overflow: hidden; } .cm-barra i { display: block; height: 100%; background: var(--ouro); border-radius: 99px; }
 .cm-funil tr.gargalo th { color: var(--c-vermelho, #e34948); } .cm-funil tr.gargalo .cm-barra i { background: var(--c-vermelho, #e34948); }
 .cm-funil-res { margin: 8px 0 0; }
+.cm-funil td .cm-un { display: inline-block; min-width: 42px; text-align: left; margin-left: 6px; color: var(--mudo); font-size: 12px; }
+.cm-funil-usar { margin: 6px 0 0; } .cm-funil-usar .btn { margin-left: 6px; }

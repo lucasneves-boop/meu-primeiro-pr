@@ -37,10 +37,15 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.fill('#cm-funil [name=f_homologadas]', '100'); await pg.fill('#cm-funil [name=f_contratadas]', '100');
     ok(/Taxa de sucesso por disputa:\s*20%/.test(await pg.innerText('#cm-funil')) && /maior perda em Arrematadas/.test(await pg.innerText('#cm-funil')), 'funil em %: taxa e gargalo');
     ok(await pg.textContent('#cm-funil tr[data-et=disputas] [data-c=nec]') === '25', 'disputas necessárias para 5 contratos');
+    // número de editais encontrados editável no modo %
+    await pg.fill('#cm-funil [name=f_encontrados]', '250');
+    ok(await pg.textContent('#cm-funil tr[data-et=disputas] [data-c=esp]') === '54' && await pg.textContent('#cm-funil tr[data-et=contratadas] [data-c=esp]') === '10,8', 'com 250 editais: 54 disputas e 10,8 contratos');
+    await pg.click('[data-a=usar-disputas]'); ok(await pg.inputValue('#cm-extra [name=disputasMes]') === '54', 'leva as disputas do funil para as disputas por mês');
+    await pg.reload(); await pg.waitForSelector('#cm-funil'); ok(await pg.inputValue('#cm-funil [name=f_encontrados]') === '250', 'número de editais fica salvo');
     await pg.click('#cm-funil .cm-pilula:has(input[value=qtd])'); await pg.waitForSelector('#cm-funil [name=f_encontrados]:not([disabled])');
     for (const [k, v] of [['encontrados', '200'], ['viaveis', '60'], ['propostas', '50'], ['disputas', '40'], ['vencidas', '10'], ['homologadas', '9'], ['contratadas', '8']]) await pg.fill('#cm-funil [name=f_' + k + ']', v);
     ok(/Taxa de sucesso por disputa:\s*20%/.test(await pg.innerText('#cm-funil')) && /do edital encontrado ao contrato:\s*4%/.test(await pg.innerText('#cm-funil')), 'funil por quantidades: 8 contratos em 40 disputas e 200 editais');
-    await pg.click('#cm-funil .cm-pilula:has(input[value=pct])'); await pg.waitForSelector('#cm-funil [name=f_encontrados][disabled]');
+    await pg.click('#cm-funil .cm-pilula:has(input[value=pct])'); await pg.waitForSelector('#cm-funil .cm-pilula input[value=pct]:checked');
     ok(await pg.inputValue('#cm-funil [name=f_homologadas]') === '100', 'os % digitados continuam ao voltar do modo quantidades');
     await pg.click('#cm-funil .cm-pilula:has(input[value=qtd])'); await pg.waitForSelector('#cm-funil [name=f_encontrados]:not([disabled])');
     ok(await pg.inputValue('#cm-funil [name=f_encontrados]') === '200', 'as quantidades também ficam guardadas');

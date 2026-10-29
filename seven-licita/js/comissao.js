@@ -128,8 +128,9 @@
     { id: 'homologadas', nome: 'Habilitadas e homologadas', pct: 85, qtd: 4 },
     { id: 'contratadas', nome: 'Contratos / empenhos assinados', pct: 95, qtd: 4 }
   ];
-  // etapas: [{ id, nome, pct?, qtd? }]; modo 'pct' usa pct, 'qtd' calcula o % pela quantidade da etapa anterior
-  function funil(etapas, modo, contratos) {
+  // etapas: [{ id, nome, pct?, qtd? }]; modo 'pct' usa pct, 'qtd' calcula o % pela quantidade da etapa anterior.
+  // base: quantos editais entram no topo (no modo 'qtd' é a quantidade da 1ª etapa); dá a quantidade esperada em cada etapa.
+  function funil(etapas, modo, contratos, base) {
     etapas = etapas && etapas.length ? etapas : FUNIL; const qtd = modo === 'qtd';
     let topo = 1; const linhas = etapas.map(function (e, i) {
       let p;
@@ -145,8 +146,9 @@
     const taxaDisputa = iDisp >= 0 ? prod(iDisp) : null; const v = Math.max(1, Math.round(num(contratos) || 1));
     // quantas em cada etapa para fechar v contratos (de trás para frente)
     linhas.forEach(function (l, i) { const x = prod(i); l.necessarios = x ? Math.ceil(v / x - 1e-9) : null; });
+    const b = qtd ? num(etapas[0].qtd) : pos(base); linhas.forEach(function (l) { l.esperados = b != null && l.doTopo != null ? b * l.doTopo / 100 : null; });
     const gargalo = linhas.slice(1).reduce(function (m, l) { return l.conversao != null && (m == null || l.conversao < m.conversao) ? l : m; }, null);
-    return { etapas: linhas, taxaDisputa: taxaDisputa == null ? null : taxaDisputa * 100, taxaGeral: linhas[linhas.length - 1].doTopo, contratos: v, gargalo: gargalo };
+    return { etapas: linhas, taxaDisputa: taxaDisputa == null ? null : taxaDisputa * 100, taxaGeral: linhas[linhas.length - 1].doTopo, contratos: v, gargalo: gargalo, base: b };
   }
 
   function lerLista(txt) { return String(txt || '').split(/[\s;]+/).map(function (s) { return Number(s.replace(/\./g, '').replace(',', '.').replace('%', '')); }).filter(function (x) { return isFinite(x) && x > 0; }).slice(0, 16); }
