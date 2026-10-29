@@ -148,11 +148,40 @@
     };
     el.innerHTML = '<div class="cl-ferr"><form class="cartao" id="cl-form"><h3>' + esc(t.ic) + ' ' + esc(t.nome) + '</h3>' + t.campos.map(function (c) { return c.t === 'check' ? '<label class="check">' + input(c) + ' ' + esc(c.r) + '</label>' : campo(c.r, input(c)); }).join('') + '</form><section class="cartao cl-saida" id="cl-saida"></section></div>';
     const form = el.querySelector('#cl-form'); const saida = el.querySelector('#cl-saida');
-    const calc = function () { t.campos.forEach(function (c) { const i = form.elements[c.n]; vals[c.n] = c.t === 'check' ? i.checked : i.value; }); try { saida.innerHTML = '<h4>Resultado</h4>' + (t.calc(vals) || '<p class="mudo">Preencha os campos.</p>'); } catch (e) { saida.innerHTML = '<p class="alerta">' + esc(e.message) + '</p>'; } };
+    const calc = function () { t.campos.forEach(function (c) { const i = form.elements[c.n]; vals[c.n] = c.t === 'check' ? i.checked : i.value; }); try { saida.innerHTML = '<h4>Resultado</h4>' + (t.calc(vals) || '<p class="mudo">Preencha os campos.</p>') + (COMO[t.id] ? '<details class="cl-como" open><summary>Como é calculado</summary><p>' + esc(COMO[t.id]) + '</p></details>' : ''); } catch (e) { saida.innerHTML = '<p class="alerta">' + esc(e.message) + '</p>'; } };
     form.oninput = calc; form.onchange = calc; form.onsubmit = function (e) { e.preventDefault(); };
     calc();
   }
 
+  // fórmula de cada ferramenta, em palavras, mostrada abaixo do resultado
+  const COMO = {
+    porcentagem: 'X% de Y = X ÷ 100 × Y. Quantos %: X ÷ Y × 100. Variação: (Y − X) ÷ X × 100. Aumento: Y × (1 + X ÷ 100). Redução: Y × (1 − X ÷ 100). Valor sem o acréscimo: Y ÷ (1 + X ÷ 100).',
+    desconto: 'Descontos em sequência se multiplicam: preço × (1 − desconto 1) × (1 − desconto 2). 10% + 10% dá 19%, não 20%.',
+    margem: 'Margem sobre a venda = (preço − custo) ÷ preço. Markup sobre o custo = (preço − custo) ÷ custo. Ex.: custo 80 e preço 100 → margem 20%, markup 25%.',
+    juros: 'A cada mês: saldo × (1 + taxa) + aporte, com o aporte entrando no fim do mês. Taxa anual equivalente = (1 + taxa mensal)¹² − 1.',
+    simples: 'Juros = capital × taxa × períodos. Montante = capital + juros.',
+    taxa: 'Juros compostos: taxa no novo período = (1 + taxa)^(novo período ÷ período da taxa) − 1. Ao dia considera mês de 30 dias.',
+    financiamento: 'Price: parcela = valor × taxa ÷ (1 − (1 + taxa)^−n), sempre igual. SAC: amortização = valor ÷ n, e os juros (saldo × taxa) caem a cada parcela.',
+    tres: 'Direta: X = B × C ÷ A. Inversa: X = A × B ÷ C.',
+    datas: 'Prazos da Lei 14.133 (art. 183): exclui o dia do começo e inclui o do vencimento. Dias úteis pulam sábados, domingos e feriados nacionais (e os locais informados). Com prorrogação, o vencimento em dia sem expediente passa para o primeiro dia útil seguinte.',
+    idade: 'Anos, meses e dias completos entre a data de nascimento e a data de referência.',
+    horas: 'Soma (ou subtrai, com −) cada linha em minutos e mostra o total em horas e minutos.',
+    imc: 'IMC = peso (kg) ÷ altura (m)². Faixas da OMS.',
+    media: 'Média = soma ÷ quantidade. Mediana = valor do meio com a lista em ordem. Desvio-padrão amostral = √(Σ(x − média)² ÷ (n − 1)).',
+    fracoes: 'As frações são operadas e simplificadas pelo MDC do numerador e do denominador.',
+    mdc: 'MDC pelo algoritmo de Euclides; MMC = a × b ÷ MDC; fatoração por divisões sucessivas.',
+    bhaskara: 'Δ = b² − 4ac; x = (−b ± √Δ) ÷ 2a. Com Δ negativo, as raízes são complexas.',
+    bases: 'Converte o número da base de origem para decimal e do decimal para as outras bases.',
+    romanos: 'Soma os símbolos; um símbolo menor antes de um maior é subtraído (IV = 4). Vale de 1 a 3.999.',
+    combustivel: 'Etanol compensa quando o preço dele for até 70% do preço da gasolina (rendimento médio do etanol).',
+    viagem: 'Litros = km total ÷ consumo; combustível = litros × preço. Total = combustível + pedágios + estacionamento + diárias. Ida e volta dobra a distância e os pedágios.',
+    conta: 'Total com gorjeta = conta × (1 + gorjeta). Por pessoa = total ÷ pessoas.',
+    unidade: 'Preço por unidade = preço ÷ quantidade. O menor é o mais barato.',
+    velocidade: 'Velocidade = distância ÷ tempo; tempo = distância ÷ velocidade; distância = velocidade × tempo.',
+    area: 'Fórmulas geométricas de cada forma (retângulo = base × altura; círculo = π × raio²; caixa = comprimento × largura × altura…).',
+    conversor: 'Converte para a unidade de base da grandeza e dela para a unidade escolhida.',
+    cambio: 'Valor convertido = valor × cotação informada.'
+  };
   Telas.calculadora = {
     titulo: 'Seven Calculadora',
     render: function (el, sub) {

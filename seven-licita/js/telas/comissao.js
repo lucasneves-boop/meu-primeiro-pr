@@ -59,8 +59,24 @@
     const nomeBase = { venda: 'Sobre o preço de venda', lucro: 'Sobre o lucro líquido' };
     return '<div class="cm-base" role="radiogroup" aria-label="Base da comissão">' + ['venda', 'lucro'].map(function (b) { return '<label class="cm-pilula"><input type="radio" name="base" value="' + b + '"' + (s.base === b ? ' checked' : '') + '><span>' + (compacto ? (b === 'venda' ? 'Sobre a venda' : 'Sobre o lucro') : nomeBase[b]) + '</span></label>'; }).join('') + '</div>' +
       '<div class="linha">' + campo(compacto ? 'Comissão %' : 'Comissão (%)', '<input name="pct" inputmode="decimal" value="' + esc(s.pct) + '" placeholder="5">') + campo(compacto ? 'Venda (R$)' : 'Valor da venda / contrato (R$)', '<input name="venda" inputmode="decimal" value="' + esc(s.venda) + '" placeholder="200.000,00">') + '</div>' +
-      '<div class="linha">' + campo(compacto ? 'Margem líquida %' : 'Margem de lucro líquido (%)', '<input name="margem" inputmode="decimal" value="' + esc(s.margem) + '" placeholder="12"' + (s.usarCustos && !compacto ? ' disabled' : '') + '>', compacto ? '' : 'Lucro que sobra da venda depois de custos, impostos e despesas.') + campo(compacto ? 'Meta (R$)' : 'Quanto quero receber (R$)', '<input name="alvo" inputmode="decimal" value="' + esc(s.alvo) + '" placeholder="15.000,00">', compacto ? '' : 'Sua meta de comissão.') + '</div>' +
-      '<div class="linha">' + campo(compacto ? 'Retenção %' : 'Retenções sobre a comissão (%)', '<input name="retencao" inputmode="decimal" value="' + esc(s.retencao) + '" placeholder="0">', compacto ? '' : 'Impostos ou descontos sobre o que você recebe. A meta é líquida.') + campo(compacto ? 'Licitações' : 'Nº de licitações', '<input name="contratos" inputmode="numeric" value="' + esc(s.contratos) + '" placeholder="1">', compacto ? '' : 'Divide a venda necessária entre os contratos.') + '</div>';
+      '<div class="linha">' + campo(compacto ? 'Margem líquida %' : 'Margem de lucro líquido (%)', '<input name="margem" inputmode="decimal" value="' + esc(s.margem) + '" placeholder="12"' + (s.usarCustos ? ' disabled' : '') + '>', compacto ? '' : 'Lucro que sobra da venda depois de custos, impostos e despesas, em % da venda.') +
+      campo(compacto ? 'ou Lucro (R$)' : 'ou o lucro líquido em reais (R$)', '<input name="lucroValor" inputmode="decimal" value="' + esc(lucroDe(s)) + '" placeholder="24.000,00"' + (s.usarCustos ? ' disabled' : '') + '>', compacto ? '' : 'Se souber o lucro em reais, digite aqui: a margem é calculada.').replace('<label class="campo"', '<label class="campo cm-so-lucro"' + (s.base === 'lucro' ? '' : ' hidden')) + '</div>' +
+      '<div class="linha">' + campo(compacto ? 'Meta (R$)' : 'Quanto quero receber (R$)', '<input name="alvo" inputmode="decimal" value="' + esc(s.alvo) + '" placeholder="15.000,00">', compacto ? '' : 'Sua meta de comissão, já líquida.') +
+      campo(compacto ? 'Retenção %' : 'Retenções sobre a comissão (%)', '<input name="retencao" inputmode="decimal" value="' + esc(s.retencao) + '" placeholder="0">', compacto ? '' : 'Impostos ou descontos sobre o que você recebe. A meta é líquida.') + campo(compacto ? 'Licitações' : 'Nº de licitações', '<input name="contratos" inputmode="numeric" value="' + esc(s.contratos) + '" placeholder="1">', compacto ? '' : 'Divide a venda necessária entre os contratos.') + '</div>';
+  }
+  // lucro em R$ a partir da venda e da margem (o que fica salvo é a margem)
+  function lucroDe(s) { const v = n(s.venda), m = s.usarCustos ? K.margemDosCustos(v, n(s.custo), n(s.impostos), n(s.despesas)) : n(s.margem); return v && m != null ? fmtBR(v * m / 100) : ''; }
+  function fmtBR(v) { return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  // mantém margem (%) e lucro (R$) coerentes no formulário: quem está sendo digitado manda no outro
+  function sincronizarLucro(form) {
+    const lv = form.elements.lucroValor, mg = form.elements.margem, vd = form.elements.venda; if (!lv || !mg || mg.disabled) return;
+    const venda = n(vd && vd.value);
+    if (document.activeElement === lv) { const l = n(lv.value); mg.value = venda && l != null ? String(Math.round(l / venda * 1e6) / 1e4).replace('.', ',') : (lv.value.trim() ? mg.value : ''); }
+    else { const m = n(mg.value); lv.value = venda && m != null ? fmtBR(venda * m / 100) : ''; }
+  }
+  function passosHTML(r, compacto) {
+    const ps = K.passos(r, { moeda: moeda, pct: function (v) { return pc(v, 2); } }); if (!ps.length) return '';
+    return '<details class="cm-passos"' + (compacto ? '' : ' open') + '><summary>Como a conta foi feita</summary><ol>' + ps.map(function (p) { return '<li class="' + (p.total ? 'total' : '') + (p.alerta ? ' alerta' : '') + (p.meta ? ' meta' : '') + '"><span>' + esc(p.t) + '</span>' + (p.c ? '<b>' + esc(p.c) + '</b>' : '') + '</li>'; }).join('') + '</ol></details>';
   }
   function resumo(r, compacto) {
     const linhas = [];
@@ -70,7 +86,7 @@
     if (r.atingiu != null) linhas.push(r.atingiu ? '<p class="cm-ok">✓ Alcança a meta de ' + moeda(r.alvo) + '</p>' : '<p class="cm-falta">Faltam ' + moeda(r.falta) + ' para a meta de ' + moeda(r.alvo) + '</p>');
     const dl = [];
     if (r.alvo != null) {
-      dl.push(['Venda necessária para a meta', r.vendaNecessaria != null ? moeda(r.vendaNecessaria) : (r.base === 'lucro' ? 'informe uma margem positiva' : 'informe o percentual'), 1]);
+      dl.push(['Venda necessária para a meta', r.vendaNecessaria != null ? moeda(r.vendaNecessaria) : (r.base === 'lucro' ? (r.margem == null ? 'informe a margem (%) ou o lucro (R$)' : 'a margem precisa ser maior que zero') : 'informe o percentual'), 1]);
       if (r.contratos > 1 && r.vendaPorContrato != null) dl.push(['Por licitação (' + r.contratos + ')', moeda(r.vendaPorContrato)]);
       if (r.base === 'lucro' && r.margemNecessaria != null) dl.push(['Margem líquida necessária', r.margemImpossivel ? pc(r.margemNecessaria, 1) + ' (inviável)' : pc(r.margemNecessaria, 2), 1]);
       if (r.pctNecessario != null) dl.push(['Comissão necessária nesta venda', pc(r.pctNecessario, 2)]);
@@ -83,17 +99,18 @@
     if (!compacto && r.comissaoSobreVenda != null && r.comissaoSobreLucro != null) dl.push(['Comparando no mesmo %', 'venda ' + moeda(r.comissaoSobreVenda) + ' · lucro ' + moeda(r.comissaoSobreLucro)]);
     if (dl.length) linhas.push('<dl class="cl-res">' + dl.map(function (l) { return '<div' + (l[2] ? ' class="dest"' : '') + '><dt>' + esc(l[0]) + '</dt><dd>' + l[1] + '</dd></div>'; }).join('') + '</dl>');
     if (r.venda == null && r.alvo == null) linhas.push('<p class="mudo mini">Informe a comissão e o valor da venda, ou a meta que quer receber.</p>');
+    linhas.push(passosHTML(r, compacto));
     return linhas.join('');
   }
   // aplica o que foi digitado num formulário ao estado salvo
   function lerForm(form) {
-    const s = estado(); const fd = new FormData(form);
+    const s = estado(); sincronizarLucro(form); const fd = new FormData(form);
     ['pct', 'venda', 'margem', 'alvo', 'retencao', 'contratos', 'custo', 'impostos', 'despesas', 'pcts', 'margens'].forEach(function (k) { if (form.elements[k] && !form.elements[k].disabled) s[k] = fd.get(k); });
     ['dataSessao', 'taxa', 'disputasMes', 'custoDisputa', 'custoFixo'].forEach(function (k) { if (form.elements[k]) s[k] = fd.get(k); });
     if (fd.get('funilModo') || K.FUNIL.some(function (e) { return form.elements['f_' + e.id]; })) { const fu = s.funil = Object.assign({ modo: 'pct', pct: {}, qtd: {} }, s.funil); const de = fd.get('funilAtual') === 'qtd' ? 'qtd' : 'pct'; K.FUNIL.forEach(function (e, k) { const i = form.elements['f_' + e.id]; if (!i || i.disabled) return; if (k === 0 && de === 'pct') { fu.base = i.value; return; } fu[de] = Object.assign({}, fu[de]); fu[de][e.id] = i.value; }); if (fd.get('funilModo')) fu.modo = fd.get('funilModo'); }
     K.ETAPAS.forEach(function (e) { if (form.elements['p_' + e.id]) { s.prazos = Object.assign({}, s.prazos); s.prazos[e.id] = fd.get('p_' + e.id); } if (form.elements['t_' + e.id]) { s.prazoTipo = Object.assign({}, s.prazoTipo); s.prazoTipo[e.id] = fd.get('t_' + e.id); } });
     if (form.elements.pzProrrogar) { s.pzProrrogar = form.elements.pzProrrogar.checked; s.pzFacultativos = form.elements.pzFacultativos.checked; s.pzFeriados = fd.get('pzFeriados'); }
-    if (fd.get('base')) s.base = fd.get('base');
+    if (fd.get('base')) { s.base = fd.get('base'); const sl = form.querySelector('.cm-so-lucro'); if (sl) sl.hidden = s.base !== 'lucro'; }
     if (form.elements.usarCustos) s.usarCustos = form.elements.usarCustos.checked;
     lerAvancado(form, s);
     return s;
@@ -218,13 +235,13 @@
       const r = K.calcular(entrada()); el.querySelector('#cm-res').innerHTML = '<h3>Resultado</h3>' + resumo(r, false);
       el.querySelector('#cm-cen').innerHTML = tabelaCenarios(estado());
       el.querySelector('#cm-extra-res').innerHTML = secoesExtras(estado()); atualizarFunil(funilF, estado());
-      if (estado().usarCustos) { const m = entrada().margem; form.elements.margem.value = m == null ? '' : String(Math.round(m * 100) / 100).replace('.', ','); }
+      if (estado().usarCustos) { const m = entrada().margem; form.elements.margem.value = m == null ? '' : String(Math.round(m * 100) / 100).replace('.', ','); if (form.elements.lucroValor) form.elements.lucroValor.value = lucroDe(estado()); }
     };
     const mudou = function (ev) {
       lerForm(form); lerForm(listas); lerForm(extra);
       if (ev && ev.target && ev.target.name === 'funilModo') { lerForm(funilF); funilF.innerHTML = formFunil(estado()); } else lerForm(funilF);
       if (ev && ev.target && ev.target.name === 'usarFaixas') { form.querySelector('.cm-faixas').hidden = !estado().usarFaixas; }
-      if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; form.elements.margem.disabled = estado().usarCustos; }
+      if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; form.elements.margem.disabled = estado().usarCustos; if (form.elements.lucroValor) form.elements.lucroValor.disabled = estado().usarCustos; }
       atualizar(); salvarDepois(); avisarMudanca('tela');
     };
     form.oninput = form.onchange = mudou; listas.oninput = mudou; extra.oninput = extra.onchange = mudou; funilF.oninput = funilF.onchange = mudou;

@@ -154,3 +154,16 @@ test('prazo em dias úteis e corridos (art. 183), com feriados e prorrogação',
   const m = C.prazos('2026-11-02', [{ id: 'a', dias: 2, tipo: 'uteis' }, { id: 'pagamento', dias: 10 }]);
   assert.strictEqual(m.etapas[0].data, '2026-11-04'); assert.strictEqual(m.dataPagamento, '2026-11-14'); assert.strictEqual(m.diasUteis, 2);
 });
+
+test('passo a passo da comissão sobre o lucro', () => {
+  const K = require('../js/comissao.js'); const f = { moeda: v => 'R$ ' + v.toFixed(2), pct: v => v.toFixed(2) + '%' };
+  const r = K.calcular({ base: 'lucro', pct: 10, venda: 200000, margem: 12, alvo: 3000, retencao: 0 });
+  const p = K.passos(r, f).map(x => x.t + ' | ' + (x.c || ''));
+  assert.ok(p.some(x => /Lucro líquido = venda × margem \| R\$ 200000.00 × 12.00% = R\$ 24000.00/.test(x)));
+  assert.ok(p.some(x => /Comissão bruta = lucro × comissão \| R\$ 24000.00 × 10.00% = R\$ 2400.00/.test(x)));
+  assert.ok(p.some(x => /Lucro líquido necessário .* = R\$ 30000.00/.test(x)) && p.some(x => /Venda necessária = lucro necessário ÷ margem \| R\$ 30000.00 ÷ 12.00% = R\$ 250000.00/.test(x)));
+  assert.ok(p.some(x => /margem precisa ser .* = 15.00%/.test(x)));
+  const sem = K.passos(K.calcular({ base: 'lucro', pct: 10, venda: 200000 }), f); assert.ok(sem[0].alerta, 'avisa que falta a margem');
+  const ret = K.passos(K.calcular({ base: 'lucro', pct: 10, venda: 200000, margem: 12, retencao: 15, alvo: 2040 }), f).map(x => x.t + ' | ' + (x.c || ''));
+  assert.ok(ret.some(x => /retenção de 15.00% .*− R\$ 360.00/.test(x)) && ret.some(x => /Você recebe \| R\$ 2040.00/.test(x)) && ret.some(x => /Comissão bruta necessária .* = R\$ 2400.00/.test(x)));
+});

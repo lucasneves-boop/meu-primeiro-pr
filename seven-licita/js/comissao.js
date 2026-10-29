@@ -86,6 +86,41 @@
     r.margemImpossivel = r.margemNecessaria != null && r.margemNecessaria > 100;
     return r;
   }
+  // passo a passo da conta, em frases (o mesmo cálculo de calcular, explicado). fmt: { moeda(v), pct(v) }
+  function passos(r, fmt) {
+    const M = fmt.moeda, P = fmt.pct; const out = [];
+    if (r.venda != null && r.pct != null || r.venda != null && r.faixas) {
+      if (r.base === 'lucro') {
+        if (r.margem == null) out.push({ t: 'Falta a margem de lucro líquido (%) ou o lucro líquido (R$) para calcular sobre o lucro.', alerta: true });
+        else {
+          out.push({ t: 'Lucro líquido = venda × margem', c: M(r.venda) + ' × ' + P(r.margem) + ' = ' + M(r.lucro) });
+          if (r.prejuizo) out.push({ t: 'Sem lucro, a comissão sobre o lucro é zero.', alerta: true });
+          else out.push({ t: 'Comissão bruta = lucro × comissão', c: M(Math.max(0, r.lucro)) + ' × ' + (r.faixas ? 'faixas (efetivo ' + P(r.pctEfetivo) + ')' : P(r.pct)) + ' = ' + M(r.comissaoBruta) });
+        }
+      } else out.push({ t: 'Comissão bruta = venda × comissão', c: M(r.venda) + ' × ' + (r.faixas ? 'faixas (efetivo ' + P(r.pctEfetivo) + ')' : P(r.pct)) + ' = ' + M(r.comissaoBruta) });
+      if (r.comissaoBruta != null) {
+        if (r.repasse) out.push({ t: 'Menos o repasse aos parceiros', c: '− ' + M(r.repasse) });
+        if (r.retida) out.push({ t: 'Menos a retenção de ' + P(r.retencao) + ' (impostos sobre o que você recebe)', c: '− ' + M(r.retida) });
+        out.push({ t: 'Você recebe', c: M(r.comissaoLiquida), total: true });
+        if (r.fixo) out.push({ t: 'Com o fixo mensal de ' + M(r.fixo), c: M(r.totalMes), total: true });
+      }
+    }
+    if (r.alvo != null) {
+      const k = r.alvoBruto && r.alvoVariavel ? r.alvoVariavel / r.alvoBruto : 1;
+      out.push({ t: 'Meta: receber ' + M(r.alvo) + (r.fixo ? ' (o fixo de ' + M(r.fixo) + ' já cobre parte: faltam ' + M(r.alvoVariavel) + ')' : ''), meta: true });
+      if (k < 0.99999) out.push({ t: 'Comissão bruta necessária = meta ÷ o que fica com você (' + P(k * 100) + ')', c: M(r.alvoVariavel) + ' ÷ ' + P(k * 100) + ' = ' + M(r.alvoBruto) });
+      if (r.base === 'lucro' && !r.faixas && r.pct) {
+        const lucroNec = r.alvoBruto / (r.pct / 100);
+        out.push({ t: 'Lucro líquido necessário = comissão bruta ÷ comissão', c: M(r.alvoBruto) + ' ÷ ' + P(r.pct) + ' = ' + M(lucroNec) });
+        if (r.margem > 0) out.push({ t: 'Venda necessária = lucro necessário ÷ margem', c: M(lucroNec) + ' ÷ ' + P(r.margem) + ' = ' + M(r.vendaNecessaria), total: true });
+        if (r.venda && r.margemNecessaria != null) out.push({ t: 'Ou, mantendo a venda de ' + M(r.venda) + ', a margem precisa ser lucro necessário ÷ venda', c: M(lucroNec) + ' ÷ ' + M(r.venda) + ' = ' + P(r.margemNecessaria) + (r.margemImpossivel ? ' (inviável: acima de 100%)' : ''), total: true });
+      } else if (r.base === 'venda' && !r.faixas && r.pct) out.push({ t: 'Venda necessária = comissão bruta ÷ comissão', c: M(r.alvoBruto) + ' ÷ ' + P(r.pct) + ' = ' + M(r.vendaNecessaria), total: true });
+      else if (r.vendaNecessaria != null) out.push({ t: 'Venda necessária (pelas faixas)', c: M(r.vendaNecessaria), total: true });
+      if (r.contratos > 1 && r.vendaPorContrato != null) out.push({ t: 'Dividida em ' + r.contratos + ' licitações', c: M(r.vendaPorContrato) + ' cada' });
+    }
+    return out;
+  }
+
   // comissão de um contrato já ganho (performance e extrato): cfg igual ao de calcular, sem metas
   function valorComissao(valor, cfg) {
     const r = calcular(Object.assign({}, cfg, { venda: valor, alvo: null, fixo: 0 }));
@@ -208,5 +243,5 @@
 
   function lerLista(txt) { return String(txt || '').split(/[\s;]+/).map(function (s) { return Number(s.replace(/\./g, '').replace(',', '.').replace('%', '')); }).filter(function (x) { return isFinite(x) && x > 0; }).slice(0, 16); }
 
-  return { calcular: calcular, valorComissao: valorComissao, comissaoFaixas: comissaoFaixas, lerFaixas: lerFaixas, cenarios: cenarios, prazos: prazos, chances: chances, funil: funil, FUNIL: FUNIL, retorno: retorno, ETAPAS: ETAPAS, somarDias: somarDias, margemDosCustos: margemDosCustos, lerLista: lerLista, PCTS: PCTS, MARGENS: MARGENS, div: div };
+  return { calcular: calcular, passos: passos, valorComissao: valorComissao, comissaoFaixas: comissaoFaixas, lerFaixas: lerFaixas, cenarios: cenarios, prazos: prazos, chances: chances, funil: funil, FUNIL: FUNIL, retorno: retorno, ETAPAS: ETAPAS, somarDias: somarDias, margemDosCustos: margemDosCustos, lerLista: lerLista, PCTS: PCTS, MARGENS: MARGENS, div: div };
 });
