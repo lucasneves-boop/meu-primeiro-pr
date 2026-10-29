@@ -27,7 +27,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     ok(await pg.locator('.pn-bloco svg.gf').count() >= 6, 'gráficos desenhados');
     ok(/⚠/.test(await pg.locator('[data-id=kpis]').innerText()), 'indicador de alerta com ícone (não só cor)');
     ok(/Vencidos[\s\S]*1/.test(await pg.locator('[data-id=documentos] .gf-leg').innerText()), 'documentos: legenda com valor');
-    ok(/1 tarefa\(s\) atrasada/.test(await pg.locator('[data-id=agenda]').innerText()), 'agenda: atrasadas sinalizadas');
+    ok(/1 tarefa atrasada/.test(await pg.locator('[data-id=agenda]').innerText()), 'agenda: atrasadas sinalizadas');
     // dica ao passar o mouse
     const alvo = pg.locator('[data-id=fin-fluxo] .gf-alvo').last(); await alvo.hover();
     await pg.waitForSelector('#pn-dica:not([hidden])'); const dt = await pg.locator('#pn-dica').innerText(); ok(/Receitas: R\$\s.*Despesas: R\$\s/.test(dt), 'dica com receitas e despesas do mês');

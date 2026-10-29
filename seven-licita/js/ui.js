@@ -21,10 +21,11 @@
   }
 
   // "3 aviso(s)" → "3 avisos", "1 cartão(ões)" → "1 cartão": o número mais próximo antes da palavra decide
-  const RE_PL = /([A-Za-zÀ-ÿ]+)\((s|es|ões|ns)\)/g;
+  const RE_PL = /([A-Za-zÀ-ÿ]+)\((s|es|ões|ns|is)\)/g;
   function flexionar(palavra, suf, um) {
     if (um) return palavra;
     if (suf === 'ões') return /ão$/.test(palavra) ? palavra.replace(/ão$/, 'ões') : palavra + 'ões';
+    if (suf === 'is') return /l$/.test(palavra) ? palavra.replace(/l$/, 'is') : palavra + 'is';
     if (suf === 'ns') return /m$/.test(palavra) ? palavra.replace(/m$/, 'ns') : palavra + 'ns';
     return palavra + suf;
   }

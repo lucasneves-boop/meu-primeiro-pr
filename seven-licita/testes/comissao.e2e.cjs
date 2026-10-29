@@ -68,7 +68,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.selectOption('#cm-extra [name=t_pagamento]', 'corridos'); await pg.waitForTimeout(100);
     ok(/\+60 dias corridos/.test(await pg.innerText('#cm-extra-res')), 'etapa a etapa: pagamento em dias corridos');
     await pg.fill('#cm-extra [name=pzFeriados]', '20/11/2026'); await pg.press('#cm-extra [name=pzFeriados]', 'Tab'); await pg.waitForTimeout(100);
-    ok(/1 feriado\(s\) local\(is\)/.test(await pg.innerText('#cm-extra-res')), 'feriados locais do órgão');
+    ok(/1 feriado local\b/.test(await pg.innerText('#cm-extra-res')), 'feriados locais do órgão');
     await pg.click('[data-a=pz-corridos]'); await pg.waitForSelector('#cm-extra [name=pzProrrogar]', { state: 'attached' }); await pg.evaluate(() => { document.querySelector('.cm-etapas').open = true; }); await pg.uncheck('#cm-extra [name=pzProrrogar]'); await pg.fill('#cm-extra [name=pzFeriados]', ''); await pg.press('#cm-extra [name=pzFeriados]', 'Tab'); await pg.waitForTimeout(100);
     await pg.locator('#cm-extra-res').screenshot({ path: path.join(saida, 'comissao-prazos.png') });
     // janela flutuante em outra tela, com os mesmos valores
