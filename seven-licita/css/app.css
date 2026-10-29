@@ -2656,3 +2656,39 @@ html.com-fundo-animado body { background: transparent; }
 .cf-vazio { color: #777; font-size: 12px; padding: 8px 2px; }
 @media (max-width: 600px) { .cf { width: calc(100vw - 16px); } .cf-dica { display: none; } }
 @media print { .cf { display: none !important; } }
+
+/* Seven Comissão */
+.cm { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 16px; align-items: start; }
+.cm-form .linha .campo { min-width: 0; }
+.cm-base { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.cm-pilula input { position: absolute; opacity: 0; pointer-events: none; }
+.cm-pilula span { display: inline-block; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--borda); cursor: pointer; font-weight: 600; font-size: 13px; }
+.cm-pilula input:checked + span { background: var(--ouro); border-color: var(--ouro); color: #050505; }
+.cm-pilula input:focus-visible + span { outline: 2px solid var(--ouro); outline-offset: 2px; }
+.cm-res { position: sticky; top: 76px; }
+.cm-destaque { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--superficie-2); border-left: 4px solid var(--ouro); margin-bottom: 10px; }
+.cm-destaque small { color: var(--mudo); } .cm-destaque b { font-size: 28px; color: var(--marca); font-variant-numeric: tabular-nums; }
+.cm-ok { color: var(--c-verde, #1baf7a); font-weight: 700; margin: 6px 0; } .cm-falta { color: var(--c-vermelho, #e34948); font-weight: 700; margin: 6px 0; }
+.cm-tab th:first-child { text-align: left; white-space: nowrap; }
+.cm-tab td.cm-bate { background: rgba(27, 175, 122, .14); color: var(--texto); font-weight: 700; }
+.cm-tab tr.cm-atual th, .cm-tab th.cm-atual { color: var(--marca); } .cm-tab tr.cm-atual td { box-shadow: inset 0 1px 0 var(--ouro), inset 0 -1px 0 var(--ouro); }
+.cm-margens { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.cm-mg { display: grid; gap: 2px; padding: 10px; border: 1px solid var(--borda); border-radius: 10px; text-align: center; }
+.cm-mg small { color: var(--mudo); } .cm-mg b { font-size: 20px; font-variant-numeric: tabular-nums; } .cm-mg.atual { border-color: var(--ouro); }
+.cm-mg.inviavel b { color: var(--c-vermelho, #e34948); } .cm-mg span { font-size: 11px; color: var(--c-vermelho, #e34948); }
+.cm-formulas summary { cursor: pointer; font-weight: 700; } .cm-formulas li { margin: 4px 0; }
+@media (max-width: 900px) { .cm { grid-template-columns: 1fr; } .cm-res { position: static; } }
+/* janela flutuante da comissão (mesmo visual da calculadora flutuante) */
+.cmf { width: 340px; }
+.cmf .cf-corpo { max-height: calc(100vh - 120px); overflow-y: auto; }
+.cmf .campo { margin-bottom: 6px; } .cmf .campo label, .cmf .campo > span { color: #cfcfcf; font-size: 12px; }
+.cmf .linha { gap: 8px; } .cmf input { background: #161616; color: #f2f2f2; border-color: #333; padding: 6px 8px; }
+.cmf .cm-pilula span { border-color: #333; color: #cfcfcf; padding: 5px 10px; font-size: 12px; }
+.cmf .cm-pilula input:checked + span { color: #050505; }
+.cmf-res { margin-top: 8px; } .cmf .cm-destaque { background: #161616; } .cmf .cm-destaque b { font-size: 22px; color: var(--ouro); } .cmf .cm-destaque small, .cmf .mudo { color: #9a9a9a; }
+.cmf .cl-res div { border-bottom-color: #222; } .cmf .cl-res dt { color: #9a9a9a; font-size: 12px; } .cmf .cl-res dd { color: #f2f2f2; font-size: 13px; } .cmf .cl-res div.dest dd { font-size: 15px; color: var(--ouro); }
+.cmf-todos { margin-top: 8px; width: 100%; justify-content: center; background: #262626; color: #f2f2f2; border-color: #333; }
+@media (max-width: 600px) { .cmf { width: calc(100vw - 16px); } }
+.cm-custos[hidden] { display: none; }
+.cmf .cf-dica { display: none; }
+.cmf .cm-falta, .cmf .cm-ok { font-size: 13px; }

@@ -1,0 +1,48 @@
+// Seven Comissão: tela com metas e cenários, e a mesma conta em janela flutuante.
+// Uso: node testes/comissao.e2e.cjs [pasta-de-capturas]
+const path = require('path'); const { abrir } = require('./apoio.cjs');
+const saida = process.argv[2] || path.join(__dirname, 'capturas');
+(async () => {
+  const t = await abrir(saida); const { pg, ok, url, foto } = t;
+  const res = () => pg.innerText('#cm-res');
+  try {
+    await pg.goto(url + '#/comissao'); await pg.waitForSelector('#cm-form');
+    ok(await pg.locator('.menu a[data-rota=comissao].ativo').count() === 1, 'Seven Comissão no menu');
+    // sobre a venda: 5% de 200 mil, meta 15 mil
+    await pg.fill('#cm-form [name=pct]', '5'); await pg.fill('#cm-form [name=venda]', '200.000,00'); await pg.fill('#cm-form [name=alvo]', '15.000');
+    let r = await res(); ok(/R\$\s?10\.000,00/.test(r), 'recebe R$ 10.000 sobre a venda');
+    ok(/Faltam R\$\s?5\.000,00/.test(r) && /Venda necessária para a meta\s*R\$\s?300\.000,00/.test(r) && /Comissão necessária nesta venda\s*7,5%/.test(r), 'falta, venda necessária e % necessário');
+    // sobre o lucro: 30% do lucro com 12% de margem
+    await pg.click('#cm-form .cm-pilula:has(input[value=lucro])'); await pg.fill('#cm-form [name=pct]', '30'); await pg.fill('#cm-form [name=margem]', '12'); await pg.fill('#cm-form [name=alvo]', '9.000');
+    r = await res(); ok(/R\$\s?7\.200,00/.test(r) && /Venda necessária para a meta\s*R\$\s?250\.000,00/.test(r), 'sobre o lucro: recebe 7.200 e precisa vender 250 mil');
+    ok(/Margem líquida necessária\s*15%/.test(r) && /Equivale sobre a venda a\s*3,6%/.test(r), 'margem necessária e equivalência');
+    // várias licitações e retenção
+    await pg.fill('#cm-form [name=contratos]', '5'); await pg.fill('#cm-form [name=retencao]', '10');
+    r = await res(); ok(/Por licitação \(5\)\s*R\$\s?55\.555,56/.test(r), 'divide a venda necessária entre as licitações, com retenção');
+    // margem pelos custos
+    await pg.check('#cm-form [name=usarCustos]'); await pg.fill('#cm-form [name=custo]', '150.000'); await pg.fill('#cm-form [name=impostos]', '10'); await pg.fill('#cm-form [name=despesas]', '5');
+    ok(await pg.inputValue('#cm-form [name=margem]') === '10', 'margem calculada pelos custos: 10%');
+    await pg.uncheck('#cm-form [name=usarCustos]'); ok(await pg.inputValue('#cm-form [name=margem]') === '10', 'ao desmarcar, a margem calculada continua no campo'); await pg.fill('#cm-form [name=margem]', '12');
+    // cenários
+    ok(await pg.locator('.cm-tab').count() === 2, 'tabelas de cenários: quanto recebe e quanto vender');
+    ok(await pg.locator('.cm-tab').first().locator('thead th').count() === 8, 'colunas: sobre a venda + 6 margens');
+    ok(await pg.locator('.cm-mg').count() === 11, 'margem necessária para cada percentual');
+    await pg.fill('#cm-listas [name=pcts]', '10 20 30'); ok(await pg.locator('.cm-tab').first().locator('tbody tr').count() === 3, 'percentuais dos cenários editáveis');
+    ok(await pg.locator('.cm-tab tr.cm-atual').count() === 2, 'linha do percentual atual destacada');
+    await foto('comissao-tela');
+    await pg.reload(); await pg.waitForSelector('#cm-form'); ok(await pg.inputValue('#cm-form [name=pct]') === '30', 'valores ficam salvos');
+    // janela flutuante em outra tela, com os mesmos valores
+    await pg.goto(url + '#/painel'); await pg.click('#botao-comissao'); await pg.waitForSelector('#comissao-flutuante:not([hidden])');
+    ok(await pg.inputValue('#comissao-flutuante [name=pct]') === '30' && /R\$\s?6\.480,00/.test(await pg.innerText('.cmf-res')), 'janela flutuante abre com os mesmos valores (7.200 − 10%)');
+    await pg.click('#comissao-flutuante .cm-pilula:has(input[value=venda])'); await pg.fill('#comissao-flutuante [name=pct]', '4');
+    ok(/R\$\s?7\.200,00/.test(await pg.innerText('.cmf-res')), 'calcula na janela: 4% de 200 mil − 10%');
+    await foto('comissao-flutuante');
+    await pg.click('.cmf-todos'); await pg.waitForSelector('#cm-form');
+    ok(await pg.inputValue('#cm-form [name=pct]') === '4' && await pg.isChecked('#cm-form input[name=base][value=venda]'), 'tela completa recebe o que foi digitado na janela');
+    await pg.fill('#cm-form [name=pct]', '6'); await pg.waitForTimeout(100); ok(await pg.inputValue('#comissao-flutuante [name=pct]') === '6', 'janela acompanha a tela');
+    await pg.keyboard.press('Alt+KeyM'); await pg.waitForSelector('#comissao-flutuante', { state: 'hidden' }); ok(true, 'Alt+M fecha'); await pg.keyboard.press('Alt+KeyM'); await pg.waitForSelector('#comissao-flutuante:not([hidden])'); ok(true, 'Alt+M abre');
+    await pg.goto(url + '#/comissao'); await pg.click('[data-a=janela]'); ok(await pg.locator('#comissao-flutuante:not([hidden])').count() === 1, 'botão da tela abre a janela');
+    await pg.setViewportSize({ width: 390, height: 800 }); await pg.waitForTimeout(200); const m = await pg.locator('#comissao-flutuante').boundingBox(); ok(m.x >= 0 && m.x + m.width <= 390, 'no celular cabe na tela');
+  } catch (e) { console.error(e.message || e); await foto('erro'); process.exit(1); }
+  await t.fechar();
+})();
