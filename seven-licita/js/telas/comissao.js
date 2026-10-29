@@ -5,7 +5,7 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, campo, aviso } = UI;
   const K = Comissao;
-  const PADRAO = { base: 'venda', pct: '5', venda: '', margem: '', alvo: '', retencao: '', contratos: '1', usarCustos: false, custo: '', impostos: '', despesas: '', pcts: '1 2 3 4 5 7,5 10 15 20 25 30', margens: '5 10 15 20 25 30', dataSessao: '', prazos: {}, taxa: '20', disputasMes: '8', custoDisputa: '', custoFixo: '' };
+  const PADRAO = { base: 'venda', pct: '5', venda: '', margem: '', alvo: '', retencao: '', contratos: '1', usarCustos: false, custo: '', impostos: '', despesas: '', pcts: '1 2 3 4 5 7,5 10 15 20 25 30', margens: '5 10 15 20 25 30', dataSessao: '', prazos: {}, funil: { modo: 'pct', pct: {}, qtd: {} }, taxa: '20', disputasMes: '8', custoDisputa: '', custoFixo: '' };
 
   function estado() { const d = Dados.e; d.comissao = Object.assign({}, PADRAO, d.comissao || {}); return d.comissao; }
   function n(v) { if (v == null || String(v).trim() === '') return null; const x = Nucleo.lerNumeroBR(v); return isFinite(x) ? x : null; }
@@ -55,6 +55,7 @@
     const s = estado(); const fd = new FormData(form);
     ['pct', 'venda', 'margem', 'alvo', 'retencao', 'contratos', 'custo', 'impostos', 'despesas', 'pcts', 'margens'].forEach(function (k) { if (form.elements[k] && !form.elements[k].disabled) s[k] = fd.get(k); });
     ['dataSessao', 'taxa', 'disputasMes', 'custoDisputa', 'custoFixo'].forEach(function (k) { if (form.elements[k]) s[k] = fd.get(k); });
+    if (fd.get('funilModo') || K.FUNIL.some(function (e) { return form.elements['f_' + e.id]; })) { const fu = s.funil = Object.assign({ modo: 'pct', pct: {}, qtd: {} }, s.funil); const de = fd.get('funilAtual') === 'qtd' ? 'qtd' : 'pct'; K.FUNIL.forEach(function (e) { const i = form.elements['f_' + e.id]; if (i && !i.disabled) { fu[de] = Object.assign({}, fu[de]); fu[de][e.id] = i.value; } }); if (fd.get('funilModo')) fu.modo = fd.get('funilModo'); }
     K.ETAPAS.forEach(function (e) { if (form.elements['p_' + e.id]) { s.prazos = Object.assign({}, s.prazos); s.prazos[e.id] = fd.get('p_' + e.id); } });
     if (fd.get('base')) s.base = fd.get('base');
     if (form.elements.usarCustos) s.usarCustos = form.elements.usarCustos.checked;
@@ -65,12 +66,14 @@
   function hoje() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function etapas(s) { return K.ETAPAS.map(function (e) { const v = (s.prazos || {})[e.id]; return { id: e.id, nome: e.nome, dias: v == null || String(v).trim() === '' ? e.dias : n(v) }; }); }
   function dataBR(iso) { return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'; }
+  function funilEtapas(s) { const fu = Object.assign({ modo: 'pct', pct: {}, qtd: {} }, s.funil); const v = function (x, d) { return x == null || String(x).trim() === '' ? d : n(x); }; return K.FUNIL.map(function (e) { return { id: e.id, nome: e.nome, pct: v((fu.pct || {})[e.id], e.pct), qtd: v((fu.qtd || {})[e.id], e.qtd) }; }); }
+  function calcFunil(s) { return K.funil(funilEtapas(s), (s.funil || {}).modo === 'qtd' ? 'qtd' : 'pct', n(s.contratos)); }
   function extras(s) {
-    s = s || estado(); const r = K.calcular(entrada(s));
+    s = s || estado(); const r = K.calcular(entrada(s)); const fu = calcFunil(s); const taxa = fu.taxaDisputa;
     const pz = K.prazos(s.dataSessao || hoje(), etapas(s));
-    const ch = K.chances(n(s.taxa), n(s.contratos));
-    const rt = K.retorno({ taxa: n(s.taxa), disputasMes: n(s.disputasMes), custoDisputa: n(s.custoDisputa), custoFixo: n(s.custoFixo), comissaoPorVitoria: r.comissaoLiquida, diasRecebimento: pz ? pz.totalDias : 0, meses: 36 });
-    return { r: r, prazo: pz, chances: ch, retorno: rt };
+    const ch = K.chances(taxa, n(s.contratos));
+    const rt = K.retorno({ taxa: taxa, disputasMes: n(s.disputasMes), custoDisputa: n(s.custoDisputa), custoFixo: n(s.custoFixo), comissaoPorVitoria: r.comissaoLiquida, diasRecebimento: pz ? pz.totalDias : 0, meses: 36 });
+    return { r: r, prazo: pz, chances: ch, retorno: rt, funil: fu, taxa: taxa };
   }
   function meses(m) { return m == null ? '—' : m + (m === 1 ? ' mês' : ' meses'); }
   function resumoExtra(x, compacto) {
@@ -81,6 +84,18 @@
     if (x.retorno) dl.push(['Retorno do investimento', x.retorno.mesRetorno ? 'no ' + x.retorno.mesRetorno + 'º mês' : 'não se paga em 36 meses', 1]);
     if (x.retorno && !compacto) dl.push(['Caixa necessário até o retorno', moeda(x.retorno.investimentoMaximo)]);
     return dl.length ? '<dl class="cl-res cm-extra-res">' + dl.map(function (l) { return '<div' + (l[2] ? ' class="dest"' : '') + '><dt>' + esc(l[0]) + '</dt><dd>' + l[1] + '</dd></div>'; }).join('') + '</dl>' : '';
+  }
+  function formFunil(s) {
+    const modo = (s.funil || {}).modo === 'qtd' ? 'qtd' : 'pct'; const et = funilEtapas(s);
+    return '<h3>Funil das licitações</h3><p class="mini mudo">Preencha com os seus números: eles mudam com o tempo, o tipo de objeto e o cliente. A taxa de sucesso usada nos cálculos abaixo sai daqui.</p>' +
+      '<input type="hidden" name="funilAtual" value="' + modo + '">' + '<div class="cm-base" role="radiogroup" aria-label="Como preencher o funil">' + [['pct', 'Em % de cada etapa'], ['qtd', 'Por quantidades do histórico']].map(function (m) { return '<label class="cm-pilula"><input type="radio" name="funilModo" value="' + m[0] + '"' + (modo === m[0] ? ' checked' : '') + '><span>' + m[1] + '</span></label>'; }).join('') + '</div>' +
+      '<div class="tabela-rolagem"><table class="tabela compacta cm-funil"><thead><tr><th>Etapa</th><th class="n">' + (modo === 'qtd' ? 'Quantidade' : '% da etapa anterior') + '</th><th class="n">% do anterior</th><th class="n">% do topo</th><th class="cm-barra-col"></th><th class="n">Para <span class="cm-fn-v"></span></th></tr></thead><tbody>' +
+      et.map(function (e, i) { const val = modo === 'qtd' ? e.qtd : e.pct; return '<tr data-et="' + e.id + '"><th>' + esc(e.nome) + '</th><td class="n"><input name="f_' + e.id + '" inputmode="decimal" aria-label="' + esc(e.nome) + '" value="' + (i === 0 && modo === 'pct' ? '100' : esc(val == null ? '' : String(val).replace('.', ','))) + '"' + (i === 0 && modo === 'pct' ? ' disabled' : '') + '></td><td class="n" data-c="conv"></td><td class="n" data-c="topo"></td><td class="cm-barra-col"><span class="cm-barra"><i></i></span></td><td class="n" data-c="nec"></td></tr>'; }).join('') + '</tbody></table></div><p class="cm-funil-res"></p>';
+  }
+  function atualizarFunil(box, s) {
+    const f = calcFunil(s); box.querySelector('.cm-fn-v').textContent = f.contratos + (f.contratos === 1 ? ' contrato' : ' contratos');
+    f.etapas.forEach(function (e) { const tr = box.querySelector('tr[data-et="' + e.id + '"]'); if (!tr) return; tr.querySelector('[data-c=conv]').textContent = e.conversao == null ? '—' : pc(e.conversao, 1); tr.querySelector('[data-c=topo]').textContent = e.doTopo == null ? '—' : pc(e.doTopo, 2); tr.querySelector('[data-c=nec]').textContent = e.necessarios == null ? '—' : e.necessarios.toLocaleString('pt-BR'); tr.querySelector('.cm-barra i').style.width = Math.max(1.5, e.doTopo || 0) + '%'; tr.classList.toggle('gargalo', !!(f.gargalo && f.gargalo.id === e.id)); });
+    box.querySelector('.cm-funil-res').innerHTML = f.taxaDisputa == null ? '<span class="alerta">Complete o funil para calcular a taxa de sucesso.</span>' : 'Taxa de sucesso por disputa: <b>' + pc(f.taxaDisputa, 2) + '</b> · do edital encontrado ao contrato: <b>' + pc(f.taxaGeral, 2) + '</b>' + (f.gargalo ? ' · maior perda em <b>' + esc(f.gargalo.nome) + '</b> (' + pc(f.gargalo.conversao, 1) + ')' : '') + '.';
   }
   function secoesExtras(s) {
     const x = extras(s); let h = '';
@@ -95,8 +110,8 @@
       const c = x.chances;
       h += '<div class="cm-numeros"><div><small>Em média, para a 1ª vitória</small><b>' + Math.ceil(c.esperadoPrimeira) + ' disputas</b></div>' + (c.vitorias > 1 ? '<div><small>Em média, para ' + c.vitorias + ' vitórias</small><b>' + Math.ceil(c.esperadoVitorias) + ' disputas</b></div>' : '') + c.confianca.map(function (k) { return '<div><small>' + k.confianca + '% de chance de ganhar ao menos uma</small><b>' + k.disputas + ' disputas</b></div>'; }).join('') + '</div>' +
         '<div class="tabela-rolagem"><table class="tabela compacta"><thead><tr><th>Disputas</th>' + c.tabela.map(function (t) { return '<th class="n">' + t.disputas + '</th>'; }).join('') + '</tr></thead><tbody><tr><th>Chance de ganhar ao menos 1</th>' + c.tabela.map(function (t) { return '<td class="n">' + pc(t.chance, 0) + '</td>'; }).join('') + '</tr><tr><th>Vitórias esperadas</th>' + c.tabela.map(function (t) { return '<td class="n">' + Number(t.esperadas).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '</td>'; }).join('') + '</tr></tbody></table></div>' +
-        '<p class="mini mudo">Com taxa de sucesso de ' + pc(c.taxa) + ' por disputa. Cada licitação é tratada como independente; a taxa real sai do seu histórico de propostas ganhas e perdidas.</p>';
-    } else h += '<p class="mudo">Informe a taxa de sucesso (de 1% a 100%).</p>';
+        '<p class="mini mudo">Taxa de sucesso de ' + pc(c.taxa) + ' por disputa, calculada pelo funil (arrematadas × homologadas × contratos). Cada licitação é tratada como independente.</p>';
+    } else h += '<p class="mudo">Preencha o funil: as etapas depois das disputas precisam ser maiores que zero.</p>';
     h += '</section>';
     // retorno
     h += '<section class="cartao"><h3>Prazo de retorno</h3>';
@@ -105,8 +120,8 @@
       h += '<div class="cm-numeros"><div><small>1ª vitória esperada</small><b>' + meses(t.mesPrimeiraVitoria) + '</b></div><div><small>1º recebimento</small><b>' + meses(t.mesPrimeiroRecebimento) + '</b></div><div class="' + (t.mesRetorno ? 'ok' : 'ruim') + '"><small>Retorno (acumulado positivo)</small><b>' + (t.mesRetorno ? 'no ' + t.mesRetorno + 'º mês' : 'não se paga') + '</b></div><div><small>Caixa necessário até lá</small><b>' + moeda(t.investimentoMaximo) + '</b></div><div class="' + (t.viavel ? 'ok' : 'ruim') + '"><small>Resultado por mês, depois de receber</small><b>' + moeda(t.lucroMes) + '</b></div></div>' +
         (t.viavel ? '' : '<p class="alerta mini">Os custos por mês (' + moeda(t.custoMes) + ') são maiores que as comissões esperadas (' + moeda(t.receitaMes) + '). Aumente o ritmo de disputas, a taxa de sucesso ou a comissão, ou reduza os custos.</p>') +
         '<div class="tabela-rolagem"><table class="tabela compacta cm-retorno"><thead><tr><th>Mês</th><th class="n">Vitórias</th><th class="n">Comissões recebidas</th><th class="n">Custos</th><th class="n">Saldo do mês</th><th class="n">Acumulado</th></tr></thead><tbody>' + t.linhas.slice(0, ate).map(function (l) { return '<tr' + (l.mes === t.mesRetorno ? ' class="cm-atual"' : '') + '><th>' + l.mes + 'º</th><td class="n">' + Number(l.vitorias).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '</td><td class="n">' + moeda(l.receita) + '</td><td class="n">' + moeda(l.custo) + '</td><td class="n">' + moeda(l.saldo) + '</td><td class="n ' + (l.acumulado >= 0 ? 'pos' : 'neg') + '">' + moeda(l.acumulado) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-        '<p class="mini mudo">Média esperada: ' + Number(n(s.disputasMes)).toLocaleString('pt-BR') + ' disputas por mês × ' + pc(n(s.taxa)) + ' de sucesso × ' + moeda(x.r.comissaoLiquida) + ' por vitória, recebidas ' + t.atrasoMeses + ' mês(es) depois (prazo para recebimento acima).</p>';
-    } else h += '<p class="mudo">Informe a comissão e a venda (para saber quanto cada vitória rende), a taxa de sucesso e quantas licitações disputa por mês.</p>';
+        '<p class="mini mudo">Média esperada: ' + Number(n(s.disputasMes)).toLocaleString('pt-BR') + ' disputas por mês × ' + pc(x.taxa) + ' de sucesso (funil) × ' + moeda(x.r.comissaoLiquida) + ' por vitória, recebidas ' + t.atrasoMeses + ' mês(es) depois (prazo para recebimento acima).</p>';
+    } else h += '<p class="mudo">Informe a comissão e a venda (para saber quanto cada vitória rende), o funil e quantas licitações disputa por mês.</p>';
     h += '</section>';
     return h;
   }
@@ -132,7 +147,8 @@
       '<div class="linha cm-custos"' + (s.usarCustos ? '' : ' hidden') + '>' + campo('Custo dos produtos/serviços (R$)', '<input name="custo" inputmode="decimal" value="' + esc(s.custo) + '">') + campo('Impostos sobre a venda (%)', '<input name="impostos" inputmode="decimal" value="' + esc(s.impostos) + '">') + campo('Outras despesas (%)', '<input name="despesas" inputmode="decimal" value="' + esc(s.despesas) + '">', 'Frete, taxas, financeiro.') + '</div>' +
       '<div class="grupo-botoes"><button type="button" class="btn mini" data-a="janela" title="Abre a Seven Comissão em janela por cima de qualquer tela (Alt+M)">⧉ Abrir em janela flutuante</button><button type="button" class="btn mini fantasma" data-a="limpar">Limpar</button></div></form>' +
       '<section class="cartao cm-res" id="cm-res" aria-live="polite"></section></div>' +
-      '<form class="cartao cm-extra" id="cm-extra" autocomplete="off"><h3>Prazos, chances e retorno</h3><div class="linha">' + campo('Data da sessão', '<input type="date" name="dataSessao" value="' + esc(s.dataSessao || hoje()) + '">') + campo('Taxa de sucesso (%)', '<input name="taxa" inputmode="decimal" value="' + esc(s.taxa) + '">', 'De cada 100 disputas, quantas você ganha.') + campo('Disputas por mês', '<input name="disputasMes" inputmode="decimal" value="' + esc(s.disputasMes) + '">') + campo('Custo por disputa (R$)', '<input name="custoDisputa" inputmode="decimal" value="' + esc(s.custoDisputa) + '">', 'Certidões, garantias, viagens, plataformas.') + campo('Custo fixo mensal (R$)', '<input name="custoFixo" inputmode="decimal" value="' + esc(s.custoFixo) + '">', 'Equipe, sistemas, escritório.') + '</div>' +
+      '<form class="cartao cm-funil-form" id="cm-funil" autocomplete="off">' + formFunil(s) + '</form>' +
+      '<form class="cartao cm-extra" id="cm-extra" autocomplete="off"><h3>Prazos, chances e retorno</h3><div class="linha">' + campo('Data da sessão', '<input type="date" name="dataSessao" value="' + esc(s.dataSessao || hoje()) + '">') + campo('Disputas por mês', '<input name="disputasMes" inputmode="decimal" value="' + esc(s.disputasMes) + '">') + campo('Custo por disputa (R$)', '<input name="custoDisputa" inputmode="decimal" value="' + esc(s.custoDisputa) + '">', 'Certidões, garantias, viagens, plataformas.') + campo('Custo fixo mensal (R$)', '<input name="custoFixo" inputmode="decimal" value="' + esc(s.custoFixo) + '">', 'Equipe, sistemas, escritório.') + '</div>' +
       '<details class="cm-etapas"><summary>Dias de cada etapa até receber</summary><div class="linha">' + etapas(s).map(function (e) { return campo(e.nome, '<input name="p_' + e.id + '" inputmode="numeric" value="' + esc(String(e.dias)) + '">'); }).join('') + '</div></details></form>' +
       '<div id="cm-extra-res"></div>' +
       '<form class="cartao cm-listas" id="cm-listas"><h3>Todos os cenários</h3><div class="linha">' + campo('Percentuais de comissão', '<input name="pcts" value="' + esc(s.pcts) + '">', 'Separe por espaço. Ex.: 1 2 5 10 20 30') + campo('Margens de lucro líquido (%)', '<input name="margens" value="' + esc(s.margens) + '">', 'Colunas das tabelas de comissão sobre o lucro.') + '</div></form>' +
@@ -145,20 +161,21 @@
       '<li><b>Margem pelos custos:</b> (venda − custo − impostos − despesas) ÷ venda.</li>' +
       '<li><b>Disputas para ganhar:</b> em média 1 ÷ taxa de sucesso; para ter C% de chance de ao menos uma vitória, n = ln(1 − C) ÷ ln(1 − taxa).</li>' +
       '<li><b>Retorno:</b> por mês, vitórias = disputas × taxa; a comissão de cada vitória entra depois do prazo para recebimento; o retorno é o mês em que o acumulado (comissões − custos) fica positivo.</li></ul></details>';
-    const form = el.querySelector('#cm-form'), listas = el.querySelector('#cm-listas'), extra = el.querySelector('#cm-extra');
+    const form = el.querySelector('#cm-form'), listas = el.querySelector('#cm-listas'), extra = el.querySelector('#cm-extra'), funilF = el.querySelector('#cm-funil');
     const atualizar = function () {
       const r = K.calcular(entrada()); el.querySelector('#cm-res').innerHTML = '<h3>Resultado</h3>' + resumo(r, false);
       el.querySelector('#cm-cen').innerHTML = tabelaCenarios(estado());
-      el.querySelector('#cm-extra-res').innerHTML = secoesExtras(estado());
+      el.querySelector('#cm-extra-res').innerHTML = secoesExtras(estado()); atualizarFunil(funilF, estado());
       if (estado().usarCustos) { const m = entrada().margem; form.elements.margem.value = m == null ? '' : String(Math.round(m * 100) / 100).replace('.', ','); }
     };
     const mudou = function (ev) {
       lerForm(form); lerForm(listas); lerForm(extra);
+      if (ev && ev.target && ev.target.name === 'funilModo') { lerForm(funilF); funilF.innerHTML = formFunil(estado()); } else lerForm(funilF);
       if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; form.elements.margem.disabled = estado().usarCustos; }
       atualizar(); salvarDepois(); avisarMudanca('tela');
     };
-    form.oninput = form.onchange = mudou; listas.oninput = mudou; extra.oninput = extra.onchange = mudou;
-    form.onsubmit = listas.onsubmit = extra.onsubmit = function (ev) { ev.preventDefault(); };
+    form.oninput = form.onchange = mudou; listas.oninput = mudou; extra.oninput = extra.onchange = mudou; funilF.oninput = funilF.onchange = mudou;
+    form.onsubmit = listas.onsubmit = extra.onsubmit = funilF.onsubmit = function (ev) { ev.preventDefault(); };
     el.onclick = function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return;
       if (b.dataset.a === 'janela') ComissaoFlutuante.abrir();

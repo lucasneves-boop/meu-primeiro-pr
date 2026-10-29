@@ -85,3 +85,20 @@ test('prazo de retorno com atraso no recebimento', () => {
   assert.ok(!ruim.viavel); assert.strictEqual(ruim.mesRetorno, null);
   assert.strictEqual(C.retorno({ taxa: 10, disputasMes: 0, comissaoPorVitoria: 1 }), null);
 });
+
+test('funil em percentuais: taxa por disputa e quantidades necessárias', () => {
+  const f = C.funil(C.FUNIL, 'pct', 2);
+  perto(f.taxaDisputa, 16.15, '20% × 85% × 95%');
+  perto(f.taxaGeral, 100 * 0.3 * 0.8 * 0.9 * 0.2 * 0.85 * 0.95);
+  const n = Object.fromEntries(f.etapas.map(e => [e.id, e.necessarios]));
+  assert.strictEqual(n.contratadas, 2); assert.strictEqual(n.disputas, 13); assert.strictEqual(n.encontrados, 58, '2 ÷ (30% × 80% × 90% × 16,15%)');
+  assert.strictEqual(f.gargalo.id, 'vencidas');
+});
+
+test('funil por quantidades do histórico', () => {
+  const et = [{ id: 'encontrados', nome: 'E', qtd: 200 }, { id: 'disputas', nome: 'D', qtd: 40 }, { id: 'vencidas', nome: 'V', qtd: 10 }, { id: 'contratadas', nome: 'C', qtd: 8 }];
+  const f = C.funil(et, 'qtd', 1);
+  perto(f.etapas[1].conversao, 20); perto(f.etapas[2].conversao, 25); perto(f.etapas[3].conversao, 80);
+  perto(f.taxaDisputa, 20, '8 contratos em 40 disputas'); assert.strictEqual(f.etapas[0].necessarios, 25);
+  assert.strictEqual(C.funil([{ id: 'encontrados', qtd: 0 }, { id: 'disputas', qtd: 3 }], 'qtd').etapas[1].conversao, null);
+});

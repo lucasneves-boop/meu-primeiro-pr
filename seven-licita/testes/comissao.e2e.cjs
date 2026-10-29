@@ -32,7 +32,19 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await foto('comissao-tela');
     await pg.reload(); await pg.waitForSelector('#cm-form'); ok(await pg.inputValue('#cm-form [name=pct]') === '30', 'valores ficam salvos');
     // prazo para recebimento, disputas necessárias e retorno
-    await pg.fill('#cm-extra [name=dataSessao]', '2026-11-02'); await pg.fill('#cm-extra [name=taxa]', '20'); await pg.fill('#cm-extra [name=disputasMes]', '10'); await pg.fill('#cm-extra [name=custoDisputa]', '100'); await pg.fill('#cm-extra [name=custoFixo]', '2.000');
+    // funil editável: em % e por quantidades do histórico
+    ok(/Taxa de sucesso por disputa:\s*16,15%/.test(await pg.innerText('#cm-funil')), 'funil padrão: 20% × 85% × 95%');
+    await pg.fill('#cm-funil [name=f_homologadas]', '100'); await pg.fill('#cm-funil [name=f_contratadas]', '100');
+    ok(/Taxa de sucesso por disputa:\s*20%/.test(await pg.innerText('#cm-funil')) && /maior perda em Arrematadas/.test(await pg.innerText('#cm-funil')), 'funil em %: taxa e gargalo');
+    ok(await pg.textContent('#cm-funil tr[data-et=disputas] [data-c=nec]') === '25', 'disputas necessárias para 5 contratos');
+    await pg.click('#cm-funil .cm-pilula:has(input[value=qtd])'); await pg.waitForSelector('#cm-funil [name=f_encontrados]:not([disabled])');
+    for (const [k, v] of [['encontrados', '200'], ['viaveis', '60'], ['propostas', '50'], ['disputas', '40'], ['vencidas', '10'], ['homologadas', '9'], ['contratadas', '8']]) await pg.fill('#cm-funil [name=f_' + k + ']', v);
+    ok(/Taxa de sucesso por disputa:\s*20%/.test(await pg.innerText('#cm-funil')) && /do edital encontrado ao contrato:\s*4%/.test(await pg.innerText('#cm-funil')), 'funil por quantidades: 8 contratos em 40 disputas e 200 editais');
+    await pg.click('#cm-funil .cm-pilula:has(input[value=pct])'); await pg.waitForSelector('#cm-funil [name=f_encontrados][disabled]');
+    ok(await pg.inputValue('#cm-funil [name=f_homologadas]') === '100', 'os % digitados continuam ao voltar do modo quantidades');
+    await pg.click('#cm-funil .cm-pilula:has(input[value=qtd])'); await pg.waitForSelector('#cm-funil [name=f_encontrados]:not([disabled])');
+    ok(await pg.inputValue('#cm-funil [name=f_encontrados]') === '200', 'as quantidades também ficam guardadas');
+    await pg.fill('#cm-extra [name=dataSessao]', '2026-11-02'); await pg.fill('#cm-extra [name=disputasMes]', '10'); await pg.fill('#cm-extra [name=custoDisputa]', '100'); await pg.fill('#cm-extra [name=custoFixo]', '2.000');
     let x = await pg.innerText('#cm-extra-res');
     ok(/O órgão paga por volta de 31\/01\/2027 \(90 dias/.test(x) && /comissão chega por volta de 05\/02\/2027 \(95 dias\)/.test(x), 'prazo para recebimento a partir da sessão');
     ok(/Em média, para a 1ª vitória\s*5 disputas/.test(x) && /90% de chance de ganhar ao menos uma\s*11 disputas/.test(x) && /Em média, para 5 vitórias\s*25 disputas/.test(x), 'quantas licitações disputar');

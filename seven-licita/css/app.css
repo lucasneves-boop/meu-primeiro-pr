@@ -2706,3 +2706,9 @@ html.com-fundo-animado body { background: transparent; }
 .cm-retorno td.pos { color: var(--c-verde, #1baf7a); font-weight: 600; } .cm-retorno td.neg { color: var(--c-vermelho, #e34948); }
 .cm-retorno tr.cm-atual td, .cm-retorno tr.cm-atual th { background: rgba(27, 175, 122, .12); }
 .cmf .cm-extra-res { margin-top: 6px; border-top: 1px solid #222; padding-top: 4px; }
+.tabela.cm-funil td input { width: 96px; max-width: 96px; text-align: right; padding: 5px 8px; }
+.cm-funil th:first-child { text-align: left; white-space: nowrap; }
+.cm-barra-col { width: 28%; min-width: 120px; }
+.cm-barra { display: block; height: 10px; border-radius: 99px; background: var(--superficie-2); overflow: hidden; } .cm-barra i { display: block; height: 100%; background: var(--ouro); border-radius: 99px; }
+.cm-funil tr.gargalo th { color: var(--c-vermelho, #e34948); } .cm-funil tr.gargalo .cm-barra i { background: var(--c-vermelho, #e34948); }
+.cm-funil-res { margin: 8px 0 0; }

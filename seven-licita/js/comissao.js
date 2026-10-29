@@ -118,7 +118,38 @@
     };
   }
 
+  // ---------- funil das licitações: % de cada etapa que chega à seguinte (ou quantidades do histórico) ----------
+  const FUNIL = [
+    { id: 'encontrados', nome: 'Editais encontrados', pct: 100, qtd: 100 },
+    { id: 'viaveis', nome: 'Editais viáveis (após análise)', pct: 30, qtd: 30 },
+    { id: 'propostas', nome: 'Propostas cadastradas', pct: 80, qtd: 24 },
+    { id: 'disputas', nome: 'Disputas (sessões realizadas)', pct: 90, qtd: 22 },
+    { id: 'vencidas', nome: 'Arrematadas (1º lugar)', pct: 20, qtd: 4 },
+    { id: 'homologadas', nome: 'Habilitadas e homologadas', pct: 85, qtd: 4 },
+    { id: 'contratadas', nome: 'Contratos / empenhos assinados', pct: 95, qtd: 4 }
+  ];
+  // etapas: [{ id, nome, pct?, qtd? }]; modo 'pct' usa pct, 'qtd' calcula o % pela quantidade da etapa anterior
+  function funil(etapas, modo, contratos) {
+    etapas = etapas && etapas.length ? etapas : FUNIL; const qtd = modo === 'qtd';
+    let topo = 1; const linhas = etapas.map(function (e, i) {
+      let p;
+      if (i === 0) p = 1;
+      else if (qtd) { const a = num(etapas[i - 1].qtd), b = num(e.qtd); p = a > 0 && b != null ? b / a : null; }
+      else p = num(e.pct) != null ? e.pct / 100 : null;
+      if (p != null) p = Math.max(0, Math.min(1, p));
+      topo = topo != null && p != null ? topo * p : null;
+      return { id: e.id, nome: e.nome, qtd: num(e.qtd), conversao: p == null ? null : p * 100, doTopo: topo == null ? null : topo * 100 };
+    });
+    const iDisp = linhas.findIndex(function (l) { return l.id === 'disputas'; });
+    const prod = function (de) { let x = 1; for (let i = de + 1; i < linhas.length; i++) { if (linhas[i].conversao == null) return null; x *= linhas[i].conversao / 100; } return x; };
+    const taxaDisputa = iDisp >= 0 ? prod(iDisp) : null; const v = Math.max(1, Math.round(num(contratos) || 1));
+    // quantas em cada etapa para fechar v contratos (de trás para frente)
+    linhas.forEach(function (l, i) { const x = prod(i); l.necessarios = x ? Math.ceil(v / x - 1e-9) : null; });
+    const gargalo = linhas.slice(1).reduce(function (m, l) { return l.conversao != null && (m == null || l.conversao < m.conversao) ? l : m; }, null);
+    return { etapas: linhas, taxaDisputa: taxaDisputa == null ? null : taxaDisputa * 100, taxaGeral: linhas[linhas.length - 1].doTopo, contratos: v, gargalo: gargalo };
+  }
+
   function lerLista(txt) { return String(txt || '').split(/[\s;]+/).map(function (s) { return Number(s.replace(/\./g, '').replace(',', '.').replace('%', '')); }).filter(function (x) { return isFinite(x) && x > 0; }).slice(0, 16); }
 
-  return { calcular: calcular, cenarios: cenarios, prazos: prazos, chances: chances, retorno: retorno, ETAPAS: ETAPAS, somarDias: somarDias, margemDosCustos: margemDosCustos, lerLista: lerLista, PCTS: PCTS, MARGENS: MARGENS, div: div };
+  return { calcular: calcular, cenarios: cenarios, prazos: prazos, chances: chances, funil: funil, FUNIL: FUNIL, retorno: retorno, ETAPAS: ETAPAS, somarDias: somarDias, margemDosCustos: margemDosCustos, lerLista: lerLista, PCTS: PCTS, MARGENS: MARGENS, div: div };
 });
