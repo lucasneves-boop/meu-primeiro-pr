@@ -2,8 +2,8 @@
    Responde: quanto recebo, quanto preciso vender em licitação para chegar ao alvo, que margem líquida preciso
    e que percentual preciso, em todos os cenários. Percentuais entram em pontos (5 = 5%). Puro: roda no navegador e no Node. */
 (function (raiz, fabrica) {
-  if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.Comissao = fabrica();
-})(typeof self !== 'undefined' ? self : this, function () {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica(require('./calc.js')); else raiz.Comissao = fabrica(raiz.Calc);
+})(typeof self !== 'undefined' ? self : this, function (Calc) {
   'use strict';
   const PCTS = [1, 2, 3, 4, 5, 7.5, 10, 15, 20, 25, 30];
   const MARGENS = [5, 10, 15, 20, 25, 30];
@@ -115,12 +115,27 @@
     { id: 'comissao', nome: 'Repasse da comissão', dias: 5 }
   ];
   function somarDias(iso, d) { const x = new Date(iso + 'T12:00:00'); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
-  function prazos(inicio, etapas) {
+  // tipo de cada etapa: 'corridos' ou 'uteis' (sem sábados, domingos e feriados nacionais; feriados locais em opc.extras).
+  // Contagem do art. 183 da Lei 14.133: exclui o dia do começo e inclui o do vencimento; com opc.prorrogar, o vencimento
+  // em dia sem expediente passa para o primeiro dia útil seguinte (§ 1º).
+  function diasEntre(a, b) { return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5); }
+  function prazos(inicio, etapas, opc) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(inicio || ''))) return null;
-    let total = 0; const linhas = (etapas || ETAPAS).map(function (e) { const d = Math.max(0, Math.round(num(e.dias) || 0)); total += d; return { id: e.id, nome: e.nome, dias: d, acumulado: total, data: somarDias(inicio, total) }; });
+    opc = opc || {}; const cal = { facultativos: !!opc.facultativos, extras: opc.extras || [] };
+    const util = function (iso) { return !Calc || Calc.ehUtil(new Date(iso + 'T12:00:00'), cal); };
+    let data = inicio, uteisTot = 0;
+    const linhas = (etapas || ETAPAS).map(function (e) {
+      const d = Math.max(0, Math.round(num(e.dias) || 0)); const tipo = e.tipo === 'uteis' && Calc ? 'uteis' : 'corridos'; const de = data;
+      data = tipo === 'uteis' ? Calc.somar(data, d, true, cal) : somarDias(data, d);
+      let prorrogado = false;
+      if (tipo === 'corridos' && d > 0 && opc.prorrogar && Calc && !util(data)) { data = Calc.somar(data, 1, true, cal); prorrogado = true; }
+      if (tipo === 'uteis') uteisTot += d;
+      return { id: e.id, nome: e.nome, dias: d, tipo: tipo, corridosEtapa: diasEntre(de, data), acumulado: diasEntre(inicio, data), data: data, prorrogado: prorrogado };
+    });
     const pg = linhas.find(function (l) { return l.id === 'pagamento'; });
-    return { inicio: inicio, etapas: linhas, totalDias: total, dataFinal: somarDias(inicio, total), diasAtePagamento: pg ? pg.acumulado : null, dataPagamento: pg ? pg.data : null };
+    return { inicio: inicio, etapas: linhas, totalDias: diasEntre(inicio, data), dataFinal: data, diasAtePagamento: pg ? pg.acumulado : null, dataPagamento: pg ? pg.data : null, diasUteis: uteisTot };
   }
+
 
   // ---------- quantas licitações disputar: taxa de sucesso p (%) ----------
   function chances(taxa, vitorias) {

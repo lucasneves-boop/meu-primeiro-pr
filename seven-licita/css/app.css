@@ -2750,3 +2750,5 @@ tr.cm-total th, tr.cm-total td { font-weight: 700; border-top: 2px solid var(--o
 .gerando-pdf .cm-relatorio a { color: #111111; text-decoration: none; }
 .cm-ganha > summary { cursor: pointer; } .cm-ganha form { margin-top: 12px; } .cm-exec-ini { margin: 6px 0 10px; } .cm-exec-ini summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
 .cm-acoes { white-space: nowrap; } .cm-acoes .btn { margin: 1px; }
+.cm-etapas-l { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin: 8px 0; }
+.cm-etapa-l { display: grid; grid-template-columns: 1fr 70px 130px; gap: 6px; align-items: center; } .cm-etapa-l span { font-size: 13px; }

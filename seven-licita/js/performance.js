@@ -43,6 +43,7 @@
     return {
       id: c.id, quadroId: q.id, titulo: c.titulo || '', quadro: q.nome, lista: lst.nome || '', etapa: perdida ? Math.max(etapa, 3) : etapa, empresaId: c.empresaId || (p && p.empresaId) || null,
       orgao: (c.valores && c.valores.orgao) || (p && p.orgao) || '', numero: (c.valores && c.valores.numero) || (p && p.numero) || '',
+      licitacao: c.licitacao || null, uasg: (c.licitacao && c.licitacao.uasg) || (p && p.uasg) || '', portal: (c.valores && c.valores.portal) || (p && p.portal) || '', valorEstimado: (c.licitacao && Number(c.licitacao.valorEstimado)) || null,
       ganha: !!ganha, perdida: !!perdida, arquivado: !!c.arquivado, valor: valor, criadoEm: dataDe(c.criadoEm), dataGanho: dataGanho, dataPerda: dataPerda,
       empenhado: ex.empenhado, faturado: ex.faturado, recebido: ex.recebido, aReceber: cent(ex.faturado - ex.recebido),
       notas: lista(x.notas).map(function (n) { const pago = soma(lista(x.pagamentos).filter(function (g) { return g.notaId === n.id; })); return { id: n.id, numero: n.numero, data: dataDe(n.data), valor: cent(n.valor), vencimento: n.vencimento || '', pago: pago, aberto: Math.max(0, cent((Number(n.valor) || 0) - pago)) }; }),

@@ -91,7 +91,8 @@
     ['pct', 'venda', 'margem', 'alvo', 'retencao', 'contratos', 'custo', 'impostos', 'despesas', 'pcts', 'margens'].forEach(function (k) { if (form.elements[k] && !form.elements[k].disabled) s[k] = fd.get(k); });
     ['dataSessao', 'taxa', 'disputasMes', 'custoDisputa', 'custoFixo'].forEach(function (k) { if (form.elements[k]) s[k] = fd.get(k); });
     if (fd.get('funilModo') || K.FUNIL.some(function (e) { return form.elements['f_' + e.id]; })) { const fu = s.funil = Object.assign({ modo: 'pct', pct: {}, qtd: {} }, s.funil); const de = fd.get('funilAtual') === 'qtd' ? 'qtd' : 'pct'; K.FUNIL.forEach(function (e, k) { const i = form.elements['f_' + e.id]; if (!i || i.disabled) return; if (k === 0 && de === 'pct') { fu.base = i.value; return; } fu[de] = Object.assign({}, fu[de]); fu[de][e.id] = i.value; }); if (fd.get('funilModo')) fu.modo = fd.get('funilModo'); }
-    K.ETAPAS.forEach(function (e) { if (form.elements['p_' + e.id]) { s.prazos = Object.assign({}, s.prazos); s.prazos[e.id] = fd.get('p_' + e.id); } });
+    K.ETAPAS.forEach(function (e) { if (form.elements['p_' + e.id]) { s.prazos = Object.assign({}, s.prazos); s.prazos[e.id] = fd.get('p_' + e.id); } if (form.elements['t_' + e.id]) { s.prazoTipo = Object.assign({}, s.prazoTipo); s.prazoTipo[e.id] = fd.get('t_' + e.id); } });
+    if (form.elements.pzProrrogar) { s.pzProrrogar = form.elements.pzProrrogar.checked; s.pzFacultativos = form.elements.pzFacultativos.checked; s.pzFeriados = fd.get('pzFeriados'); }
     if (fd.get('base')) s.base = fd.get('base');
     if (form.elements.usarCustos) s.usarCustos = form.elements.usarCustos.checked;
     lerAvancado(form, s);
@@ -100,14 +101,17 @@
 
   // ---------- prazos, chances e retorno ----------
   function hoje() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-  function etapas(s) { return K.ETAPAS.map(function (e) { const v = (s.prazos || {})[e.id]; return { id: e.id, nome: e.nome, dias: v == null || String(v).trim() === '' ? e.dias : n(v) }; }); }
+  function etapas(s) { return K.ETAPAS.map(function (e) { const v = (s.prazos || {})[e.id]; return { id: e.id, nome: e.nome, dias: v == null || String(v).trim() === '' ? e.dias : n(v), tipo: (s.prazoTipo || {})[e.id] === 'uteis' ? 'uteis' : 'corridos' }; }); }
+  // feriados locais: "20/01/2026, 24/10/2026" → ISO
+  function feriadosLocais(txt) { return String(txt || '').split(/[,;\s]+/).map(function (x) { const m = x.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }).filter(Boolean); }
+  function opcPrazo(s) { return { prorrogar: s.pzProrrogar !== false, facultativos: !!s.pzFacultativos, extras: feriadosLocais(s.pzFeriados) }; }
   function dataBR(iso) { return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'; }
   function funilEtapas(s) { const fu = Object.assign({ modo: 'pct', pct: {}, qtd: {} }, s.funil); const v = function (x, d) { return x == null || String(x).trim() === '' ? d : n(x); }; return K.FUNIL.map(function (e) { return { id: e.id, nome: e.nome, pct: v((fu.pct || {})[e.id], e.pct), qtd: v((fu.qtd || {})[e.id], e.qtd) }; }); }
   function baseFunil(s) { const b = (s.funil || {}).base; return b == null || String(b).trim() === '' ? 100 : n(b); }
   function calcFunil(s) { return K.funil(funilEtapas(s), (s.funil || {}).modo === 'qtd' ? 'qtd' : 'pct', n(s.contratos), baseFunil(s)); }
   function extras(s) {
     s = s || estado(); const r = K.calcular(entrada(s)); const fu = calcFunil(s); const taxa = fu.taxaDisputa;
-    const pz = K.prazos(s.dataSessao || hoje(), etapas(s));
+    const pz = K.prazos(s.dataSessao || hoje(), etapas(s), opcPrazo(s));
     const ch = K.chances(taxa, n(s.contratos));
     const rt = K.retorno({ fixoMes: n(s.fixo), taxa: taxa, disputasMes: n(s.disputasMes), custoDisputa: n(s.custoDisputa), custoFixo: n(s.custoFixo), comissaoPorVitoria: r.comissaoLiquida, diasRecebimento: pz ? pz.totalDias : 0, meses: 36 });
     return { r: r, prazo: pz, chances: ch, retorno: rt, funil: fu, taxa: taxa };
@@ -141,9 +145,9 @@
     const x = extras(s); let h = '';
     // prazo
     h += '<section class="cartao"><h3>Prazo para recebimento</h3>';
-    h += x.prazo ? '<ol class="cm-linha-tempo"><li class="ini"><b>' + dataBR(x.prazo.inicio) + '</b><span>Sessão da licitação</span></li>' + x.prazo.etapas.map(function (e) { return '<li' + (e.id === 'pagamento' ? ' class="pg"' : e.id === 'comissao' ? ' class="fim"' : '') + '><b>' + dataBR(e.data) + '</b><span>' + esc(e.nome) + '</span><small>+' + e.dias + ' dias · ' + e.acumulado + ' no total</small></li>'; }).join('') + '</ol>' +
-      '<p class="cm-prazo-res">O órgão paga por volta de <b>' + dataBR(x.prazo.dataPagamento) + '</b> (' + x.prazo.diasAtePagamento + ' dias após a sessão) e a comissão chega por volta de <b>' + dataBR(x.prazo.dataFinal) + '</b> (' + x.prazo.totalDias + ' dias).</p>' : '<p class="mudo">Informe a data da sessão.</p>';
-    h += '<p class="mini mudo">Dias corridos e prazos médios: ajuste cada etapa pelo edital, pelo contrato e pelo histórico de pagamento do órgão (veja o Seven CAPAG).</p></section>';
+    h += x.prazo ? '<ol class="cm-linha-tempo"><li class="ini"><b>' + dataBR(x.prazo.inicio) + '</b><span>Sessão da licitação</span></li>' + x.prazo.etapas.map(function (e) { return '<li' + (e.id === 'pagamento' ? ' class="pg"' : e.id === 'comissao' ? ' class="fim"' : '') + '><b>' + dataBR(e.data) + '</b><span>' + esc(e.nome) + '</span><small>+' + e.dias + (e.tipo === 'uteis' ? ' dias úteis (' + e.corridosEtapa + ' corridos)' : ' dias corridos') + (e.prorrogado ? ' · vencimento prorrogado para dia útil' : '') + ' · ' + e.acumulado + ' no total</small></li>'; }).join('') + '</ol>' +
+      '<p class="cm-prazo-res">O órgão paga por volta de <b>' + dataBR(x.prazo.dataPagamento) + '</b> (' + x.prazo.diasAtePagamento + ' dias após a sessão) e a comissão chega por volta de <b>' + dataBR(x.prazo.dataFinal) + '</b> (' + x.prazo.totalDias + ' dias corridos' + (x.prazo.diasUteis ? ', com ' + x.prazo.diasUteis + ' dias úteis nas etapas em dias úteis' : '') + ').</p>' : '<p class="mudo">Informe a data da sessão.</p>';
+    const o = opcPrazo(s); h += '<p class="mini mudo">Contagem do art. 183 da Lei 14.133/2021: exclui o dia do começo e inclui o do vencimento. Dias úteis excluem sábados, domingos e feriados nacionais' + (o.facultativos ? ' e pontos facultativos federais' : '') + (o.extras.length ? ' e ' + o.extras.length + ' feriado(s) local(is)' : '') + (o.prorrogar ? '; vencimento em dia sem expediente passa para o próximo dia útil' : '') + '. Escolha dias úteis ou corridos em cada etapa conforme o edital e o contrato; confira o expediente do órgão (veja também o Seven CAPAG).</p></section>';
     // chances
     h += '<section class="cartao"><h3>Quantas licitações disputar para ganhar</h3>';
     if (x.chances) {
@@ -190,7 +194,12 @@
       '<section class="cartao cm-res" id="cm-res" aria-live="polite"></section></div>' +
       '<form class="cartao cm-funil-form" id="cm-funil" autocomplete="off">' + formFunil(s) + '</form>' +
       '<form class="cartao cm-extra" id="cm-extra" autocomplete="off"><h3>Prazos, chances e retorno</h3><div class="linha">' + campo('Data da sessão', '<input type="date" name="dataSessao" value="' + esc(s.dataSessao || hoje()) + '">') + campo('Disputas por mês', '<input name="disputasMes" inputmode="decimal" value="' + esc(s.disputasMes) + '">') + campo('Custo por disputa (R$)', '<input name="custoDisputa" inputmode="decimal" value="' + esc(s.custoDisputa) + '">', 'Certidões, garantias, viagens, plataformas.') + campo('Custo fixo mensal (R$)', '<input name="custoFixo" inputmode="decimal" value="' + esc(s.custoFixo) + '">', 'Equipe, sistemas, escritório.') + '</div>' +
-      '<details class="cm-etapas"><summary>Dias de cada etapa até receber</summary><div class="linha">' + etapas(s).map(function (e) { return campo(e.nome, '<input name="p_' + e.id + '" inputmode="numeric" value="' + esc(String(e.dias)) + '">'); }).join('') + '</div></details></form>' +
+      '<details class="cm-etapas"' + ((s.prazoTipo && Object.keys(s.prazoTipo).some(function (k) { return s.prazoTipo[k] === 'uteis'; })) ? ' open' : '') + '><summary>Dias de cada etapa até receber (úteis ou corridos)</summary>' +
+      '<div class="grupo-botoes"><button type="button" class="btn mini" data-a="pz-uteis">Tudo em dias úteis</button><button type="button" class="btn mini" data-a="pz-corridos">Tudo em dias corridos</button></div>' +
+      '<div class="cm-etapas-l">' + etapas(s).map(function (e) { return '<div class="cm-etapa-l"><span>' + esc(e.nome) + '</span><input name="p_' + e.id + '" inputmode="numeric" value="' + esc(String(e.dias)) + '" aria-label="Dias: ' + esc(e.nome) + '"><select name="t_' + e.id + '" aria-label="Tipo de dia: ' + esc(e.nome) + '"><option value="corridos"' + (e.tipo === 'corridos' ? ' selected' : '') + '>dias corridos</option><option value="uteis"' + (e.tipo === 'uteis' ? ' selected' : '') + '>dias úteis</option></select></div>'; }).join('') + '</div>' +
+      '<label class="check"><input type="checkbox" name="pzProrrogar"' + (s.pzProrrogar !== false ? ' checked' : '') + '> Vencimento em sábado, domingo ou feriado passa para o próximo dia útil (art. 183, § 1º)</label>' +
+      '<label class="check"><input type="checkbox" name="pzFacultativos"' + (s.pzFacultativos ? ' checked' : '') + '> Considerar pontos facultativos federais (Carnaval, Corpus Christi…)</label>' +
+      campo('Feriados locais do órgão', '<input name="pzFeriados" value="' + esc(s.pzFeriados || '') + '" placeholder="20/01/2026, 24/10/2026">', 'Estaduais ou municipais, separados por vírgula.') + '</details></form>' +
       '<div id="cm-extra-res"></div>' +
       '<form class="cartao cm-listas" id="cm-listas"><h3>Todos os cenários</h3><div class="linha">' + campo('Percentuais de comissão', '<input name="pcts" value="' + esc(s.pcts) + '">', 'Separe por espaço. Ex.: 1 2 5 10 20 30') + campo('Margens de lucro líquido (%)', '<input name="margens" value="' + esc(s.margens) + '">', 'Colunas das tabelas de comissão sobre o lucro.') + '</div></form>' +
       '<div id="cm-cen"></div>' +
@@ -222,6 +231,7 @@
     form.onsubmit = listas.onsubmit = extra.onsubmit = funilF.onsubmit = function (ev) { ev.preventDefault(); };
     el.onclick = function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return;
+      if (b.dataset.a === 'pz-uteis' || b.dataset.a === 'pz-corridos') { const st = estado(); st.prazoTipo = {}; K.ETAPAS.forEach(function (e) { st.prazoTipo[e.id] = b.dataset.a === 'pz-uteis' ? 'uteis' : 'corridos'; }); Dados.salvar(); avisarMudanca('tela'); App.redesenhar(); return; }
       if (acaoAvancado(estado(), b.dataset.a, b.dataset.i)) { Dados.salvar(); avisarMudanca('tela'); App.redesenhar(); return; }
       if (b.dataset.a === 'janela') ComissaoFlutuante.abrir();
       if (b.dataset.a === 'usar-disputas') { const i = el.querySelector('#cm-extra [name=disputasMes]'); i.value = String(b.dataset.v).replace('.', ','); i.dispatchEvent(new Event('input', { bubbles: true })); aviso('Disputas por mês: ' + i.value + ' (vindas do funil).'); }

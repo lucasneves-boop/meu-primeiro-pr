@@ -137,3 +137,20 @@ test('margem necessária com faixas tem precisão de centésimos', () => {
   const r = C.calcular({ base: 'lucro', venda: 200000, faixas: [{ ate: '', pct: 30 }], alvo: 9000 });
   perto(r.margemNecessaria, 15);
 });
+
+test('prazo em dias úteis e corridos (art. 183), com feriados e prorrogação', () => {
+  // 02/11/2026 (Finados, segunda): 5 dias úteis → 03,04,05,06,09 = 09/11
+  const u = C.prazos('2026-11-01', [{ id: 'a', nome: 'A', dias: 5, tipo: 'uteis' }]);
+  assert.strictEqual(u.dataFinal, '2026-11-09'); assert.strictEqual(u.etapas[0].corridosEtapa, 8);
+  // 30 dias corridos a partir de 02/11/2026 caem em 02/12 (quarta): sem prorrogação
+  assert.strictEqual(C.prazos('2026-11-02', [{ id: 'a', dias: 30 }], { prorrogar: true }).dataFinal, '2026-12-02');
+  // 05/12/2026 é sábado: com prorrogação vai para segunda 07/12
+  const p = C.prazos('2026-11-05', [{ id: 'a', dias: 30 }], { prorrogar: true });
+  assert.strictEqual(p.dataFinal, '2026-12-07'); assert.ok(p.etapas[0].prorrogado);
+  assert.strictEqual(C.prazos('2026-11-05', [{ id: 'a', dias: 30 }]).dataFinal, '2026-12-05', 'sem prorrogação fica no sábado');
+  // feriado local informado
+  assert.strictEqual(C.prazos('2026-11-01', [{ id: 'a', dias: 5, tipo: 'uteis' }], { extras: ['2026-11-04'] }).dataFinal, '2026-11-10');
+  // etapas encadeadas: a 2ª conta a partir da data final da 1ª
+  const m = C.prazos('2026-11-02', [{ id: 'a', dias: 2, tipo: 'uteis' }, { id: 'pagamento', dias: 10 }]);
+  assert.strictEqual(m.etapas[0].data, '2026-11-04'); assert.strictEqual(m.dataPagamento, '2026-11-14'); assert.strictEqual(m.diasUteis, 2);
+});

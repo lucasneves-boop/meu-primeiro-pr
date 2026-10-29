@@ -103,7 +103,7 @@
       etiquetas: [['Risco crítico', 'vermelho'], ['Documentação', 'amarelo'], ['Viabilidade financeira', 'verde'], ['Operação e logística', 'azul'], ['Vantagem competitiva', 'rosa']].map(function (x) { return { id: Dados.id('et'), nome: x[0], cor: x[1] }; }) };
     if (modelo === 'licitacoes') {
       q.etiquetas = q.etiquetas.concat([['Pregão', 'preto'], ['Dispensa', 'cinza'], ['ME/EPP', 'dourado'], ['SRP', 'roxo'], ['Ganha', 'lima'], ['Perdida', 'laranja']].map(function (x) { return { id: Dados.id('et'), nome: x[0], cor: x[1] }; }));
-      q.campos = [{ id: 'valor', nome: 'Valor estimado', tipo: 'moeda' }, { id: 'orgao', nome: 'Órgão', tipo: 'texto' }, { id: 'numero', nome: 'Nº do processo', tipo: 'texto' }, { id: 'portal', nome: 'Portal', tipo: 'lista', opcoes: ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Compras Públicas', 'SISLOG-GO', 'Licitações-e', 'Outro'] }];
+      q.campos = [{ id: 'valor', nome: 'Valor estimado', tipo: 'moeda' }, { id: 'orgao', nome: 'Órgão', tipo: 'texto' }, { id: 'numero', nome: 'Nº do processo', tipo: 'texto' }, { id: 'portal', nome: 'Portal', tipo: 'lista', opcoes: Nucleo.PORTAIS.slice() }];
       q.automacoes = [
         { id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: '*' }, acoes: [{ tipo: 'checklist-etapa' }] },
         { id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Concluído' }, acoes: [{ tipo: 'concluir' }] },
@@ -1255,13 +1255,23 @@
 
   // Licitação já ganha lançada fora do funil (Seven Comissão → Licitações ganhas): cartão com etiqueta Ganha,
   // campos preenchidos e a execução (contrato, empenhos, notas e pagamentos) pronta.
+  function resumoLicitacao(o) {
+    const L = o.licitacao || {}; const m = function (v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }; const d = function (x) { return x ? x.split('-').reverse().join('/') : ''; };
+    return [L.objeto || o.objeto, L.itens && 'Itens/lotes: ' + L.itens,
+      [o.orgao, L.uasg && 'UASG ' + L.uasg, L.municipio && L.uf ? L.municipio + '/' + L.uf : L.uf].filter(Boolean).join(' · '),
+      [L.modalidade || o.modalidade, L.criterio, o.portal, L.srp && 'Registro de preços'].filter(Boolean).join(' · '),
+      'Ganho: ' + m(o.valor) + (L.valorEstimado ? ' (estimado ' + m(L.valorEstimado) + ', deságio ' + ((1 - o.valor / L.valorEstimado) * 100).toFixed(1).replace('.', ',') + '%)' : ''),
+      [o.contrato && 'Contrato/ata ' + o.contrato, L.vigenciaInicio || o.vigencia ? 'vigência ' + [d(L.vigenciaInicio), d(o.vigencia)].filter(Boolean).join(' a ') : ''].filter(Boolean).join(' · '),
+      [L.gestor && 'Gestor: ' + L.gestor + (L.contatoGestor ? ' (' + L.contatoGestor + ')' : ''), L.garantia && 'garantia ' + L.garantia + '%', L.prazoEntrega && 'entrega em ' + L.prazoEntrega + ' dias', L.prazoPagamento && 'pagamento em ' + L.prazoPagamento + ' dias após o atesto'].filter(Boolean).join(' · '),
+      L.localEntrega && 'Local de entrega: ' + L.localEntrega, L.linkEdital && 'Edital: ' + L.linkEdital, L.pncp && 'PNCP: ' + L.pncp, L.idPortal && 'ID no portal: ' + L.idPortal, L.obs].filter(Boolean).join('\n');
+  }
   function lancarGanha(o) {
     o = o || {}; const q = quadroLicitacoes(); if (!q) return null;
     const l = q.listas.find(function (x) { return x.nome === (o.etapa || 'Contrato'); }) || q.listas.find(function (x) { return x.nome === 'Contrato'; }) || q.listas[0];
     const et = function (n) { const t = q.etiquetas.find(function (x) { return x.nome === n; }); return t ? [t.id] : []; };
     const etiquetas = [].concat(et('Ganha'), /preg/i.test(o.modalidade || '') ? et('Pregão') : [], /dispensa/i.test(o.modalidade || '') ? et('Dispensa') : []);
     const x = Execucao.normalizar(Object.assign({ numero: o.contrato || '', valor: Number(o.valor) || 0, vigenciaFim: o.vigencia || '', empenhos: [], notas: [], pagamentos: [] }, o.execucao || {}));
-    const c = criarCartao(q, l.id, { titulo: o.titulo || 'Licitação ganha', descricao: o.objeto || '', empresaId: o.empresaId || null, etiquetas: etiquetas, valores: { valor: Number(o.valor) || 0, orgao: o.orgao || '', numero: o.numero || '', portal: o.portal || '' }, execucao: x, modalidade: o.modalidade || '', lancadaManual: true });
+    const c = criarCartao(q, l.id, { titulo: o.titulo || 'Licitação ganha', descricao: resumoLicitacao(o), licitacao: o.licitacao || {}, empresaId: o.empresaId || null, etiquetas: etiquetas, valores: { valor: Number(o.valor) || 0, orgao: o.orgao || '', numero: o.numero || '', portal: o.portal || '' }, execucao: x, modalidade: o.modalidade || '', lancadaManual: true });
     const quando = (o.dataGanho || new Date().toISOString().slice(0, 10)) + 'T12:00:00.000Z';
     c.atividade.push({ em: quando, por: eu(), texto: 'ganha em ' + quando.slice(0, 10).split('-').reverse().join('/') + ' (lançada na Seven Comissão)' });
     salvar(); return { quadro: q, cartao: c };
@@ -1269,7 +1279,7 @@
 
   Telas.quadros = {
     titulo: 'Seven Processo',
-    lancarGanha: lancarGanha,
+    lancarGanha: lancarGanha, resumoLicitacao: resumoLicitacao,
     render: function (el, sub, param) {
       if (aberto && (!document.getElementById('kov'))) aberto = null;
       garantirQuadroPadrao();

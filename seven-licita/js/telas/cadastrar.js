@@ -4,7 +4,7 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, num, data, dataHora, cnpj, campo, opcoes, modal, confirmar, aviso, abas, emQuanto } = UI;
   const STATUS = { rascunho: 'Rascunho', pronta: 'Pronta para envio', enviada: 'Enviada no portal', erro: 'Envio com erro', vencida: 'Ganha / readequada', perdida: 'Não vencida' };
-  const PORTAIS = ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Compras Públicas', 'SISLOG-GO', 'Licitações-e', 'Licitar Digital', 'BBMNet', 'Portal próprio do órgão', 'Outro'];
+  const PORTAIS = Nucleo.PORTAIS;
   const LINKS_CERTIDOES = [
     { t: 'CND Federal (Receita/PGFN)', u: 'https://www.gov.br/pt-br/servicos/emitir-certidao-de-regularidade-fiscal' },
     { t: 'CRF do FGTS (Caixa)', u: 'https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf' },

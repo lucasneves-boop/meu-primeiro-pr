@@ -221,18 +221,46 @@
 
   // ---------- Licitações ganhas: lançamento e carteira por cliente ----------
   const MODALIDADES = ['Pregão eletrônico', 'Dispensa eletrônica', 'Concorrência', 'Inexigibilidade', 'Adesão a ata (carona)', 'Outra'];
-  const PORTAIS = ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Compras Públicas', 'SISLOG-GO', 'Licitações-e', 'Outro'];
+  const PORTAIS = Nucleo.PORTAIS;
+  const CRITERIOS = ['Menor preço', 'Maior desconto', 'Técnica e preço', 'Melhor técnica ou conteúdo artístico', 'Maior lance', 'Maior retorno econômico'];
+  const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
   const ETAPAS_GANHA = ['Contrato', 'Empenho', 'Entrega', 'Pagamento', 'Concluído'];
   const opc = function (l, v) { return l.map(function (x) { return '<option' + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join(''); };
   const num = function (v) { return v == null || String(v).trim() === '' ? 0 : (Nucleo.lerNumeroBR(v) || 0); };
   function acharCartao(id) { let r = null; (Dados.e.quadros || []).some(function (q) { const c = (q.cartoes || []).find(function (k) { return k.id === id; }); if (c) r = { q: q, c: c }; return !!c; }); return r; }
   function nota(txt, c) { c.atividade = c.atividade || []; c.atividade.unshift({ em: new Date().toISOString(), por: Dados.e.config.responsavel || '', texto: txt }); c.atualizadoEm = new Date().toISOString(); }
+  // campos da licitação ganha (lançar e editar); v = valores atuais
+  function camposGanha(v, idSel) {
+    v = v || {}; const es = Dados.e.empresas || []; const val = function (k) { return esc(v[k] == null ? '' : String(v[k])); };
+    const sel = function (nome, l, atual, vazio) { return '<select name="' + nome + '">' + (vazio ? '<option value=""></option>' : '') + l.map(function (x) { return '<option' + (x === atual ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>'; };
+    return '<fieldset class="cm-av"><legend>Cliente e órgão comprador</legend><div class="linha">' +
+      campo('Cliente *', '<select name="cliente" required><option value="">Escolha o cliente</option>' + es.map(function (x) { return '<option value="' + esc(x.id) + '"' + ((v.empresaId || idSel) === x.id ? ' selected' : '') + '>' + esc(x.fantasia || x.razao) + '</option>'; }).join('') + '</select>', es.length ? '' : 'Cadastre o cliente em Clientes (CNPJs).') +
+      campo('Órgão *', '<input name="orgao" required value="' + val('orgao') + '" placeholder="Prefeitura de Catalão">') +
+      campo('UASG / código da unidade', '<input name="uasg" value="' + val('uasg') + '" placeholder="926789">', 'UASG no Compras.gov.br; UG, código ou ID do órgão nos outros portais.') + '</div><div class="linha">' +
+      campo('CNPJ do órgão', '<input name="cnpjOrgao" inputmode="numeric" value="' + val('cnpjOrgao') + '" placeholder="00.000.000/0001-00">') + campo('UF', sel('uf', UFS, v.uf, true)) + campo('Município', '<input name="municipio" value="' + val('municipio') + '">') + '</div></fieldset>' +
+      '<fieldset class="cm-av"><legend>Licitação</legend><div class="linha">' +
+      campo('Nº do processo / pregão', '<input name="numero" value="' + val('numero') + '" placeholder="PE 90012/2026">') + campo('ID da licitação no portal', '<input name="idPortal" value="' + val('idPortal') + '">', 'Número da compra ou código usado pelo portal.') + campo('Nº de controle PNCP', '<input name="pncp" value="' + val('pncp') + '" placeholder="00000000000000-1-000000/2026">') + '</div><div class="linha">' +
+      campo('Modalidade', sel('modalidade', MODALIDADES, v.modalidade || 'Pregão eletrônico')) + campo('Critério de julgamento', sel('criterio', CRITERIOS, v.criterio || 'Menor preço')) +
+      campo('Portal', '<input name="portal" list="cm-portais" value="' + val('portal') + '" placeholder="Escolha ou digite"><datalist id="cm-portais">' + PORTAIS.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>') + '</div><div class="linha">' +
+      campo('Objeto *', '<input name="objeto" required value="' + val('objeto') + '" placeholder="Gêneros alimentícios">') + campo('Link do edital', '<input name="linkEdital" type="url" value="' + val('linkEdital') + '" placeholder="https://">') + '</div>' +
+      campo('Itens / lotes ganhos', '<textarea name="itens" rows="2" placeholder="Itens 3, 7 e 12; lote 2 (arroz, feijão e óleo)">' + val('itens') + '</textarea>') +
+      '<label class="check"><input type="checkbox" name="srp"' + (v.srp ? ' checked' : '') + '> Registro de preços (gera ata; o órgão compra conforme a necessidade)</label></fieldset>' +
+      '<fieldset class="cm-av"><legend>Resultado</legend><div class="linha">' +
+      campo('Valor ganho (R$) *', '<input name="valor" inputmode="decimal" required value="' + val('valorTxt') + '" placeholder="120.000,00">') + campo('Valor estimado pelo órgão (R$)', '<input name="valorEstimado" inputmode="decimal" value="' + val('valorEstimadoTxt') + '">', 'Referência do edital; calcula o deságio.') +
+      campo('Data do resultado *', '<input type="date" name="data" required value="' + esc(v.dataGanho || T.hoje()) + '">', 'Homologação ou adjudicação.') + campo('Etapa atual', sel('etapa', ETAPAS_GANHA, v.etapa || 'Contrato')) + '</div></fieldset>' +
+      '<fieldset class="cm-av"><legend>Contrato ou ata</legend><div class="linha">' +
+      campo('Nº do contrato / ata', '<input name="contrato" value="' + val('contrato') + '">') + campo('Assinatura', '<input type="date" name="assinatura" value="' + val('assinatura') + '">') + campo('Vigência de', '<input type="date" name="vigenciaInicio" value="' + val('vigenciaInicio') + '">') + campo('até', '<input type="date" name="vigencia" value="' + val('vigencia') + '">') + '</div><div class="linha">' +
+      campo('Gestor ou fiscal do contrato', '<input name="gestor" value="' + val('gestor') + '">') + campo('Contato do gestor', '<input name="contatoGestor" value="' + val('contatoGestor') + '" placeholder="telefone ou e-mail">') + campo('Garantia contratual (%)', '<input name="garantia" inputmode="decimal" value="' + val('garantia') + '" placeholder="5">', 'Até 5% (ou 10% em obras e serviços de grande vulto).') + '</div><div class="linha">' +
+      campo('Prazo de entrega (dias)', '<input name="prazoEntrega" inputmode="numeric" value="' + val('prazoEntrega') + '">') + campo('Prazo de pagamento (dias após o atesto)', '<input name="prazoPagamento" inputmode="numeric" value="' + val('prazoPagamento') + '" placeholder="30">', 'Usado como vencimento padrão das notas.') + campo('Local de entrega', '<input name="localEntrega" value="' + val('localEntrega') + '">') + '</div></fieldset>' +
+      campo('Observações', '<textarea name="obs" rows="2">' + val('obs') + '</textarea>');
+  }
+  const CAMPOS_LIC = ['uasg', 'cnpjOrgao', 'uf', 'municipio', 'idPortal', 'pncp', 'criterio', 'linkEdital', 'itens', 'assinatura', 'vigenciaInicio', 'gestor', 'contatoGestor', 'garantia', 'prazoEntrega', 'prazoPagamento', 'localEntrega', 'obs', 'objeto', 'modalidade'];
+  function lerGanha(d) {
+    const lic = {}; CAMPOS_LIC.forEach(function (k) { lic[k] = String(d.get(k) || '').trim(); }); lic.srp = !!d.get('srp'); lic.valorEstimado = num(d.get('valorEstimado')) || null;
+    return { empresaId: d.get('cliente'), orgao: String(d.get('orgao') || '').trim(), numero: String(d.get('numero') || '').trim(), portal: String(d.get('portal') || '').trim(), valor: num(d.get('valor')), dataGanho: d.get('data'), contrato: String(d.get('contrato') || '').trim(), vigencia: d.get('vigencia') || '', etapa: d.get('etapa'), licitacao: lic };
+  }
   function formGanha(idSel) {
-    const es = Dados.e.empresas || [];
-    return '<details class="cartao cm-ganha no-print"' + (P.cartoes(Dados.e, null).some(function (c) { return c.ganha; }) ? '' : ' open') + '><summary><b>+ Lançar licitação ganha</b> <span class="mini mudo">para ter o controle por cliente, mesmo das que não passaram pelo funil</span></summary><form id="cm-ganha-f" autocomplete="off">' +
-      '<div class="linha">' + campo('Cliente *', '<select name="cliente" required><option value="">Escolha o cliente</option>' + es.map(function (x) { return '<option value="' + esc(x.id) + '"' + (idSel === x.id ? ' selected' : '') + '>' + esc(x.fantasia || x.razao) + '</option>'; }).join('') + '</select>', es.length ? '' : 'Cadastre o cliente em Clientes (CNPJs).') + campo('Órgão *', '<input name="orgao" required placeholder="Prefeitura de Catalão">') + campo('Nº do processo / pregão', '<input name="numero" placeholder="PE 90012/2026">') + '</div>' +
-      '<div class="linha">' + campo('Objeto *', '<input name="objeto" required placeholder="Gêneros alimentícios">') + campo('Modalidade', '<select name="modalidade">' + opc(MODALIDADES, 'Pregão eletrônico') + '</select>') + campo('Portal', '<select name="portal"><option value=""></option>' + opc(PORTAIS, '') + '</select>') + '</div>' +
-      '<div class="linha">' + campo('Valor ganho (R$) *', '<input name="valor" inputmode="decimal" required placeholder="120.000,00">') + campo('Data do resultado *', '<input type="date" name="data" required value="' + T.hoje() + '">', 'Homologação ou adjudicação.') + campo('Nº do contrato / ata', '<input name="contrato">') + campo('Vigência até', '<input type="date" name="vigencia">') + campo('Etapa atual', '<select name="etapa">' + opc(ETAPAS_GANHA, 'Contrato') + '</select>') + '</div>' +
+    return '<details class="cartao cm-ganha no-print"' + (P.cartoes(Dados.e, null).some(function (c) { return c.ganha; }) ? '' : ' open') + '><summary><b>+ Lançar licitação ganha</b> <span class="mini mudo">para ter o controle por cliente, mesmo das que não passaram pelo funil</span></summary><form id="cm-ganha-f" autocomplete="off">' + camposGanha({}, idSel) +
       '<details class="cm-exec-ini"><summary>Execução já realizada (opcional)</summary><div class="linha">' + campo('Empenho nº', '<input name="emp_num">') + campo('Valor do empenho (R$)', '<input name="emp_valor" inputmode="decimal">') + campo('Data do empenho', '<input type="date" name="emp_data">') + '</div>' +
       '<div class="linha">' + campo('Nota fiscal nº', '<input name="nf_num">') + campo('Valor da NF (R$)', '<input name="nf_valor" inputmode="decimal">') + campo('Emissão', '<input type="date" name="nf_data">') + campo('Vencimento', '<input type="date" name="nf_venc">') + '</div>' +
       '<div class="linha">' + campo('Pagamento recebido (R$)', '<input name="pg_valor" inputmode="decimal">', 'Referente à NF acima.') + campo('Data do pagamento', '<input type="date" name="pg_data">') + '</div></details>' +
@@ -246,8 +274,8 @@
     const grupos = {}; ganhas.forEach(function (c) { (grupos[c.empresaId || '—'] = grupos[c.empresaId || '—'] || []).push(c); });
     const somaG = function (l, k) { return l.reduce(function (a, c) { return a + (Number(c[k]) || 0); }, 0); };
     const linha = function (c) {
-      return '<tr><td>' + (c.dataGanho ? dataBR(c.dataGanho) : '—') + '</td><td>' + linkCartao(c) + (c.numero ? '<br><small class="mudo">' + esc(c.numero) + '</small>' : '') + '</td><td>' + esc(c.orgao) + '</td><td class="n">' + moeda(c.valor) + '</td><td class="n">' + moeda(c.empenhado) + '</td><td class="n">' + moeda(c.faturado) + '</td><td class="n">' + moeda(c.recebido) + '</td><td class="n">' + moeda(c.aReceber) + '</td><td class="n">' + moeda(c.comissao) + '</td><td>' + esc(c.lista) + '</td>' +
-        '<td class="no-print cm-acoes"><button type="button" class="btn mini" data-a="add-empenho" data-c="' + esc(c.id) + '">+ Empenho</button><button type="button" class="btn mini" data-a="add-nf" data-c="' + esc(c.id) + '">+ NF</button><button type="button" class="btn mini" data-a="add-pg" data-c="' + esc(c.id) + '"' + (c.notas.some(function (n) { return n.aberto > 0; }) ? '' : ' disabled title="Registre uma NF primeiro"') + '>+ Pagamento</button></td></tr>';
+      return '<tr><td>' + (c.dataGanho ? dataBR(c.dataGanho) : '—') + '</td><td>' + linkCartao(c) + (c.numero ? '<br><small class="mudo">' + esc(c.numero) + '</small>' : '') + '</td><td>' + esc(c.orgao) + (c.uasg || (c.licitacao && c.licitacao.uf) ? '<br><small class="mudo">' + esc([c.uasg && 'UASG ' + c.uasg, c.licitacao && c.licitacao.uf, c.portal].filter(Boolean).join(' · ')) + '</small>' : '') + '</td><td class="n">' + moeda(c.valor) + (c.valorEstimado ? '<br><small class="mudo">deságio ' + pc((1 - c.valor / c.valorEstimado) * 100, 1) + '</small>' : '') + '</td><td class="n">' + moeda(c.empenhado) + '</td><td class="n">' + moeda(c.faturado) + '</td><td class="n">' + moeda(c.recebido) + '</td><td class="n">' + moeda(c.aReceber) + '</td><td class="n">' + moeda(c.comissao) + '</td><td>' + esc(c.lista) + '</td>' +
+        '<td class="no-print cm-acoes"><button type="button" class="btn mini fantasma" data-a="editar" data-c="' + esc(c.id) + '">Editar</button><button type="button" class="btn mini" data-a="add-empenho" data-c="' + esc(c.id) + '">+ Empenho</button><button type="button" class="btn mini" data-a="add-nf" data-c="' + esc(c.id) + '">+ NF</button><button type="button" class="btn mini" data-a="add-pg" data-c="' + esc(c.id) + '"' + (c.notas.some(function (n) { return n.aberto > 0; }) ? '' : ' disabled title="Registre uma NF primeiro"') + '>+ Pagamento</button></td></tr>';
     };
     const cab = [['Resultado'], ['Licitação'], ['Órgão'], ['Valor ganho', 1], ['Empenhado', 1], ['Faturado', 1], ['Recebido', 1], ['A receber', 1], ['Comissão', 1], ['Etapa'], ['']];
     el.innerHTML = abas('ganhas') + formGanha(id) +
@@ -270,10 +298,12 @@
       if (d.get('emp_num') || num(d.get('emp_valor'))) ex.empenhos.push({ id: Execucao.novoId('em'), numero: d.get('emp_num'), valor: num(d.get('emp_valor')) || valor, data: d.get('emp_data') || '' });
       if (d.get('nf_num') || num(d.get('nf_valor'))) ex.notas.push({ id: Execucao.novoId('nf'), numero: d.get('nf_num'), valor: num(d.get('nf_valor')), data: d.get('nf_data') || '', vencimento: d.get('nf_venc') || '', empenhoId: ex.empenhos[0] ? ex.empenhos[0].id : '' });
       if (num(d.get('pg_valor')) && ex.notas[0]) ex.pagamentos.push({ id: Execucao.novoId('pg'), notaId: ex.notas[0].id, valor: num(d.get('pg_valor')), data: d.get('pg_data') || T.hoje() });
-      const titulo = [d.get('numero'), d.get('objeto')].filter(Boolean).join(' · ');
-      const ok = Telas.quadros.lancarGanha({ empresaId: d.get('cliente'), titulo: titulo, objeto: d.get('objeto'), orgao: d.get('orgao'), numero: d.get('numero'), modalidade: d.get('modalidade'), portal: d.get('portal'), valor: valor, dataGanho: d.get('data'), contrato: d.get('contrato'), vigencia: d.get('vigencia'), etapa: d.get('etapa'), execucao: Object.assign({ numero: d.get('contrato') || '', valor: valor, vigenciaFim: d.get('vigencia') || '' }, ex) });
+      const g = lerGanha(d); const titulo = [g.numero, g.licitacao.objeto].filter(Boolean).join(' · ');
+      const venc = function (emissao) { return emissao && num(g.licitacao.prazoPagamento) ? Execucao.vencimentoPadrao(emissao, num(g.licitacao.prazoPagamento)) : ''; };
+      ex.notas.forEach(function (n) { if (!n.vencimento) n.vencimento = venc(n.data); });
+      const ok = Telas.quadros.lancarGanha(Object.assign(g, { titulo: titulo, objeto: g.licitacao.objeto, modalidade: g.licitacao.modalidade, execucao: Object.assign({ numero: g.contrato, valor: g.valor, vigenciaFim: g.vigencia, vigenciaInicio: g.licitacao.vigenciaInicio }, ex) }));
       if (!ok) { aviso('Não foi possível criar o cartão no Seven Processo.', 'erro'); return; }
-      prefs().cliente = d.get('cliente'); Dados.salvar(); aviso('Licitação ganha lançada: ' + titulo + '.'); App.redesenhar();
+      prefs().cliente = g.empresaId; Dados.salvar(); aviso('Licitação ganha lançada: ' + titulo + '.'); App.redesenhar();
     };
     const ff = el.querySelector('#cm-gf');
     ff.onchange = function (ev) { if (ev.target.name === 'cliente') { prefs().cliente = ev.target.value || null; Dados.salvar(); App.redesenhar(); } };
@@ -283,12 +313,25 @@
       const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
       if (a === 'imprimir') return imprimir(); if (a === 'pdf') return imprimir(true);
       const k = b.dataset.c && acharCartao(b.dataset.c); if (!k) return; const xx = Execucao.normalizar(k.c.execucao = k.c.execucao || { empenhos: [], notas: [], pagamentos: [] }); k.c.execucao = xx;
+      const L = k.c.licitacao || {};
+      if (a === 'editar') {
+        const cp = r.contratos.find(function (z) { return z.id === k.c.id; }) || {}; const lst = (k.q.listas || []).find(function (l) { return l.id === k.c.lista; }) || {};
+        const v = Object.assign({}, L, { empresaId: k.c.empresaId, orgao: (k.c.valores || {}).orgao, numero: (k.c.valores || {}).numero, portal: (k.c.valores || {}).portal, valorTxt: String(cp.valor || (k.c.valores || {}).valor || '').replace('.', ','), valorEstimadoTxt: L.valorEstimado ? String(L.valorEstimado).replace('.', ',') : '', dataGanho: cp.dataGanho, etapa: lst.nome, contrato: xx.numero, vigencia: xx.vigenciaFim, vigenciaInicio: xx.vigenciaInicio || L.vigenciaInicio });
+        const f = await UI.modal({ titulo: 'Editar licitação ganha', largo: true, botao: 'Salvar', corpo: camposGanha(v) }); if (!f) return;
+        const g = lerGanha(f); if (!(g.valor > 0)) { aviso('Informe o valor ganho.', 'erro'); return; }
+        k.c.empresaId = g.empresaId || k.c.empresaId; k.c.valores = Object.assign({}, k.c.valores, { orgao: g.orgao, numero: g.numero, portal: g.portal, valor: g.valor }); k.c.licitacao = g.licitacao;
+        Object.assign(xx, { numero: g.contrato, valor: g.valor, vigenciaFim: g.vigencia, vigenciaInicio: g.licitacao.vigenciaInicio });
+        k.c.titulo = [g.numero, g.licitacao.objeto].filter(Boolean).join(' · ') || k.c.titulo; k.c.descricao = Telas.quadros.resumoLicitacao(Object.assign({}, g, { objeto: g.licitacao.objeto, modalidade: g.licitacao.modalidade }));
+        const nl = (k.q.listas || []).find(function (l) { return l.nome === g.etapa; }); if (nl && nl.id !== k.c.lista) { k.c.lista = nl.id; nota('moveu para "' + nl.nome + '" (Seven Comissão)', k.c); }
+        if (g.dataGanho && g.dataGanho !== cp.dataGanho) { const at = (k.c.atividade || []).find(function (t) { return /lançada na Seven Comissão/.test(t.texto || ''); }); const em = g.dataGanho + 'T12:00:00.000Z'; if (at) { at.em = em; at.texto = 'ganha em ' + g.dataGanho.split('-').reverse().join('/') + ' (lançada na Seven Comissão)'; } else k.c.atividade.push({ em: em, por: '', texto: 'ganha em ' + g.dataGanho.split('-').reverse().join('/') + ' (lançada na Seven Comissão)' }); }
+        nota('editou os dados da licitação (Seven Comissão)', k.c);
+      }
       if (a === 'add-empenho') {
         const f = await UI.modal({ titulo: 'Registrar empenho · ' + k.c.titulo, botao: 'Registrar', corpo: '<div class="linha">' + campo('Nº do empenho', '<input name="n" required>') + campo('Valor (R$)', '<input name="v" inputmode="decimal" required>') + campo('Data', '<input type="date" name="d" value="' + T.hoje() + '">') + '</div>' });
         if (!f) return; xx.empenhos.push({ id: Execucao.novoId('em'), numero: f.get('n'), valor: num(f.get('v')), data: f.get('d') }); nota('registrou o empenho ' + f.get('n') + ' (Seven Comissão)', k.c);
       }
       if (a === 'add-nf') {
-        const f = await UI.modal({ titulo: 'Registrar nota fiscal · ' + k.c.titulo, botao: 'Registrar', corpo: '<div class="linha">' + campo('Nº da NF', '<input name="n" required>') + campo('Valor (R$)', '<input name="v" inputmode="decimal" required>') + '</div><div class="linha">' + campo('Emissão', '<input type="date" name="d" value="' + T.hoje() + '">') + campo('Vencimento', '<input type="date" name="venc">') + (xx.empenhos.length ? campo('Empenho', '<select name="e">' + xx.empenhos.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.numero || 'sem nº') + ' · ' + moeda(m.valor) + '</option>'; }).join('') + '</select>') : '') + '</div>' });
+        const f = await UI.modal({ titulo: 'Registrar nota fiscal · ' + k.c.titulo, botao: 'Registrar', corpo: '<div class="linha">' + campo('Nº da NF', '<input name="n" required>') + campo('Valor (R$)', '<input name="v" inputmode="decimal" required>') + '</div><div class="linha">' + campo('Emissão', '<input type="date" name="d" value="' + T.hoje() + '">') + campo('Vencimento', '<input type="date" name="venc" value="' + (num(L.prazoPagamento) ? Execucao.vencimentoPadrao(T.hoje(), num(L.prazoPagamento)) : '') + '">', num(L.prazoPagamento) ? 'Emissão + ' + num(L.prazoPagamento) + ' dias (prazo de pagamento do contrato).' : '') + (xx.empenhos.length ? campo('Empenho', '<select name="e">' + xx.empenhos.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.numero || 'sem nº') + ' · ' + moeda(m.valor) + '</option>'; }).join('') + '</select>') : '') + '</div>' });
         if (!f) return; xx.notas.push({ id: Execucao.novoId('nf'), numero: f.get('n'), valor: num(f.get('v')), data: f.get('d'), vencimento: f.get('venc') || '', empenhoId: f.get('e') || '' }); nota('registrou a NF ' + f.get('n') + ' (Seven Comissão)', k.c);
       }
       if (a === 'add-pg') {

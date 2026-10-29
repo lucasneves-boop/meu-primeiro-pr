@@ -431,7 +431,12 @@
     return (palavras || []).filter(function (p) { return p.termo && contemTermo(n, normalizar(p.termo)); });
   }
 
-  return {
+  // Portais de compras públicas (disputa eletrônica) usados nos formulários da plataforma.
+  const PORTAIS = ['Compras.gov.br', 'BLL', 'BNC', 'Licitanet', 'Compras Públicas', 'Licitações-e', 'BBMNet', 'Licitar Digital', 'Publinexo', 'Compras BR', 'Licita Mais Brasil',
+    'SISLOG-GO', 'ComprasNet GO', 'Compras MG', 'BEC/SP', 'Pregão Online Banrisul (RS)', 'Compras SC (e-LIC)', 'PE Integrado', 'Compras Amazonas', 'Compras MT', 'Compras Paraná', 'SIGA RJ', 'Comprasnet.BA',
+    'Licitações Caixa', 'Petronect', 'Portal próprio do órgão', 'Presencial', 'Outro'];
+
+  return { PORTAIS: PORTAIS,
     normalizar: normalizar, termos: termos, contemTermo: contemTermo, casaProduto: casaProduto, produtosQueCasam: produtosQueCasam,
     diasEntre: diasEntre, yyyymmdd: yyyymmdd, statusDocumento: statusDocumento, CATEGORIAS: CATEGORIAS, leituraCapag: leituraCapag,
     arredondar: arredondar, arredondarBaixo: arredondarBaixo, arredondarCima: arredondarCima, lerNumeroBR: lerNumeroBR,

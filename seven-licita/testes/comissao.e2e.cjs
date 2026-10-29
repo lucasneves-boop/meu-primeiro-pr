@@ -49,15 +49,27 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     ok(await pg.inputValue('#cm-funil [name=f_homologadas]') === '100', 'os % digitados continuam ao voltar do modo quantidades');
     await pg.click('#cm-funil .cm-pilula:has(input[value=qtd])'); await pg.waitForSelector('#cm-funil [name=f_encontrados]:not([disabled])');
     ok(await pg.inputValue('#cm-funil [name=f_encontrados]') === '200', 'as quantidades também ficam guardadas');
+    // as datas abaixo são em dias corridos sem prorrogação; a prorrogação e os dias úteis são conferidos depois
+    await pg.evaluate(() => { document.querySelector('.cm-etapas').open = true; }); await pg.uncheck('#cm-extra [name=pzProrrogar]');
     await pg.fill('#cm-extra [name=dataSessao]', '2026-11-02'); await pg.fill('#cm-extra [name=disputasMes]', '10'); await pg.fill('#cm-extra [name=custoDisputa]', '100'); await pg.fill('#cm-extra [name=custoFixo]', '2.000');
     let x = await pg.innerText('#cm-extra-res');
-    ok(/O órgão paga por volta de 31\/01\/2027 \(90 dias/.test(x) && /comissão chega por volta de 05\/02\/2027 \(95 dias\)/.test(x), 'prazo para recebimento a partir da sessão');
+    ok(/O órgão paga por volta de 31\/01\/2027 \(90 dias/.test(x) && /comissão chega por volta de 05\/02\/2027 \(95 dias corridos\)/.test(x), 'prazo para recebimento a partir da sessão');
     ok(/Em média, para a 1ª vitória\s*5 disputas/.test(x) && /90% de chance de ganhar ao menos uma\s*11 disputas/.test(x) && /Em média, para 5 vitórias\s*25 disputas/.test(x), 'quantas licitações disputar');
     ok(/1º recebimento\s*5 meses/.test(x) && /Retorno \(acumulado positivo\)\s*no \d+º mês/.test(x) && await pg.locator('.cm-retorno tbody tr').count() >= 12, 'prazo de retorno com tabela mês a mês');
-    await pg.click('.cm-etapas summary'); await pg.fill('#cm-extra [name=p_pagamento]', '60');
-    ok(/comissão chega por volta de 07\/03\/2027 \(125 dias\)/.test(await pg.innerText('#cm-extra-res')), 'etapas editáveis (pagamento em 60 dias)');
+    await pg.evaluate(() => { document.querySelector('.cm-etapas').open = true; }); await pg.fill('#cm-extra [name=p_pagamento]', '60');
+    ok(/comissão chega por volta de 07\/03\/2027 \(125 dias corridos\)/.test(await pg.innerText('#cm-extra-res')), 'etapas editáveis (pagamento em 60 dias)');
     await pg.fill('#cm-extra [name=custoFixo]', '90.000'); ok(/não se paga/.test(await pg.innerText('#cm-extra-res')) && await pg.locator('#cm-extra-res .alerta').count() === 1, 'avisa quando os custos não se pagam');
     await pg.fill('#cm-extra [name=custoFixo]', '2.000');
+    // dias úteis e prorrogação do vencimento (art. 183)
+    await pg.check('#cm-extra [name=pzProrrogar]'); await pg.waitForTimeout(100);
+    ok(/comissão chega por volta de 10\/03\/2027 \(128 dias corridos/.test(await pg.innerText('#cm-extra-res')) && /vencimento prorrogado para dia útil/.test(await pg.innerText('#cm-extra-res')), 'vencimento em dia sem expediente passa para o próximo dia útil');
+    await pg.click('[data-a=pz-uteis]'); await pg.waitForSelector('#cm-extra [name=t_entrega]');
+    ok(await pg.inputValue('#cm-extra [name=t_entrega]') === 'uteis' && /\+30 dias úteis \(\d+ corridos\)/.test(await pg.innerText('#cm-extra-res')), 'todas as etapas em dias úteis');
+    await pg.selectOption('#cm-extra [name=t_pagamento]', 'corridos'); await pg.waitForTimeout(100);
+    ok(/\+60 dias corridos/.test(await pg.innerText('#cm-extra-res')), 'etapa a etapa: pagamento em dias corridos');
+    await pg.fill('#cm-extra [name=pzFeriados]', '20/11/2026'); await pg.press('#cm-extra [name=pzFeriados]', 'Tab'); await pg.waitForTimeout(100);
+    ok(/1 feriado\(s\) local\(is\)/.test(await pg.innerText('#cm-extra-res')), 'feriados locais do órgão');
+    await pg.click('[data-a=pz-corridos]'); await pg.waitForSelector('#cm-extra [name=pzProrrogar]', { state: 'attached' }); await pg.evaluate(() => { document.querySelector('.cm-etapas').open = true; }); await pg.uncheck('#cm-extra [name=pzProrrogar]'); await pg.fill('#cm-extra [name=pzFeriados]', ''); await pg.press('#cm-extra [name=pzFeriados]', 'Tab'); await pg.waitForTimeout(100);
     await pg.locator('#cm-extra-res').screenshot({ path: path.join(saida, 'comissao-prazos.png') });
     // janela flutuante em outra tela, com os mesmos valores
     await pg.goto(url + '#/painel'); await pg.click('#botao-comissao'); await pg.waitForSelector('#comissao-flutuante:not([hidden])');
