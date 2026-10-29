@@ -43,7 +43,7 @@
     return {
       id: c.id, quadroId: q.id, titulo: c.titulo || '', quadro: q.nome, lista: lst.nome || '', etapa: perdida ? Math.max(etapa, 3) : etapa, empresaId: c.empresaId || (p && p.empresaId) || null,
       orgao: (c.valores && c.valores.orgao) || (p && p.orgao) || '', numero: (c.valores && c.valores.numero) || (p && p.numero) || '',
-      licitacao: c.licitacao || null, uasg: (c.licitacao && c.licitacao.uasg) || (p && p.uasg) || '', portal: (c.valores && c.valores.portal) || (p && p.portal) || '', valorEstimado: (c.licitacao && Number(c.licitacao.valorEstimado)) || null,
+      licitacao: c.licitacao || null, uf: (c.licitacao && c.licitacao.uf) || (p && p.uf) || '', prazo: dataDe(c.prazo), perda: perdida ? Object.assign({}, p && p.motivoPerda ? { motivo: p.motivoPerda } : {}, c.perda || {}) : null, lanceFinal: (p && Number(p.lanceFinal)) || null, uasg: (c.licitacao && c.licitacao.uasg) || (p && p.uasg) || '', portal: (c.valores && c.valores.portal) || (p && p.portal) || '', valorEstimado: (c.licitacao && Number(c.licitacao.valorEstimado)) || null,
       ganha: !!ganha, perdida: !!perdida, arquivado: !!c.arquivado, valor: valor, criadoEm: dataDe(c.criadoEm), dataGanho: dataGanho, dataPerda: dataPerda,
       empenhado: ex.empenhado, faturado: ex.faturado, recebido: ex.recebido, aReceber: cent(ex.faturado - ex.recebido),
       notas: lista(x.notas).map(function (n) { const pago = soma(lista(x.pagamentos).filter(function (g) { return g.notaId === n.id; })); return { id: n.id, numero: n.numero, data: dataDe(n.data), valor: cent(n.valor), vencimento: n.vencimento || '', pago: pago, aberto: Math.max(0, cent((Number(n.valor) || 0) - pago)) }; }),
@@ -167,8 +167,89 @@
     return meses(o.de.slice(0, 7), o.ate.slice(0, 7)).map(function (mm) { const p = mes(mm); const r = resumoPeriodo(e, Object.assign({}, o, p)); delete r.desempenho; r.mes = mm; return r; });
   }
 
+  // ---------- complementos do relatório: trabalho da Seven, perdas, concorrência, distribuição, metas, agenda, habilitação ----------
+  const MOTIVOS_PERDA = [['preco', 'Preço (perdeu nos lances)'], ['habilitacao', 'Inabilitação (documentos)'], ['tecnica', 'Desclassificação técnica ou amostra'], ['prazo', 'Prazo perdido ou proposta não enviada'], ['deserta', 'Deserta, fracassada, revogada ou anulada'], ['outro', 'Outro motivo']];
+  const GRUPO_PECA = { esclarecimento: 'esclarecimentos', impugnacao: 'impugnacoes', intencao: 'recursos', recurso: 'recursos', contrarrazoes: 'contrarrazoes' };
+  const TRABALHO = [['oportunidades', 'Oportunidades avaliadas'], ['analisados', 'Editais analisados'], ['propostasCadastradas', 'Propostas montadas'], ['propostasEnviadas', 'Propostas enviadas'], ['sessoes', 'Sessões disputadas'], ['esclarecimentos', 'Pedidos de esclarecimento'], ['impugnacoes', 'Impugnações'], ['recursos', 'Intenções e recursos'], ['contrarrazoes', 'Contrarrazões'], ['outrasPecas', 'Outras peças (reequilíbrio, cobrança…)'], ['documentos', 'Documentos de habilitação renovados'], ['movimentos', 'Movimentações no Seven Processo']];
+  function cartoesBrutos(e, empresaId) {
+    const out = []; lista(e.quadros).filter(function (q) { return !q.arquivado && quadroDeLicitacao(q); }).forEach(function (q) { lista(q.cartoes).forEach(function (c) { const p = lista(e.propostas).find(function (x) { return x.id === c.propostaId; }); const id = c.empresaId || (p && p.empresaId) || null; if (!empresaId || id === empresaId) out.push(c); }); });
+    return out;
+  }
+  // o: { empresaId, de, ate, hoje, analisados (contagem manual) }
+  function trabalho(e, o) {
+    o = o || {}; const hoje = o.hoje || new Date().toISOString().slice(0, 10); const de = o.de, ate = o.ate;
+    const doCli = function (x) { return !o.empresaId || x.empresaId === o.empresaId; }; const em = function (iso) { return noPeriodo(iso, de, ate); };
+    const n = { oportunidades: 0, analisados: Math.max(0, Math.round(Number(o.analisados) || 0)), propostasCadastradas: 0, propostasEnviadas: 0, sessoes: 0, esclarecimentos: 0, impugnacoes: 0, recursos: 0, contrarrazoes: 0, outrasPecas: 0, documentos: 0, movimentos: 0 };
+    const cs = cartoesBrutos(e, o.empresaId);
+    cs.forEach(function (c) { if (em(c.criadoEm)) n.oportunidades++; lista(c.atividade).forEach(function (a) { if (em(a.em)) n.movimentos++; }); });
+    const props = lista(e.propostas).filter(doCli);
+    props.forEach(function (p) { if (em(p.criadaEm)) n.propostasCadastradas++; if (em(p.enviadaEm)) n.propostasEnviadas++; });
+    // sessões: Seven Pregão e Seven Sessão, sem contar duas vezes a mesma licitação
+    const vistas = {}; const chave = function (x) { const p = x.propostaId && props.find(function (y) { return y.id === x.propostaId; }); return (x.avisoId || (p && p.avisoId)) || x.id; };
+    lista(e.disputas).concat(lista(e.monitor)).filter(doCli).forEach(function (x) { const d = dataDe(x.sessao); if (!d || d > hoje || !em(d)) return; const k = chave(x); if (vistas[k]) return; vistas[k] = 1; n.sessoes++; });
+    lista(e.pecas).filter(doCli).forEach(function (p) { if (em(p.criadaEm)) n[GRUPO_PECA[p.modelo] || 'outrasPecas']++; });
+    lista(e.monitor).filter(doCli).forEach(function (m) { lista(m.recursos).forEach(function (r) { if (em(r.em)) n.recursos++; }); });
+    lista(e.documentos).filter(doCli).forEach(function (d) { if (em(d.criadoEm)) n.documentos++; });
+    const itens = TRABALHO.map(function (t) { return { chave: t[0], nome: t[1], n: n[t[0]] }; });
+    return { itens: itens, n: n, total: itens.reduce(function (s, x) { return s + (x.chave === 'movimentos' ? 0 : x.n); }, 0) };
+  }
+  // perdas no período, com o motivo de cada uma
+  function perdas(cs, de, ate) {
+    const l = cs.filter(function (c) { return c.perdida && noPeriodo(c.dataPerda, de, ate); });
+    const por = MOTIVOS_PERDA.map(function (m) { const k = l.filter(function (c) { return c.perda && c.perda.motivo === m[0]; }).length; return { chave: m[0], nome: m[1], n: k, pct: l.length ? k / l.length * 100 : 0 }; }).filter(function (x) { return x.n; });
+    const sem = l.filter(function (c) { return !(c.perda && c.perda.motivo); }).length;
+    return { lista: l, porMotivo: por.sort(function (a, b) { return b.n - a.n; }), semMotivo: sem, principal: por.length ? por[0] : null };
+  }
+  function nossoValor(c) { return Number(c.perda && c.perda.nossoValor) || c.lanceFinal || c.valor || null; }
+  // deságio sobre o estimado nas ganhas, distância para o vencedor nas perdidas e concorrentes que mais ganharam de nós
+  function concorrencia(cs, de, ate) {
+    const g = cs.filter(function (c) { return c.ganha && noPeriodo(c.dataGanho, de, ate) && c.valorEstimado > 0 && c.valor > 0; });
+    const desagios = g.map(function (c) { return (c.valorEstimado - c.valor) / c.valorEstimado * 100; });
+    const p = cs.filter(function (c) { return c.perdida && noPeriodo(c.dataPerda, de, ate) && c.perda && Number(c.perda.valorVencedor) > 0 && nossoValor(c) > 0; });
+    const dist = p.map(function (c) { return (nossoValor(c) - Number(c.perda.valorVencedor)) / Number(c.perda.valorVencedor) * 100; });
+    const med = function (l) { return l.length ? l.reduce(function (s, x) { return s + x; }, 0) / l.length : null; };
+    const conc = {}; cs.forEach(function (c) { const v = c.perda && String(c.perda.vencedor || '').trim(); if (!c.perdida || !v) return; const k = norm(v).replace(/\s+/g, ' '); const x = conc[k] = conc[k] || { nome: v, vezes: 0, valor: 0, noPeriodo: 0 }; x.vezes++; x.valor = cent(x.valor + (Number(c.perda.valorVencedor) || 0)); if (noPeriodo(c.dataPerda, de, ate)) x.noPeriodo++; });
+    return { desagioMedio: med(desagios), nDesagio: desagios.length, distanciaMedia: med(dist), nDistancia: dist.length, concorrentes: Object.keys(conc).map(function (k) { return conc[k]; }).sort(function (a, b) { return b.vezes - a.vezes || b.valor - a.valor; }).slice(0, 8) };
+  }
+  // licitações decididas no período por órgão, portal e UF
+  function distribuicao(cs, de, ate) {
+    const dec = cs.filter(function (c) { return (c.ganha && noPeriodo(c.dataGanho, de, ate)) || (c.perdida && noPeriodo(c.dataPerda, de, ate)); });
+    const por = function (f) { const g = {}; dec.forEach(function (c) { const k = String(f(c) || '').trim() || 'Não informado'; const x = g[k] = g[k] || { nome: k, decididas: 0, ganhas: 0, valorGanho: 0 }; x.decididas++; if (c.ganha) { x.ganhas++; x.valorGanho = cent(x.valorGanho + c.valor); } }); return Object.keys(g).map(function (k) { const x = g[k]; x.taxa = x.ganhas / x.decididas * 100; return x; }).sort(function (a, b) { return b.valorGanho - a.valorGanho || b.decididas - a.decididas; }).slice(0, 10); };
+    return { decididas: dec.length, orgao: por(function (c) { return c.orgao; }), portal: por(function (c) { return c.portal; }), uf: por(function (c) { return String(c.uf || '').toUpperCase(); }) };
+  }
+  // metas mensais do cliente × resultado do período (meses do período multiplicam a meta)
+  const METAS = [['valorGanho', 'Valor ganho'], ['recebido', 'Recebido dos órgãos'], ['ganhas', 'Licitações ganhas']];
+  function metas(meta, resumo) {
+    meta = meta || {}; const nm = meses(resumo.de.slice(0, 7), resumo.ate.slice(0, 7)).length || 1;
+    const fr = function () { const a = new Date(resumo.de + 'T12:00:00'), b = new Date(resumo.ate + 'T12:00:00'); const mi = resumo.de.slice(8) === '01' && somaDia(resumo.ate, 1).slice(8) === '01'; return mi ? nm : (Math.round((b - a) / 864e5) + 1) / 30.4375; };
+    const k = fr();
+    return METAS.filter(function (m) { return Number(meta[m[0]]) > 0; }).map(function (m) { const alvo = m[0] === 'ganhas' ? Math.round(Number(meta[m[0]]) * k * 10) / 10 : cent(Number(meta[m[0]]) * k); const at = Number(resumo[m[0]]) || 0; return { chave: m[0], nome: m[1], atual: at, alvo: alvo, pct: alvo ? at / alvo * 100 : null, atingida: at >= alvo }; });
+  }
+  // próximas sessões e prazos do cliente (de hoje até `dias` à frente)
+  function agenda(e, o) {
+    o = o || {}; const hoje = o.hoje || new Date().toISOString().slice(0, 10); const fim = somaDia(hoje, o.dias || 30);
+    const doCli = function (x) { return !o.empresaId || x.empresaId === o.empresaId; }; const dentro = function (d) { return d && d >= hoje && d <= fim; };
+    const props = lista(e.propostas); const out = []; const vistas = {};
+    const add = function (k, it) { if (k && vistas[k]) return; if (k) vistas[k] = 1; out.push(it); };
+    const totalProp = function (p) { return p ? cent(lista(p.itens).reduce(function (s, i) { return s + (Number(i.refUnitaria) || Number(i.unitario) || 0) * (Number(i.quantidade) || 0); }, 0)) : 0; };
+    lista(e.disputas).filter(doCli).forEach(function (x) { const d = dataDe(x.sessao); if (!dentro(d)) return; const p = props.find(function (y) { return y.id === x.propostaId; }); add((p && p.avisoId) || x.id, { data: d, hora: String(x.sessao || '').slice(11, 16), tipo: 'Sessão', titulo: x.titulo || '', orgao: (p && p.orgao) || '', portal: x.portal || (p && p.portal) || '', valor: totalProp(p) }); });
+    lista(e.monitor).filter(doCli).forEach(function (x) { const d = dataDe(x.sessao); if (!dentro(d)) return; add(x.avisoId || x.id, { data: d, hora: String(x.sessao || '').slice(11, 16), tipo: 'Sessão', titulo: x.titulo || '', orgao: '', portal: x.portal || '', valor: 0 }); });
+    props.filter(doCli).forEach(function (p) { const d = dataDe(p.encerramento); if (!dentro(d)) return; add(p.avisoId || p.id, { data: d, hora: String(p.encerramento || '').slice(11, 16), tipo: 'Sessão', titulo: [p.modalidade, p.numero].filter(Boolean).join(' ') || p.objeto || 'Proposta', orgao: p.orgao || '', portal: p.portal || '', valor: totalProp(p) }); });
+    cartoes(e, o.empresaId).filter(function (c) { return !c.ganha && !c.perdida && !c.arquivado && dentro(c.prazo); }).forEach(function (c) { add('c:' + c.id, { data: c.prazo, hora: '', tipo: 'Prazo', titulo: c.titulo, orgao: c.orgao, portal: c.portal, valor: c.valorEstimado || c.valor || 0 }); });
+    return out.sort(function (a, b) { return (a.data + a.hora) < (b.data + b.hora) ? -1 : 1; });
+  }
+  // documentos de habilitação do cliente: vencidos, vencendo em `dias` e válidos
+  function habilitacao(e, o) {
+    o = o || {}; const hoje = o.hoje || new Date().toISOString().slice(0, 10); const dias = o.dias || 30; const h = new Date(hoje + 'T12:00:00');
+    const docs = lista(e.documentos).filter(function (d) { return !o.empresaId || d.empresaId === o.empresaId; });
+    const r = { vencidos: [], vencendo: [], validos: 0, semValidade: 0, total: docs.length };
+    docs.forEach(function (d) { if (!d.validade) { r.semValidade++; return; } const n = Math.round((new Date(d.validade + 'T12:00:00') - h) / 864e5); const it = { nome: d.nome || (d.arquivo && d.arquivo.nome) || 'Documento', validade: d.validade, dias: n, tipo: d.tipo || '' }; if (n < 0) r.vencidos.push(it); else if (n <= dias) r.vencendo.push(it); else r.validos++; });
+    r.vencidos.sort(function (a, b) { return a.dias - b.dias; }); r.vencendo.sort(function (a, b) { return a.dias - b.dias; });
+    return r;
+  }
+
   // primeiro e último dia do mês 'AAAA-MM'
   function mes(aaaamm) { const m = String(aaaamm || '').match(/^(\d{4})-(\d{2})$/); if (!m) return null; const ult = new Date(Number(m[1]), Number(m[2]), 0).getDate(); return { de: m[1] + '-' + m[2] + '-01', ate: m[1] + '-' + m[2] + '-' + String(ult).padStart(2, '0') }; }
 
-  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
+  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, trabalho: trabalho, perdas: perdas, concorrencia: concorrencia, distribuicao: distribuicao, metas: metas, agenda: agenda, habilitacao: habilitacao, MOTIVOS_PERDA: MOTIVOS_PERDA, METAS: METAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
 });

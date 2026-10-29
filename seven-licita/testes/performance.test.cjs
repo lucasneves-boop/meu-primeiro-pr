@@ -81,3 +81,40 @@ test('Seven Relatórios: período anterior, comparação, veredito e evolução'
   const ev = P.evolucao(e, { empresaId: null, cfgDe: cfg, de: '2026-09-01', ate: '2026-11-30' });
   assert.deepStrictEqual(ev.map(x => x.mes), ['2026-09', '2026-10', '2026-11']); assert.strictEqual(ev[0].ganhas, 1, 'ganho do cliente B em setembro'); assert.strictEqual(ev[1].ganhas, 1);
 });
+
+test('Relatórios: trabalho da Seven no período', () => {
+  const e = estado();
+  e.propostas.push({ id: 'p2', empresaId: 'A', avisoId: 'av2', criadaEm: '2026-10-03T10:00:00Z', enviadaEm: '2026-10-08T10:00:00Z' }, { id: 'p3', empresaId: 'B', criadaEm: '2026-10-03T10:00:00Z' });
+  e.disputas = [{ id: 'd1', empresaId: 'A', propostaId: 'p2', sessao: '2026-10-15T09:00:00' }, { id: 'd2', empresaId: 'A', sessao: '2026-12-15T09:00:00' }];
+  e.monitor = [{ id: 'm1', empresaId: 'A', avisoId: 'av2', sessao: '2026-10-15T09:00:00', recursos: [{ em: '2026-10-16T10:00:00Z' }] }];
+  e.pecas = [{ modelo: 'impugnacao', empresaId: 'A', criadaEm: '2026-10-02T10:00:00Z' }, { modelo: 'recurso', empresaId: 'A', criadaEm: '2026-10-20T10:00:00Z' }, { modelo: 'reequilibrio', empresaId: 'A', criadaEm: '2026-10-21T10:00:00Z' }, { modelo: 'recurso', empresaId: 'A', criadaEm: '2026-09-20T10:00:00Z' }];
+  e.documentos = [{ empresaId: 'A', criadoEm: '2026-10-09T10:00:00Z' }];
+  const t = P.trabalho(e, { empresaId: 'A', de: '2026-10-01', ate: '2026-10-31', hoje: '2026-11-10', analisados: 12 }).n;
+  assert.strictEqual(t.oportunidades, 6); assert.strictEqual(t.analisados, 12); assert.strictEqual(t.propostasCadastradas, 1); assert.strictEqual(t.propostasEnviadas, 1);
+  assert.strictEqual(t.sessoes, 1, 'mesma licitação no Pregão e na Sessão conta uma vez; sessão futura não conta');
+  assert.strictEqual(t.impugnacoes, 1); assert.strictEqual(t.recursos, 2, 'peça de recurso + intenção registrada'); assert.strictEqual(t.outrasPecas, 1); assert.strictEqual(t.documentos, 1);
+});
+
+test('Relatórios: motivos de perda, deságio, concorrentes e distribuição', () => {
+  const e = estado(); const q = e.quadros[0];
+  q.cartoes.find(c => c.id === 'perd').perda = { motivo: 'preco', vencedor: 'Concorrente X', valorVencedor: 90000, nossoValor: 99000 };
+  q.cartoes.find(c => c.id === 'ganho').licitacao = { valorEstimado: 125000, uf: 'go' };
+  q.cartoes.find(c => c.id === 'ganho').valores = { orgao: 'Prefeitura de Catalão', portal: 'BLL' };
+  const d = P.desempenho(e, { empresaId: 'A', hoje: '2026-11-10' }).cartoes;
+  const pe = P.perdas(d, '2026-10-01', '2026-10-31'); assert.strictEqual(pe.lista.length, 1); assert.strictEqual(pe.principal.chave, 'preco'); assert.strictEqual(pe.semMotivo, 0);
+  const co = P.concorrencia(d, '2026-10-01', '2026-10-31'); perto(co.desagioMedio, 20); perto(co.distanciaMedia, 10); assert.strictEqual(co.concorrentes[0].nome, 'Concorrente X');
+  const di = P.distribuicao(d, '2026-10-01', '2026-10-31'); assert.strictEqual(di.decididas, 2); assert.strictEqual(di.orgao[0].nome, 'Prefeitura de Catalão'); assert.strictEqual(di.uf[0].nome, 'GO'); perto(di.portal[0].taxa, 100);
+});
+
+test('Relatórios: metas proporcionais ao período, agenda e habilitação', () => {
+  const m = P.metas({ valorGanho: 50000, ganhas: 1 }, { de: '2026-10-01', ate: '2026-12-31', valorGanho: 120000, ganhas: 2 });
+  assert.strictEqual(m.length, 2); perto(m[0].alvo, 150000); perto(m[0].pct, 80); assert.strictEqual(m[1].alvo, 3); assert.strictEqual(m[0].atingida, false);
+  const e = estado(); e.quadros[0].cartoes.find(c => c.id === 'dis').prazo = '2026-11-20';
+  e.propostas.push({ id: 'p9', empresaId: 'A', avisoId: 'a9', encerramento: '2026-11-15T10:00:00', orgao: 'UFG', itens: [{ refUnitaria: 10, quantidade: 100 }] });
+  e.disputas = [{ id: 'd9', empresaId: 'A', propostaId: 'p9', sessao: '2026-11-15T10:00:00', titulo: 'PE 9' }];
+  const ag = P.agenda(e, { empresaId: 'A', hoje: '2026-11-10', dias: 30 });
+  assert.strictEqual(ag.length, 2); assert.strictEqual(ag[0].tipo, 'Sessão'); perto(ag[0].valor, 1000); assert.strictEqual(ag[1].tipo, 'Prazo');
+  e.documentos = [{ empresaId: 'A', nome: 'CRF', validade: '2026-11-05' }, { empresaId: 'A', nome: 'CND', validade: '2026-11-25' }, { empresaId: 'A', nome: 'Balanço', validade: '2027-05-01' }, { empresaId: 'A', nome: 'Contrato social' }];
+  const h = P.habilitacao(e, { empresaId: 'A', hoje: '2026-11-10' });
+  assert.strictEqual(h.vencidos.length, 1); assert.strictEqual(h.vencendo[0].nome, 'CND'); assert.strictEqual(h.validos, 1); assert.strictEqual(h.semValidade, 1);
+});

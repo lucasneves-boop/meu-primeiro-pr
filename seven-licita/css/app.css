@@ -2762,3 +2762,15 @@ tr.cm-total th, tr.cm-total td { font-weight: 700; border-top: 2px solid var(--o
 .rl-leitura { margin: 0; padding-left: 18px; } .rl-leitura li { margin: 4px 0; }
 .rl-graf { overflow-x: auto; } .rl-graf svg { max-width: 100%; height: auto; }
 .rl tr.rl-no-periodo th, .rl tr.rl-no-periodo td { background: rgba(182, 141, 64, .10); font-weight: 600; }
+/* Seven Relatórios: seções complementares */
+.cm-numeros .alerta b { color: var(--c-amarelo, #c98a00); }
+.rl-secoes { margin: 6px 0 2px; } .rl-secoes summary { cursor: pointer; font-size: 13px; color: var(--mudo); }
+.rl-secoes-l { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-top: 6px; }
+.rl section h3 .btn { margin-left: 8px; vertical-align: middle; }
+.rl-vazia { border-style: dashed; }
+.rl-texto p { margin: 0 0 8px; line-height: 1.5; } .rl-texto ul { margin: 0 0 8px; padding-left: 18px; } .rl-parecer h4 { margin: 12px 0 6px; }
+.rl-motivos { display: grid; gap: 6px; margin-bottom: 12px; }
+.rl-motivo { display: grid; grid-template-columns: minmax(140px, 260px) 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+.rl-barra { height: 8px; border-radius: 4px; background: var(--superficie-2); overflow: hidden; } .rl-barra i { display: block; height: 100%; background: var(--c-vermelho, #e34948); border-radius: 4px; }
+.rl-dist { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; } .rl-dist h4 { margin: 4px 0 6px; }
+@media (max-width: 600px) { .rl-motivo { grid-template-columns: 1fr auto; } .rl-motivo .rl-barra { grid-column: 1 / -1; grid-row: 2; } }

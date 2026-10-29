@@ -9,6 +9,21 @@
     const x = LIBS[k]; if (self[x[1]]) return Promise.resolve(self[x[1]]);
     return carregando[k] = carregando[k] || new Promise(function (ok, erro) { const s = document.createElement('script'); s.src = x[0]; s.onload = function () { ok(self[x[1]]); }; s.onerror = function () { carregando[k] = null; erro(new Error('Sem acesso à biblioteca de PDF. Verifique a internet.')); }; document.head.appendChild(s); });
   }
+  // html2canvas 1.4 não lê cores 'color(srgb …)' (resultado de color-mix): troca por rgba() na cópia
+  const PROPS_COR = ['color', 'backgroundColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'outlineColor', 'textDecorationColor', 'fill', 'stroke'];
+  function rgbaDe(v) {
+    const m = /^color\(srgb\s+([\d.e+-]+)\s+([\d.e+-]+)\s+([\d.e+-]+)(?:\s*\/\s*([\d.e+-]+%?))?\s*\)$/.exec(String(v).trim()); if (!m) return null;
+    const c = function (x) { return Math.round(Math.min(1, Math.max(0, Number(x))) * 255); }; let a = m[4] == null ? 1 : /%$/.test(m[4]) ? parseFloat(m[4]) / 100 : Number(m[4]);
+    return 'rgba(' + c(m[1]) + ', ' + c(m[2]) + ', ' + c(m[3]) + ', ' + Math.min(1, Math.max(0, a)) + ')';
+  }
+  function corrigirCores(doc) {
+    const win = doc.defaultView; if (!win) return;
+    doc.querySelectorAll('*').forEach(function (n) {
+      const cs = win.getComputedStyle(n);
+      PROPS_COR.forEach(function (k) { const v = cs[k]; if (v && /^color\(/.test(v)) { const r = rgbaDe(v); n.style[k] = r || 'transparent'; } });
+      if (/color\(/.test(cs.boxShadow || '')) n.style.boxShadow = 'none';
+    });
+  }
   function emQuadro() { try { return window.self !== window.top; } catch (e) { return true; } }
 
   async function salvar(nome, blob) {
@@ -30,7 +45,7 @@
     let tela;
     try {
       tela = await h2c(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: 1100,
-        onclone: function (doc) { doc.documentElement.classList.add('gerando-pdf'); doc.querySelectorAll('.no-print').forEach(function (n) { n.style.display = 'none'; }); } });
+        onclone: function (doc) { doc.documentElement.classList.add('gerando-pdf'); corrigirCores(doc); doc.querySelectorAll('.no-print').forEach(function (n) { n.style.display = 'none'; }); } });
     } finally { document.documentElement.classList.remove('gerando-pdf'); }
     const pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const M = 10, W = 210 - 2 * M, H = 297 - 2 * M; const pxPorMm = tela.width / W; const altPag = Math.floor(H * pxPorMm);
@@ -56,5 +71,5 @@
     return gerar(el, nome);
   }
 
-  self.RelatorioPDF = { gerar: gerar, imprimir: imprimir, emQuadro: emQuadro, salvar: salvar };
+  self.RelatorioPDF = { rgbaDe: rgbaDe, gerar: gerar, imprimir: imprimir, emQuadro: emQuadro, salvar: salvar };
 })();
