@@ -60,6 +60,16 @@
     return api;
   }
 
+  // celular: os botões das janelas ficam agrupados atrás de um só botão no topo
+  function ligarGrupo() {
+    const b = document.getElementById('botao-janelas'), g = document.getElementById('topo-janelas'); if (!b || !g) return;
+    const fechar = function () { g.classList.remove('aberta'); b.setAttribute('aria-expanded', 'false'); };
+    b.addEventListener('click', function (ev) { ev.stopPropagation(); const a = g.classList.toggle('aberta'); b.setAttribute('aria-expanded', String(a)); });
+    g.addEventListener('click', function (ev) { if (ev.target.closest('button')) fechar(); });
+    document.addEventListener('click', function (ev) { if (!g.contains(ev.target) && ev.target !== b) fechar(); });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') fechar(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ligarGrupo); else ligarGrupo();
   window.addEventListener('resize', function () { todas.forEach(function (j) { if (j.aberta()) j.posicionar(); }); });
   // atualiza as janelas abertas quando os dados mudam em outra tela (sem atrapalhar quem está digitando nelas)
   let agendado = null;

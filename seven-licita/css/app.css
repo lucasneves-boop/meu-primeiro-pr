@@ -2845,3 +2845,17 @@ html.sem-animacao #fundo-animado { display: none; }
 html.sem-descricoes #desc-tela { display: none !important; }
 .menu p.grupo[hidden], .menu a[hidden] { display: none !important; }
 .topo .icone[hidden] { display: none !important; }
+/* grupo dos botões das janelas flutuantes (no celular, atrás de um só botão) */
+.topo-janelas { display: flex; align-items: center; gap: 12px; flex: none; }
+.topo-janelas + .botao-tema { margin-left: 0; }
+.botao-janelas { display: none; width: 34px; height: 34px; border: 1px solid var(--borda); border-radius: 50%; background: var(--superficie); color: var(--texto); place-items: center; cursor: pointer; flex: none; }
+.botao-janelas[aria-expanded="true"] { border-color: var(--ouro); color: var(--ouro); }
+@media (max-width: 760px) {
+  .botao-janelas { display: grid; }
+  .topo-janelas { display: none; position: absolute; top: calc(100% + 6px); right: 12px; flex-wrap: wrap; gap: 8px; padding: 8px; max-width: calc(100vw - 24px); background: var(--superficie); border: 1px solid var(--borda); border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); z-index: 20; }
+  .topo-janelas.aberta { display: flex; }
+}
+/* cabeçalho dos relatórios no celular: quebra em linhas em vez de sair da tela */
+.cm-cab-rel { flex-wrap: wrap; gap: 8px 12px; } .cm-cab-rel div { min-width: 0; } .cm-cab-rel b, .cm-cab-rel small { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .cm-cab-rel div { flex-basis: 100%; } .cm-gerado { white-space: normal; } }
+.grupo-botoes .btn { max-width: 100%; white-space: normal; text-align: center; }
