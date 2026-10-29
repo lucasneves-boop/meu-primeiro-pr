@@ -114,3 +114,16 @@ test('Relatórios: metas proporcionais ao período e habilitação', () => {
   const h = P.habilitacao(e, { empresaId: 'A', hoje: '2026-11-10' });
   assert.strictEqual(h.vencidos.length, 1); assert.strictEqual(h.vencendo[0].nome, 'CND'); assert.strictEqual(h.validos, 1); assert.strictEqual(h.semValidade, 1);
 });
+
+test('carteira: resultado geral e de cada empresa, com a própria empresa à parte', () => {
+  const e = estado(); e.empresas[1].propria = true;
+  e.propostas.push({ id: 'pp', empresaId: 'A', status: 'rascunho', encerramento: '2026-11-12T09:00:00' });
+  e.documentos = [{ empresaId: 'A', nome: 'CRF', validade: '2026-11-01' }];
+  const c = P.carteira(e, { de: '2026-01-01', ate: '2026-12-31', hoje: '2026-11-10', cfgDe: () => ({ base: 'venda', pct: 5 }) });
+  const a = c.linhas.find(x => x.id === 'A'), b = c.linhas.find(x => x.id === 'B');
+  assert.strictEqual(a.ganhas, 1); perto(a.valorGanho, 100000); assert.strictEqual(a.propostasPreparo, 1); assert.strictEqual(a.sessoes7, 1); assert.strictEqual(a.docsVencidos, 1);
+  assert.strictEqual(b.propria, true); assert.strictEqual(b.comissao, 0, 'sem comissão na própria empresa');
+  perto(c.total.valorGanho, 150000); assert.strictEqual(c.total.clientes, 1); assert.strictEqual(c.total.empresas, 2);
+  assert.strictEqual(P.carteira(e, { hoje: '2026-11-10', filtro: 'propria' }).linhas.length, 1);
+  assert.strictEqual(P.carteira(e, { hoje: '2026-11-10', filtro: 'clientes' }).linhas[0].id, 'A');
+});

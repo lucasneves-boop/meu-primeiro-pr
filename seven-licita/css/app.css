@@ -2871,3 +2871,26 @@ html.sem-descricoes #desc-tela { display: none !important; }
 .linha > .campo[hidden] { display: none; }
 .cl-res dt { flex: 1 1 45%; min-width: 0; } .cl-res dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
 .cl-como { margin-top: 12px; border-top: 1px solid var(--borda); padding-top: 8px; } .cl-como summary { cursor: pointer; font-weight: 700; font-size: 13px; } .cl-como p { margin: 6px 0 0; font-size: 13px; color: var(--mudo); line-height: 1.5; }
+/* Seven Clientes: carteira */
+.cl-geral-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 16px; margin-bottom: 8px; } .cl-geral-cab h3 { margin: 0; }
+.cl-filtros { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 4px 0 14px; } .cl-filtros input[type=search] { flex: 1 1 240px; min-width: 0; } .cl-filtros select { flex: 0 1 220px; }
+.cl-emps { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+.cl-emp { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.cl-emp > header { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; } .cl-emp h3 { margin: 0; overflow-wrap: anywhere; } .cl-emp header p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.cl-emp-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; flex: none; max-width: 45%; }
+.cl-emp.propria { border-color: var(--ouro); box-shadow: inset 4px 0 0 var(--ouro); } .cl-emp.ativo { outline: 2px solid var(--ouro); outline-offset: -2px; }
+.cl-emp-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.cl-emp-kpis > div { background: var(--superficie-2); border-radius: 8px; padding: 6px 8px; min-width: 0; } .cl-emp-kpis small { display: block; font-size: 11px; color: var(--mudo); line-height: 1.25; } .cl-emp-kpis b { display: block; font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; } .cl-emp-kpis b small { display: inline; }
+.cl-emp-kpis .ok b { color: var(--c-verde, #1baf7a); }
+.cl-emp-alertas { display: flex; flex-wrap: wrap; gap: 6px; }
+.cl-emp footer { margin-top: auto; }
+@media (max-width: 600px) { .cl-emp-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cl-emp-tags { max-width: none; } .cl-emp > header { flex-direction: column; } .cl-emp-tags { justify-content: flex-start; } }
+.cl-emps + .mini { margin-top: 12px; }
+/* categorias do menu retráteis */
+.menu p.grupo { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 6px; user-select: none; border-radius: 6px; }
+.menu p.grupo:hover, .menu p.grupo:focus-visible { color: var(--ouro); outline: none; }
+.menu p.grupo:focus-visible { box-shadow: 0 0 0 2px var(--ouro); }
+.menu .grupo-seta { font-size: 11px; transition: transform .15s; opacity: .7; }
+.menu p.grupo.fechado .grupo-seta { transform: rotate(-90deg); }
+.menu a.no-grupo-fechado:not(.ativo) { display: none; }
+html.lateral-recolhida .menu a.no-grupo-fechado { display: flex; } html.lateral-recolhida .menu .grupo-seta { display: none; }

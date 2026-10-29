@@ -235,8 +235,38 @@
     return r;
   }
 
+  // ---------- carteira: resultado geral e de cada empresa (clientes e a própria empresa) ----------
+  // o: { de, ate, hoje, cfgDe, filtro: 'todos'|'clientes'|'propria' }
+  function carteira(e, o) {
+    o = o || {}; const hoje = o.hoje || new Date().toISOString().slice(0, 10);
+    const de = o.de || hoje.slice(0, 4) + '-01-01', ate = o.ate || hoje.slice(0, 4) + '-12-31';
+    const emps = lista(e.empresas).filter(function (x) { return o.filtro === 'propria' ? x.propria : o.filtro === 'clientes' ? !x.propria : true; });
+    const em7 = somaDia(hoje, 7);
+    const linhas = emps.map(function (x) {
+      const r = resumoPeriodo(e, { empresaId: x.id, cfgDe: o.cfgDe, de: de, ate: ate, hoje: hoje }); const d = r.desempenho; const t = d.totais;
+      const h = habilitacao(e, { empresaId: x.id, hoje: hoje, dias: 30 });
+      const props = lista(e.propostas).filter(function (p) { return p.empresaId === x.id; });
+      const sessoes = lista(e.disputas).concat(lista(e.monitor)).concat(props.map(function (p) { return { empresaId: p.empresaId, sessao: p.encerramento, avisoId: p.avisoId || p.id }; }))
+        .filter(function (z) { const s = dataDe(z.sessao); return z.empresaId === x.id && s && s >= hoje && s <= em7; });
+      const vistas = {}; const prox = sessoes.filter(function (z) { const k = z.avisoId || z.propostaId || z.id || z.sessao; if (vistas[k]) return false; vistas[k] = 1; return true; }).map(function (z) { return dataDe(z.sessao); }).sort();
+      return {
+        id: x.id, nome: x.fantasia || x.razao || 'Empresa', propria: !!x.propria,
+        oportunidades: d.cartoes.filter(function (c) { return !c.ganha && !c.perdida && !c.arquivado; }).length,
+        propostasPreparo: props.filter(function (p) { return !p.enviadaEm && !p.resultado && (p.status === 'rascunho' || p.status === 'pronta' || !p.status); }).length,
+        sessoes7: prox.length, proximaSessao: prox[0] || null,
+        ganhas: r.ganhas, decididas: r.disputadas, taxa: r.taxa, valorGanho: r.valorGanho, recebido: r.recebido,
+        aReceber: t.aReceber, atrasado: t.atrasado, comissao: x.propria ? 0 : r.comissao,
+        docsVencidos: h.vencidos.length, docsVencendo: h.vencendo.length, docs: h.total
+      };
+    });
+    const soma = function (k) { return cent(linhas.reduce(function (a, x) { return a + (Number(x[k]) || 0); }, 0)); };
+    const dec = soma('decididas');
+    const total = { empresas: linhas.length, clientes: linhas.filter(function (x) { return !x.propria; }).length, oportunidades: soma('oportunidades'), propostasPreparo: soma('propostasPreparo'), sessoes7: soma('sessoes7'), ganhas: soma('ganhas'), decididas: dec, taxa: dec ? soma('ganhas') / dec * 100 : null, valorGanho: soma('valorGanho'), recebido: soma('recebido'), aReceber: soma('aReceber'), atrasado: soma('atrasado'), comissao: soma('comissao'), docsVencidos: soma('docsVencidos'), docsVencendo: soma('docsVencendo') };
+    return { de: de, ate: ate, linhas: linhas, total: total };
+  }
+
   // primeiro e último dia do mês 'AAAA-MM'
   function mes(aaaamm) { const m = String(aaaamm || '').match(/^(\d{4})-(\d{2})$/); if (!m) return null; const ult = new Date(Number(m[1]), Number(m[2]), 0).getDate(); return { de: m[1] + '-' + m[2] + '-01', ate: m[1] + '-' + m[2] + '-' + String(ult).padStart(2, '0') }; }
 
-  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, trabalho: trabalho, perdas: perdas, concorrencia: concorrencia, distribuicao: distribuicao, metas: metas, habilitacao: habilitacao, MOTIVOS_PERDA: MOTIVOS_PERDA, METAS: METAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
+  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, trabalho: trabalho, perdas: perdas, concorrencia: concorrencia, distribuicao: distribuicao, metas: metas, habilitacao: habilitacao, carteira: carteira, MOTIVOS_PERDA: MOTIVOS_PERDA, METAS: METAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
 });

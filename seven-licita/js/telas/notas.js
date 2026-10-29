@@ -24,7 +24,7 @@
 
   // ---------- criação ----------
   function nova(tipo, extra) {
-    const emp = Dados.empresaAtiva(); if (!emp) { aviso('Cadastre o cliente emitente em Clientes (CNPJs) antes.', 'erro'); location.hash = '#/empresas'; return null; }
+    const emp = Dados.empresaAtiva(); if (!emp) { aviso('Cadastre o cliente emitente em Seven Clientes antes.', 'erro'); location.hash = '#/empresas'; return null; }
     const f = fiscal(emp);
     const n = Object.assign({ id: Dados.id('nf'), operacao: 'saida', tipo: tipo || 'produto', modelo: tipo === 'servico' ? 'NFS-e' : '55', situacao: 'rascunho', natureza: tipo === 'servico' ? 'Prestação de serviço' : 'Venda de mercadoria', finalidade: 'normal', emissao: hoje(), saida: hoje(), empresaId: emp.id,
       destinatario: { orgaoPublico: true, contribuinte: false, consumidorFinal: true, uf: emp.uf }, itens: [], frete: 0, seguro: 0, outras: 0, modalidadeFrete: 9, duplicatas: [], formaPagamento: 'Ordem bancária (órgão público)', contrato: {}, retencaoFederal: false, naturezaRetencao: tipo === 'servico' ? 'servicos' : 'bens', aliqIss: f.aliqIss, codigoServico: f.codigoServico, percTributos: f.percTributos, dadosBancarios: f.dadosBancarios, criadoEm: new Date().toISOString(), historico: [] }, extra || {});

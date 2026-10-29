@@ -11,9 +11,10 @@
   function preencherEmpresas() {
     const sel = $('#empresa-ativa'); const e = Dados.e;
     const ativa = Dados.empresaAtiva();
-    sel.innerHTML = e.empresas.length
-      ? e.empresas.map(function (x) { return '<option value="' + x.id + '"' + (ativa && ativa.id === x.id ? ' selected' : '') + '>' + esc(x.fantasia || x.razao) + '</option>'; }).join('')
-      : '<option value="">Cadastre um cliente</option>';
+    const op = function (x) { return '<option value="' + x.id + '"' + (ativa && ativa.id === x.id ? ' selected' : '') + '>' + esc(x.fantasia || x.razao) + '</option>'; };
+    const propria = e.empresas.filter(function (x) { return x.propria; }), clientes = e.empresas.filter(function (x) { return !x.propria; });
+    sel.innerHTML = !e.empresas.length ? '<option value="">Cadastre uma empresa</option>'
+      : propria.length ? '<optgroup label="Minha empresa">' + propria.map(op).join('') + '</optgroup><optgroup label="Clientes">' + clientes.map(op).join('') + '</optgroup>' : clientes.map(op).join('');
   }
 
   // Descrição curta de cada ferramenta, mostrada acima do conteúdo (telas com cabeçalho próprio mantêm o delas).
@@ -51,7 +52,7 @@
     design: 'Crie posts, stories, apresentações, propostas e gráficos com a identidade da Seven, com ferramentas no padrão do Canva.',
     calculadora: 'Calculadora científica e dezenas de cálculos do dia a dia, incluindo o custo de viagem com combustível, pedágio e diárias.',
     musicas: 'Ouça suas músicas e playlists enquanto trabalha, com equalizador, velocidade e timer de sono.',
-    empresas: 'Cadastre os clientes atendidos (CNPJs). O cliente ativo filtra propostas, documentos, disputas e monitoramento.',
+    empresas: 'Carteira das empresas que você assessora e da sua própria empresa: o resultado geral e o de cada uma, com sessões, propostas, documentos, valores ganhos e a receber.',
     config: 'Ajuste a aparência (tema, cor, tamanho, espaçamento), o menu e a tela inicial, as janelas flutuantes e os atalhos, a assinatura das mensagens, os avisos e o backup.'
   };
   function descricao(r, tela) {
@@ -113,6 +114,24 @@
     window.dispatchEvent(new Event('resize'));
     return r;
   }
+  // ---------- categorias do menu retráteis: clique no nome do grupo para recolher ou mostrar as ferramentas dele ----------
+  function gruposFechados() { try { return JSON.parse(localStorage.getItem('seven-menu-grupos')) || []; } catch (e) { return []; } }
+  function aplicarGrupos() {
+    const fechados = gruposFechados();
+    $$('.menu p.grupo').forEach(function (g) {
+      const nome = g.dataset.grupo || g.textContent.trim(); const fechado = fechados.indexOf(nome) >= 0;
+      g.setAttribute('aria-expanded', String(!fechado)); g.classList.toggle('fechado', fechado);
+      for (let n = g.nextElementSibling; n && !n.matches('p.grupo'); n = n.nextElementSibling) if (n.matches('a[data-rota]')) n.classList.toggle('no-grupo-fechado', fechado);
+    });
+  }
+  $$('.menu p.grupo').forEach(function (g) {
+    const nome = g.textContent.trim(); g.dataset.grupo = nome; g.setAttribute('role', 'button'); g.tabIndex = 0; g.title = 'Recolher ou mostrar ' + nome;
+    g.insertAdjacentHTML('beforeend', '<span class="grupo-seta" aria-hidden="true">▾</span>');
+    const alternar = function () { const f = gruposFechados(); const i = f.indexOf(nome); if (i >= 0) f.splice(i, 1); else f.push(nome); try { localStorage.setItem('seven-menu-grupos', JSON.stringify(f)); } catch (e) { /* sem armazenamento */ } aplicarGrupos(); };
+    g.addEventListener('click', alternar); g.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); alternar(); } });
+  });
+  aplicarGrupos();
+
   $('#recolher-menu').addEventListener('click', function () { menuRecolhido(!document.documentElement.classList.contains('lateral-recolhida')); });
   menuRecolhido(self.Pref && Pref.obter().menuRecolhidoAoAbrir ? true : undefined);
 

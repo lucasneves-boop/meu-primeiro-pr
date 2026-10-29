@@ -19,7 +19,8 @@
     return Object.assign(pad, d.comissaoClientes[id || '_todos'] || {});
   }
   function cfgCalc(c) { return Object.assign(cfgNum(c), T.cfgAvancado(c), { fixoDesde: c.fixoDesde, diaVenc: Nucleo.lerNumeroBR(c.diaVenc || '10'), autoFinanceiro: !!c.autoFinanceiro }); }
-  function cfgDe(id) { return cfgCalc(cfgCliente(id)); }
+  // a própria empresa não paga comissão a si mesma: comissão e fixo ficam zerados
+  function cfgDe(id) { const emp = id && Dados.empresa(id); const c = cfgCalc(cfgCliente(id)); return emp && emp.propria ? Object.assign(c, { pct: 0, faixas: null, fixo: 0, parceiros: [] }) : c; }
   function cfgNum(c) { const n = function (v) { return v == null || String(v).trim() === '' ? null : Nucleo.lerNumeroBR(v); }; return { base: c.base, pct: n(c.pct), margem: n(c.margem), retencao: n(c.retencao), meta: n(c.meta) }; }
   function textoCfg(c) {
     const x = cfgCalc(c); const fx = x.faixas ? K.lerFaixas(x.faixas) : [];

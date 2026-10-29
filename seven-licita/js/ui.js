@@ -20,6 +20,39 @@
     return ms >= 0 ? 'em ' + t : 'há ' + t;
   }
 
+  // "3 aviso(s)" → "3 avisos", "1 cartão(ões)" → "1 cartão": o número mais próximo antes da palavra decide
+  const RE_PL = /([A-Za-zÀ-ÿ]+)\((s|es|ões|ns)\)/g;
+  function flexionar(palavra, suf, um) {
+    if (um) return palavra;
+    if (suf === 'ões') return /ão$/.test(palavra) ? palavra.replace(/ão$/, 'ões') : palavra + 'ões';
+    if (suf === 'ns') return /m$/.test(palavra) ? palavra.replace(/m$/, 'ns') : palavra + 'ns';
+    return palavra + suf;
+  }
+  function plurais(t) {
+    t = String(t == null ? '' : t); if (t.indexOf('(') < 0) return t;
+    return t.replace(RE_PL, function (m, palavra, suf, pos) {
+      const antes = t.slice(Math.max(0, pos - 60), pos).replace(/<[^>]*>/g, ' ');
+      const nums = antes.match(/(?:^|[^\w,.])(\d+(?:[.,]\d+)?)(?=[^\d]*$)/); const trecho = nums ? antes.slice(antes.lastIndexOf(nums[1])) : '';
+      const perto = nums && !/[.;:!?\n]/.test(trecho.slice(nums[1].length)) && trecho.split(/\s+/).length <= 6;
+      const um = perto && Number(nums[1].replace(',', '.')) === 1;
+      return flexionar(palavra, suf, um);
+    });
+  }
+  function pluraisEm(raiz) {
+    if (!raiz) return; const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { return n.nodeValue.indexOf('(') >= 0 && !n.parentElement.closest('textarea,script,style,[contenteditable],pre,code,input') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; } });
+    const ns = []; while (w.nextNode()) ns.push(w.currentNode);
+    ns.forEach(function (n) { const v = plurais(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+  }
+
+  // aplica as flexões em tudo que é desenhado na tela (telas, janelas, modais e avisos)
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+    const fila = new Set(); let agendado = false;
+    const processar = function () { agendado = false; fila.forEach(function (n) { if (n.isConnected) { if (n.nodeType === 3) { if (!n.parentElement || !n.parentElement.closest('textarea,script,style,[contenteditable],pre,code')) { const v = plurais(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } } else pluraisEm(n); } }); fila.clear(); };
+    const obs = new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1 || (n.nodeType === 3 && n.nodeValue.indexOf('(') >= 0)) fila.add(n); }); }); if (fila.size && !agendado) { agendado = true; Promise.resolve().then(processar); } });
+    const iniciar = function () { obs.observe(document.body, { childList: true, subtree: true }); pluraisEm(document.body); };
+    if (document.body) iniciar(); else document.addEventListener('DOMContentLoaded', iniciar);
+  }
+
   function $(sel, raiz) { return (raiz || document).querySelector(sel); }
   function $$(sel, raiz) { return Array.prototype.slice.call((raiz || document).querySelectorAll(sel)); }
 
@@ -28,7 +61,7 @@
     const el = document.createElement('div');
     el.className = 'toast ' + (tipo || '');
     el.setAttribute('role', 'status');
-    el.textContent = texto;
+    el.textContent = plurais(texto);
     box.appendChild(el);
     setTimeout(function () { el.classList.add('sai'); setTimeout(function () { el.remove(); }, 400); }, tipo === 'erro' ? 7000 : (self.Pref ? Math.max(2, Number(Pref.obter().avisosSegundos) || 4) * 1000 : 3500));
   }
@@ -43,11 +76,13 @@
         '<div class="modal-corpo">' + opcoes.corpo + '</div>' +
         '<footer>' + (opcoes.semCancelar ? '' : '<button type="button" class="btn fantasma cancelar">Cancelar</button>') +
         (opcoes.botao === false ? '' : '<button type="submit" class="btn primario">' + esc(opcoes.botao || 'Salvar') + '</button>') + '</footer></form>';
-      document.body.appendChild(fundo);
+      document.body.appendChild(fundo); pluraisEm(fundo.querySelector('.modal-corpo')); pluraisEm(fundo.querySelector('header'));
       const form = fundo.querySelector('form');
-      function fim(v) { fundo.remove(); document.removeEventListener('keydown', esc_); ok(v); }
+      function fim(v) { fundo.remove(); document.removeEventListener('keydown', esc_); window.removeEventListener('hashchange', saiu); ok(v); }
       function esc_(e) { if (e.key === 'Escape') fim(null); }
-      document.addEventListener('keydown', esc_);
+      // trocar de tela fecha a janela (ela pertence à tela em que foi aberta)
+      function saiu() { if (document.body.contains(fundo)) fim(null); }
+      document.addEventListener('keydown', esc_); window.addEventListener('hashchange', saiu);
       fundo.querySelector('.fechar').onclick = function () { fim(null); };
       const c = fundo.querySelector('.cancelar'); if (c) c.onclick = function () { fim(null); };
       fundo.addEventListener('mousedown', function (e) { if (e.target === fundo) fim(null); });
@@ -136,6 +171,6 @@
   self.UI = {
     esc: esc, moeda: moeda, num: num, pct: pct, data: data, dataHora: dataHora, cnpj: cnpj, emQuanto: emQuanto, $: $, $$: $$,
     aviso: aviso, modal: modal, confirmar: confirmar, opcoes: opcoes, campo: campo, baixar: baixar, lerArquivoTexto: lerArquivoTexto,
-    escolherArquivo: escolherArquivo, url: url, abrirArquivo: abrirArquivo, vazio: vazio, abas: abas, progresso: progresso, barras: barras
+    plurais: plurais, pluraisEm: pluraisEm, escolherArquivo: escolherArquivo, url: url, abrirArquivo: abrirArquivo, vazio: vazio, abas: abas, progresso: progresso, barras: barras
   };
 })();
