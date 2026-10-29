@@ -32,6 +32,11 @@
     licitacoes: { t: 'Licitações (do edital ao pagamento)', fundo: 'preto', listas: LISTAS_LICITACAO },
     execucao: { t: 'Execução de contratos', fundo: 'marinho', listas: ['Contratos vigentes', 'Aguardando empenho', 'Entrega programada', 'Faturado (NF emitida)', 'Aguardando pagamento', 'Pago', 'Encerrado'] },
     documentos: { t: 'Documentos e certidões', fundo: 'petroleo', listas: ['Em emissão', 'Válidos', 'Vencendo em 30 dias', 'Vencidos'] },
+    comercial: { t: 'Comercial (vender o BPO)', fundo: 'ouro', listas: ['Prospecção', 'Primeiro contato', 'Diagnóstico', 'Proposta enviada', 'Negociação', 'Fechado', 'Perdido'] },
+    juridico: { t: 'Jurídico (esclarecimentos, impugnações e recursos)', fundo: 'vinho', listas: ['A analisar', 'Redigindo', 'Revisão', 'Protocolado', 'Aguardando decisão', 'Decidido'] },
+    onboarding: { t: 'Onboarding de cliente', fundo: 'azul', listas: ['Contrato e cadastro', 'Documentos e certidões', 'Portais e acessos', 'Catálogo e perfis de busca', 'Primeira disputa', 'Cliente ativo'] },
+    cotacoes: { t: 'Cotações com fornecedores', fundo: 'petroleo', listas: ['A cotar', 'Enviada aos fornecedores', 'Respostas recebidas', 'Mapa comparativo', 'Preço aprovado'] },
+    equipe: { t: 'Rotina semanal da equipe', fundo: 'grafite', listas: ['Esta semana', 'Hoje', 'Em andamento', 'Aguardando terceiros', 'Feito'] },
     simples: { t: 'Simples (A fazer / Fazendo / Feito)', fundo: 'ouro', listas: ['A fazer', 'Fazendo', 'Feito'] },
     vazio: { t: 'Em branco', fundo: 'grafite', listas: [] }
   };
@@ -86,8 +91,12 @@
   function fundoCss(q) { return FUNDOS[q.fundo] || (/^#[0-9a-f]{3,8}$/i.test(q.fundo || '') ? q.fundo : FUNDOS.preto); }
   function progresso(c) { let t = 0, f = 0; (c.checklists || []).forEach(function (cl) { cl.itens.forEach(function (i) { t++; if (i.feito) f++; }); }); return { t: t, f: f }; }
   function filtroDe(q) { return est.filtros[q.id] = est.filtros[q.id] || K.vazioFiltro(); }
-  function visiveis(q) { const f = filtroDe(q); const cx = { eu: eu() }; return q.cartoes.filter(function (c) { return K.passaFiltro(c, f, cx); }); }
+  function visiveis(q) { const f = filtroDe(q); const cx = { eu: eu(), bloqueadoPor: bloqueios }; return q.cartoes.filter(function (c) { return K.passaFiltro(c, f, cx); }); }
   function salvar() { Dados.salvar(); }
+  // cartões que bloqueiam c (dependências ainda não concluídas)
+  function bloqueios(c) { return K.bloqueadoPor(c, function (v) { return acharId(v.q, v.c); }); }
+  const COR_PRIO = ['', 'cinza', 'azul', 'laranja', 'vermelho'];
+  function seloPrioridade(c, grande) { const p = c.prioridade || 0; return p ? '<span class="kprio p' + p + (grande ? ' grande' : '') + '" title="Prioridade ' + K.PRIORIDADES[p].toLowerCase() + '">⚑ ' + K.PRIORIDADES[p] + '</span>' : ''; }
   function fmtPrazo(c) {
     if (!c.prazo && !c.inicio) return '';
     const d = function (v) { const x = new Date(v); return x.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''); };
@@ -98,7 +107,7 @@
   function novoQuadro(nome, modelo) {
     const m = MODELOS[modelo] || MODELOS.simples;
     const q = { id: Dados.id('qd'), nome: nome, criadoEm: new Date().toISOString(), arquivado: false, fundo: m.fundo, descricao: '', seq: 0, _v: 2,
-      config: { numeros: true, envelhecimento: false, capas: true, votacao: true }, botoes: [], botoesCartao: [], atividade: [], campos: [], automacoes: [],
+      config: { numeros: true, envelhecimento: false, capas: true, votacao: true, prioridade: true, valorNoCartao: true, visaoPadrao: 'quadro', raias: '', compacto: false }, botoes: [], botoesCartao: [], atividade: [], campos: [], automacoes: [],
       listas: m.listas.map(function (n) { return { id: Dados.id('ls'), nome: n }; }), cartoes: [],
       etiquetas: [['Risco crítico', 'vermelho'], ['Documentação', 'amarelo'], ['Viabilidade financeira', 'verde'], ['Operação e logística', 'azul'], ['Vantagem competitiva', 'rosa']].map(function (x) { return { id: Dados.id('et'), nome: x[0], cor: x[1] }; }) };
     if (modelo === 'licitacoes') {
@@ -116,6 +125,10 @@
       q.campos = [{ id: Dados.id('cf'), nome: 'Nº contrato', tipo: 'texto' }, { id: 'valor', nome: 'Valor', tipo: 'moeda' }, { id: 'orgao', nome: 'Órgão', tipo: 'texto' }, { id: Dados.id('cf'), nome: 'Fim da vigência', tipo: 'data' }];
       q.automacoes = [{ id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Pago' }, acoes: [{ tipo: 'concluir' }] }, { id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Aguardando pagamento' }, acoes: [{ tipo: 'prazo', valor: 30 }] }];
     }
+    if (modelo === 'comercial') { q.campos = [{ id: 'valor', nome: 'Mensalidade', tipo: 'moeda' }, { id: Dados.id('cf'), nome: 'Origem do lead', tipo: 'lista', opcoes: ['Indicação', 'Instagram', 'LinkedIn', 'Evento', 'Site', 'Outro'] }, { id: Dados.id('cf'), nome: 'Próximo contato', tipo: 'data' }]; q.automacoes = [{ id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Proposta enviada' }, acoes: [{ tipo: 'prazo', valor: 3 }, { tipo: 'checklist', valor: 'Follow-up;Ligar em 3 dias;Enviar case de sucesso' }] }, { id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Fechado' }, acoes: [{ tipo: 'concluir' }] }]; }
+    if (modelo === 'juridico') { q.campos = [{ id: Dados.id('cf'), nome: 'Tipo de peça', tipo: 'lista', opcoes: ['Esclarecimento', 'Impugnação', 'Intenção de recurso', 'Recurso', 'Contrarrazões', 'Representação'] }, { id: 'orgao', nome: 'Órgão', tipo: 'texto' }, { id: 'numero', nome: 'Nº do processo', tipo: 'texto' }]; q.automacoes = [{ id: Dados.id('au'), ativo: true, gatilho: { tipo: 'prazo-proximo', dias: 1 }, acoes: [{ tipo: 'prioridade', valor: 4 }, { tipo: 'notificar', valor: 'Prazo da peça em menos de 24 h' }] }]; }
+    if (modelo === 'onboarding') q.automacoes = [{ id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Documentos e certidões' }, acoes: [{ tipo: 'checklist', valor: 'Documentos;Contrato social;CND federal;CRF FGTS;CNDT;Certidão estadual;Certidão municipal;Balanço' }] }, { id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Portais e acessos' }, acoes: [{ tipo: 'checklist', valor: 'Portais;Compras.gov.br (SICAF);BLL;BNC;Licitações-e;Portal estadual' }] }];
+    if (modelo === 'equipe') q.automacoes = [{ id: Dados.id('au'), ativo: true, gatilho: { tipo: 'entrar-lista', lista: 'Feito' }, acoes: [{ tipo: 'concluir' }] }];
     if (modelo === 'documentos') q.automacoes = [{ id: Dados.id('au'), ativo: true, gatilho: { tipo: 'prazo-proximo', dias: 30 }, acoes: [{ tipo: 'mover', valor: 'Vencendo em 30 dias' }] }];
     e().quadros.push(q);
     return q;
@@ -145,7 +158,8 @@
       K.dispararEvento(q, c, { tipo: 'entrar-lista' }, ctx());
       const l = lista(q, idLista);
       if (l.seguindo) notificar('Cartão entrou na lista seguida "' + l.nome + '": ' + c.titulo, link(q, c));
-      if (l.limite && q.cartoes.filter(function (x) { return x.lista === l.id && !x.arquivado; }).length > l.limite) aviso('A lista "' + l.nome + '" passou do limite de ' + l.limite + ' cartões.', 'erro');
+      const bl = bloqueios(c); if (bl.length) aviso('Atenção: "' + c.titulo + '" está bloqueado por ' + bl.map(function (b) { return '"' + b.titulo + '"'; }).join(', ') + '.', 'erro');
+      const lim = l.limite || q.config.limitePadrao; if (lim && q.cartoes.filter(function (x) { return x.lista === l.id && !x.arquivado; }).length > lim) aviso('A lista "' + l.nome + '" passou do limite de ' + lim + ' cartões.', 'erro');
     }
     salvar();
   }
@@ -181,6 +195,7 @@
       (est.inbox ? painelInbox() : '') +
       (fav.length ? '<h3 class="ktit">★ Favoritos</h3><div class="ktiles">' + fav.map(tile).join('') + '</div>' : '') +
       (rec.length ? '<h3 class="ktit">Vistos recentemente</h3><div class="ktiles">' + rec.map(tile).join('') + '</div>' : '') +
+      '<h3 class="ktit">Visões de todos os quadros</h3><div class="karea-links">' + VISOES.filter(function (v) { return v[0] !== 'quadro'; }).map(function (v) { return '<a class="btn" href="#/quadros/area/' + v[0] + '">' + { tabela: '▤', calendario: '📅', cronograma: '▬', painel: '📊', mapa: '🗺' }[v[0]] + ' ' + v[1] + '</a>'; }).join('') + '</div>' +
       '<h3 class="ktit">Seus quadros</h3><div class="ktiles">' + qs.map(tile).join('') + '<button class="ktile novo" data-a="novo">+ Criar quadro</button></div>' +
       (fechados.length ? '<details class="kfechados"><summary>Quadros fechados (' + fechados.length + ')</summary><ul class="lista-links">' + fechados.map(function (q) { return '<li><b>' + esc(q.nome) + '</b> <button class="btn mini" data-reabrir="' + q.id + '">Reabrir</button> <button class="btn mini fantasma perigo" data-excluir="' + q.id + '">Excluir de vez</button></li>'; }).join('') + '</ul></details>' : '') + '</div>';
     el.querySelector('#kbusca').onsubmit = function (ev) { ev.preventDefault(); est.busca = new FormData(this).get('q').trim(); App.redesenhar(); };
@@ -195,6 +210,34 @@
       if (b.dataset.a === 'inbox') { est.inbox = !est.inbox; App.redesenhar(); }
       if (b.dataset.a === 'sino') abrirNotificacoes();
     };
+  }
+
+  // ---------- visões da área de trabalho: todos os quadros juntos ----------
+  function quadroArea() {
+    const qs = e().quadros.filter(function (x) { return !x.arquivado && (!est.areaQuadro || x.id === est.areaQuadro); });
+    return { id: 'area', nome: 'Todos os quadros', listas: [].concat.apply([], qs.map(function (x) { return x.listas.map(function (l) { return Object.assign({}, l, { nome: l.nome }); }); })),
+      cartoes: [].concat.apply([], qs.map(function (x) { return x.cartoes; })), etiquetas: [].concat.apply([], qs.map(function (x) { return x.etiquetas; })), campos: [], config: { numeros: true, capas: false, votacao: false }, atividade: [].concat.apply([], qs.map(function (x) { return x.atividade || []; })).sort(function (a, b) { return String(b.em).localeCompare(String(a.em)); }), botoes: [], botoesCartao: [], automacoes: [] };
+  }
+  function telaArea(el, visao) {
+    const vq = quadroArea(); const f = filtroDe(vq); const nf = K.contaFiltros(f);
+    est.visao = visao; const qs = e().quadros.filter(function (x) { return !x.arquivado; });
+    el.innerHTML = '<div class="kpagina claro karea"><div class="kcab"><a class="kvoltar" href="#/quadros" title="Todos os quadros">▦</a><h2 class="knome">Todos os quadros</h2>' +
+      '<nav class="kvisoes">' + VISOES.filter(function (v) { return v[0] !== 'quadro'; }).map(function (v) { return '<a class="' + (visao === v[0] ? 'ativa' : '') + '" href="#/quadros/area/' + v[0] + '">' + v[1] + '</a>'; }).join('') + '</nav><span class="kespaco"></span>' +
+      '<select data-area-quadro aria-label="Quadro"><option value="">Todos os quadros</option>' + opcoes(qs.map(function (x) { return { v: x.id, t: x.nome }; }), est.areaQuadro || '') + '</select>' +
+      '<input class="kbusca" type="search" placeholder="Buscar em todos os quadros" value="' + esc(f.texto) + '" id="kbusca-area">' +
+      '<button class="btn kbtn ' + (nf ? 'ativo' : '') + '" data-a="filtros">Filtros' + (nf ? ' (' + nf + ')' : '') + '</button>' + (nf ? '<button class="btn kbtn" data-a="limpar">Limpar</button>' : '') + '</div>' +
+      '<div class="kcorpo"><div class="kvisao" id="kvisao">' + desenharVisao(vq) + '</div></div></div>';
+    const raiz = el.querySelector('.kpagina');
+    raiz.addEventListener('click', async function (ev) {
+      const uf = ev.target.closest('[data-uf]'); if (uf) { est.mapaUF = est.mapaUF === uf.dataset.uf ? null : uf.dataset.uf; App.redesenhar(); return; }
+      const cal = ev.target.closest('[data-cal]'); if (cal) { const n = Number(cal.dataset.cal); const r = new Date(est.calRef || Date.now()); if (n === 0) est.calRef = new Date(); else if (est.calModo === 'semana') { r.setDate(r.getDate() + 7 * n); est.calRef = r; } else est.calRef = new Date(r.getFullYear(), r.getMonth() + n, 1); App.redesenhar(); return; }
+      const cm = ev.target.closest('[data-calmodo]'); if (cm) { est.calModo = cm.dataset.calmodo; App.redesenhar(); return; }
+      const ord = ev.target.closest('[data-ord]'); if (ord) { est.ord = { col: ord.dataset.ord, dir: est.ord.col === ord.dataset.ord ? -est.ord.dir : 1 }; App.redesenhar(); return; }
+      const b = ev.target.closest('[data-a]'); if (b) { if (b.dataset.a === 'filtros') await painelFiltros(vq); if (b.dataset.a === 'limpar') est.filtros.area = K.vazioFiltro(); App.redesenhar(); return; }
+      const k = ev.target.closest('[data-cartao],[data-cal-cartao]'); if (k) { ev.preventDefault(); const id = k.dataset.cartao || k.dataset.calCartao; const c = vq.cartoes.find(function (x) { return x.id === id; }); const rq = c && quadroDe(c); if (rq) location.hash = link(rq, c); }
+    });
+    raiz.querySelector('[data-area-quadro]').onchange = function () { est.areaQuadro = this.value; App.redesenhar(); };
+    const busca = el.querySelector('#kbusca-area'); busca.oninput = function () { filtroDe(vq).texto = busca.value; clearTimeout(busca._t); busca._t = setTimeout(function () { el.querySelector('#kvisao').innerHTML = desenharVisao(quadroArea()); }, 200); };
   }
 
   function buscarGlobal(t) {
@@ -271,13 +314,15 @@
   // ---------- quadro ----------
   function telaQuadro(el, q, idCartao) {
     q.visitadoEm = new Date().toISOString();
+    if (est.visaoDe !== q.id) { est.visaoDe = q.id; est.visao = q.config.visaoPadrao || 'quadro'; est.sel = {}; }
     if (varrerTudo()) { /* mudanças já salvas */ }
     const f = filtroDe(q); const nf = K.contaFiltros(f);
     const claro = FUNDOS_CLAROS.indexOf(q.fundo) >= 0;
     el.innerHTML = '<div class="kpagina ' + (claro ? 'claro' : 'escuro') + '" style="background:' + fundoCss(q) + '">' +
       '<div class="kcab"><a class="kvoltar" href="#/quadros" title="Todos os quadros">▦</a><h2 class="knome" contenteditable="true" spellcheck="false" data-renomear-quadro>' + esc(q.nome) + '</h2>' +
       '<button class="icone estrela ' + (q.favorito ? 'on' : '') + '" data-a="fav" aria-label="Favoritar quadro">★</button>' +
-      '<nav class="kvisoes">' + [['quadro', 'Quadro'], ['tabela', 'Tabela'], ['calendario', 'Calendário'], ['cronograma', 'Cronograma'], ['painel', 'Painel']].map(function (v) { return '<button class="' + (est.visao === v[0] ? 'ativa' : '') + '" data-visao="' + v[0] + '">' + v[1] + '</button>'; }).join('') + '</nav>' +
+      '<nav class="kvisoes">' + VISOES.map(function (v) { return '<button class="' + (est.visao === v[0] ? 'ativa' : '') + '" data-visao="' + v[0] + '">' + v[1] + '</button>'; }).join('') + '</nav>' +
+      (est.visao === 'quadro' ? '<label class="kraias-sel" title="Agrupar os cartões em raias">Raias <select data-raias aria-label="Agrupar em raias">' + opcoes([{ v: '', t: 'Nenhuma' }, { v: 'membro', t: 'Por membro' }, { v: 'etiqueta', t: 'Por etiqueta' }, { v: 'prioridade', t: 'Por prioridade' }, { v: 'empresa', t: 'Por empresa' }], q.config.raias || '') + '</select></label>' : '') +
       '<span class="kespaco"></span>' +
       '<input class="kbusca" type="search" placeholder="Buscar neste quadro ( / )" value="' + esc(f.texto) + '" id="kbusca-quadro">' +
       '<button class="btn kbtn ' + (nf ? 'ativo' : '') + '" data-a="filtros">Filtros' + (nf ? ' (' + nf + ')' : '') + '</button>' + (nf ? '<button class="btn kbtn" data-a="limpar">Limpar</button>' : '') +
@@ -291,7 +336,9 @@
     if (idCartao) { const c = cartao(q, idCartao); if (c) abrirCartao(q, c); }
   }
 
+  const VISOES = [['quadro', 'Quadro'], ['tabela', 'Tabela'], ['calendario', 'Calendário'], ['cronograma', 'Cronograma'], ['painel', 'Painel'], ['mapa', 'Mapa']];
   function desenharVisao(q) {
+    if (est.visao === 'mapa') return visaoMapa(q);
     if (est.visao === 'tabela') return visaoTabela(q);
     if (est.visao === 'calendario') return visaoCalendario(q);
     if (est.visao === 'cronograma') return visaoCronograma(q);
@@ -305,14 +352,15 @@
     const idade = q.config.envelhecimento ? Math.floor((Date.now() - K.ultimaAtividade(c)) / (7 * DIA)) : 0;
     const cheia = q.config.capas !== false && c.capa && c.capaTamanho === 'cheia' && !c.capaAnexo;
     const img = q.config.capas !== false && c.capaAnexo;
-    return '<article class="kcartao' + (cheia ? ' capa-cheia cor-' + c.capa : '') + (idade >= 1 ? ' idade-' + Math.min(3, idade) : '') + (c.concluido ? ' feito' : '') + '" draggable="true" data-cartao="' + c.id + '" tabindex="0" aria-label="' + esc(c.titulo) + '">' +
+    return '<article class="kcartao' + (q.config.compacto ? ' compacto' : '') + (cheia ? ' capa-cheia cor-' + c.capa : '') + (idade >= 1 ? ' idade-' + Math.min(3, idade) : '') + (c.concluido ? ' feito' : '') + '" draggable="true" data-cartao="' + c.id + '" tabindex="0" aria-label="' + esc(c.titulo) + '">' +
       (img ? '<div class="kcapa-img"><img data-anexo-img="' + esc(c.capaAnexo) + '" alt=""></div>' : (!cheia && q.config.capas !== false && c.capa ? '<div class="kcapa cor-' + c.capa + '"></div>' : '')) +
       (ets.length ? '<div class="ketiquetas">' + ets.map(function (x) { return '<span class="ket cor-' + x.cor + '" title="' + esc(x.nome) + '">' + esc(x.nome) + '</span>'; }).join('') + '</div>' : '') +
+      ((q.config.prioridade !== false && c.prioridade) || bloqueios(c).length ? '<div class="kselos">' + (q.config.prioridade !== false ? seloPrioridade(c) : '') + (bloqueios(c).length ? '<span class="kbloq" title="Bloqueado por ' + esc(bloqueios(c).map(function (b) { return b.titulo; }).join(', ')) + '">⛔ bloqueado</span>' : '') + '</div>' : '') +
       '<p class="ktitulo">' + (c.concluido ? '<span class="kok">✓</span> ' : '') + esc(c.titulo) + '</p>' +
       '<div class="kmeta">' +
       (q.config.numeros && c.num ? '<span class="knum">#' + c.num + '</span>' : '') +
       (c.prazo || c.inicio ? '<span class="kprazo ' + (s || '') + '">◷ ' + esc(fmtPrazo(c)) + '</span>' : '') +
-      (c.valores && c.valores.valor ? '<span>' + moeda(c.valores.valor) + '</span>' : '') +
+      (q.config.valorNoCartao !== false && c.valores && c.valores.valor ? '<span>' + moeda(c.valores.valor) + '</span>' : '') +
       (c.seguindo ? '<span title="Você segue este cartão">👁</span>' : '') +
       (c.descricao ? '<span title="Tem descrição">≡</span>' : '') +
       ((c.comentarios || []).length ? '<span title="Comentários">💬 ' + c.comentarios.length + '</span>' : '') +
@@ -326,19 +374,41 @@
   }
 
   function visaoQuadro(q) {
-    const vis = visiveis(q);
-    return '<div class="kquadro" id="kquadro">' + q.listas.filter(function (l) { return !l.arquivada; }).map(function (l) {
+    const todos = visiveis(q);
+    if (q.config.raias) {
+      const rs = K.raias(todos, q.config.raias, { etiquetas: q.etiquetas, nomeEmpresa: function (id) { const x = Dados.empresa(id); return x ? x.fantasia || x.razao : id; } });
+      return '<div class="kraias" id="kquadro">' + (rs.length ? rs.map(function (r) { return '<section class="kraia"><h3 class="kraia-cab"><span>' + esc(r.nome) + '</span><b>' + r.cartoes.length + '</b></h3>' + colunas(q, r.cartoes, false) + '</section>'; }).join('') : '<p class="mudo">Nenhum cartão com estes filtros.</p>') + '</div>';
+    }
+    return '<div class="kquadro" id="kquadro">' + colunas(q, todos, true).replace(/^<div class="kcolunas">|<\/div>$/g, '') + '</div>';
+  }
+  function colunas(q, vis, comNovaLista) {
+    return '<div class="kcolunas">' + q.listas.filter(function (l) { return !l.arquivada; }).map(function (l) {
       const cs = vis.filter(function (c) { return c.lista === l.id; }).sort(function (a, b) { return (a.ordem || 0) - (b.ordem || 0); });
       const total = q.cartoes.filter(function (c) { return c.lista === l.id && !c.arquivado; }).length;
       if (l.recolhida) return '<section class="klista recolhida" data-lista="' + l.id + '"><button class="krecolher" data-recolher="' + l.id + '" title="Expandir">' + esc(l.nome) + ' <b>' + total + '</b></button></section>';
       const valor = cs.reduce(function (s, c) { return s + (Number(c.valores && c.valores.valor) || 0); }, 0);
-      const excedeu = l.limite && total > l.limite;
+      const lim = l.limite || q.config.limitePadrao; const excedeu = lim && total > lim;
       return '<section class="klista' + (l.cor ? ' lcor-' + l.cor : '') + (excedeu ? ' excedeu' : '') + '" data-lista="' + l.id + '"><header draggable="true" data-arrasta-lista="' + l.id + '"><h3 contenteditable="true" spellcheck="false" data-renomear="' + l.id + '">' + esc(l.nome) + '</h3>' +
-        '<span class="kcont">' + (cs.length !== total ? cs.length + '/' : '') + total + (l.limite ? ' de ' + l.limite : '') + (valor ? ' · ' + moeda(valor) : '') + '</span>' + (l.seguindo ? '<span title="Seguindo">👁</span>' : '') +
+        '<span class="kcont">' + (cs.length !== total ? cs.length + '/' : '') + total + (lim ? ' de ' + lim : '') + (valor ? ' · ' + moeda(valor) : '') + '</span>' + (l.seguindo ? '<span title="Seguindo">👁</span>' : '') +
         '<button class="icone" data-recolher="' + l.id + '" aria-label="Recolher lista" title="Recolher">‹</button><button class="icone" data-a="menu-lista" aria-label="Ações da lista">⋯</button></header>' +
         '<div class="kcartoes" data-soltar="' + l.id + '">' + cs.map(function (c) { return miniCartao(q, c); }).join('') + '</div>' +
         '<div class="kcompor" data-compor="' + l.id + '"><button class="kadicionar" data-a="compor" data-lista="' + l.id + '">+ Adicionar um cartão</button><button class="icone" data-a="modelo-cartao" data-lista="' + l.id + '" title="Criar a partir de modelo">▤</button></div></section>';
-    }).join('') + '<section class="klista nova"><button class="kadicionar" data-a="nova-lista">+ Adicionar outra lista</button></section></div>';
+    }).join('') + (comNovaLista ? '<section class="klista nova"><button class="kadicionar" data-a="nova-lista">+ Adicionar outra lista</button></section>' : '') + '</div>';
+  }
+
+  // ---------- mapa por UF ----------
+  function ufAviso(c) { const a = c.avisoId && Dados.e.avisos && Dados.e.avisos[c.avisoId]; if (a && a.uf) return a.uf; const p = c.propostaId && (Dados.e.propostas || []).find(function (x) { return x.id === c.propostaId; }); return p && p.uf || ''; }
+  function visaoMapa(q) {
+    const cs = visiveis(q); const m = K.porUF(cs, { ufAviso: ufAviso }); const max = Math.max.apply(null, Object.keys(m).filter(function (u) { return u !== '—'; }).map(function (u) { return m[u].cartoes; }).concat([1]));
+    const sel = est.mapaUF && m[est.mapaUF] ? est.mapaUF : null;
+    const tiles = K.UFS_MAPA.map(function (t) { const x = m[t[0]]; const n = x ? x.cartoes : 0; const a = n ? 0.18 + 0.82 * n / max : 0;
+      return '<button type="button" class="kuf' + (n ? ' tem' : '') + (sel === t[0] ? ' sel' : '') + '" data-uf="' + t[0] + '" style="grid-row:' + (t[1] + 1) + ';grid-column:' + (t[2] + 1) + (n ? ';--a:' + a.toFixed(2) : '') + '" title="' + t[0] + ': ' + n + ' cartão(ões)' + (x && x.valor ? ' · ' + moeda(x.valor) : '') + '"><b>' + t[0] + '</b><small>' + (n || '') + '</small></button>'; }).join('');
+    const lst = sel ? m[sel].lista : [];
+    const sem = m['—'] ? m['—'].cartoes : 0;
+    return '<div class="kfolha kmapa-folha"><div class="kmapa-cab"><h3>Licitações por estado</h3><p class="mini mudo">A UF vem dos dados da licitação no cartão, do aviso do Seven Edital ou da proposta.' + (sem ? ' ' + sem + ' cartão(ões) sem UF.' : '') + '</p></div>' +
+      '<div class="kmapa-corpo"><div class="kmapa" role="group" aria-label="Mapa do Brasil por estado">' + tiles + '</div>' +
+      '<div class="kmapa-lado">' + (sel ? '<h4>' + sel + ' · ' + lst.length + ' cartão(ões)' + (m[sel].valor ? ' · ' + moeda(m[sel].valor) : '') + '</h4><ul class="lista-links">' + lst.slice(0, 60).map(function (c) { const rq = quadroDe(c) || q; return '<li><a href="#" data-cartao="' + c.id + '">' + (c.num ? '#' + c.num + ' ' : '') + esc(c.titulo) + '</a> <span class="mudo">· ' + esc((lista(rq, c.lista) || {}).nome || '') + '</span></li>'; }).join('') + '</ul>' :
+        '<h4>Ranking</h4><ol class="kmapa-rank">' + Object.keys(m).filter(function (u) { return u !== '—'; }).sort(function (a, b) { return m[b].cartoes - m[a].cartoes; }).slice(0, 10).map(function (u) { return '<li><button type="button" class="link-btn" data-uf="' + u + '">' + u + '</button> <b>' + m[u].cartoes + '</b>' + (m[u].valor ? ' <span class="mudo">· ' + moeda(m[u].valor) + '</span>' : '') + '</li>'; }).join('') + '</ol><p class="mini mudo">Clique num estado para ver os cartões.</p>') + '</div></div></div>';
   }
 
   function visaoTabela(q) {
@@ -346,15 +416,23 @@
     const col = est.ord.col; const dir = est.ord.dir;
     const val = function (c, k) {
       if (k === 'titulo') return c.titulo.toLowerCase(); if (k === 'lista') return q.listas.indexOf(lista(q, c.lista)); if (k === 'prazo') return c.prazo || '9999'; if (k === 'inicio') return c.inicio || '9999';
+      if (k === 'prioridade') return c.prioridade || 0; if (k === 'quadro') return ((quadroDe(c) || {}).nome || '').toLowerCase();
       if (k === 'membros') return (c.membros || []).join(','); if (k === 'etiquetas') return (c.etiquetas || []).length; if (k === 'num') return c.num || 0; if (k === 'status') return c.concluido ? 1 : 0; if (k === 'check') { const p = progresso(c); return p.t ? p.f / p.t : -1; }
       const v = (c.valores || {})[k]; return v == null ? '' : v;
     };
     if (col) cs.sort(function (a, b) { const x = val(a, col), y = val(b, col); return (x > y ? 1 : x < y ? -1 : 0) * dir; });
     const th = function (k, t) { return '<th data-ord="' + k + '" class="ordenavel">' + esc(t) + (col === k ? (dir > 0 ? ' ▲' : ' ▼') : '') + '</th>'; };
-    return '<div class="kfolha"><div class="tabela-rolagem"><table class="tabela"><thead><tr>' + th('num', '#') + th('titulo', 'Cartão') + th('lista', 'Lista') + th('etiquetas', 'Etiquetas') + th('membros', 'Membros') + th('inicio', 'Início') + th('prazo', 'Prazo') + th('status', 'Status') + th('check', 'Checklist') + q.campos.map(function (f) { return th(f.id, f.nome); }).join('') + '</tr></thead><tbody>' +
+    const sel = est.sel || (est.sel = {}); const nSel = cs.filter(function (c) { return sel[c.id]; }).length; const massa = q.id !== 'area';
+    const barra = massa && nSel ? '<form class="kmassa" data-massa><b>' + nSel + ' selecionado(s)</b>' +
+      '<select name="lista"><option value="">Mover para…</option>' + opcoes(q.listas.filter(function (l) { return !l.arquivada; }).map(function (l) { return { v: l.id, t: l.nome }; })) + '</select>' +
+      '<select name="etiqueta"><option value="">+ Etiqueta…</option>' + opcoes(q.etiquetas.map(function (x) { return { v: x.id, t: x.nome || x.cor }; })) + '</select>' +
+      '<select name="membro"><option value="">+ Membro…</option>' + opcoes(e().membros) + '</select>' +
+      '<select name="prioridade"><option value="">Prioridade…</option>' + opcoes(K.PRIORIDADES.map(function (n, i) { return { v: String(i), t: n }; })) + '</select>' +
+      '<input type="date" name="prazo" aria-label="Definir prazo"><button class="btn mini primario">Aplicar</button><button type="button" class="btn mini" data-massa-acao="concluir">✓ Concluir</button><button type="button" class="btn mini" data-massa-acao="arquivar">🗄 Arquivar</button><button type="button" class="btn mini fantasma" data-massa-acao="limpar">Limpar seleção</button></form>' : '';
+    return '<div class="kfolha">' + barra + '<div class="tabela-rolagem"><table class="tabela"><thead><tr>' + (massa ? '<th class="ksel"><input type="checkbox" data-sel-todos aria-label="Selecionar todos"' + (nSel && nSel === cs.length ? ' checked' : '') + '></th>' : '') + th('num', '#') + (q.id === 'area' ? th('quadro', 'Quadro') : '') + th('titulo', 'Cartão') + th('lista', 'Lista') + th('prioridade', 'Prioridade') + th('etiquetas', 'Etiquetas') + th('membros', 'Membros') + th('inicio', 'Início') + th('prazo', 'Prazo') + th('status', 'Status') + th('check', 'Checklist') + q.campos.map(function (f) { return th(f.id, f.nome); }).join('') + '</tr></thead><tbody>' +
       cs.map(function (c) {
         const p = progresso(c); const s = K.statusPrazo(c);
-        return '<tr data-cartao="' + c.id + '" class="clicavel"><td class="mudo">' + (c.num || '') + '</td><td><b>' + esc(c.titulo) + '</b></td><td>' + esc((lista(q, c.lista) || {}).nome) + '</td><td>' + (c.etiquetas || []).map(function (id) { const x = q.etiquetas.find(function (y) { return y.id === id; }); return x ? '<span class="ket cor-' + x.cor + '">' + esc(x.nome) + '</span>' : ''; }).join(' ') + '</td><td>' + (c.membros || []).map(function (m) { return avatar(m); }).join('') + '</td><td>' + (c.inicio ? dataHora(c.inicio) : '—') + '</td><td class="' + (s || '') + '">' + (c.prazo ? dataHora(c.prazo) : '—') + '</td><td>' + (c.concluido ? '<span class="tag verde">Concluído</span>' : s === 'atrasado' ? '<span class="tag vermelho">Atrasado</span>' : '<span class="tag claro">Pendente</span>') + '</td><td class="n">' + (p.t ? p.f + '/' + p.t : '—') + '</td>' +
+        return '<tr data-cartao="' + c.id + '" class="clicavel' + (sel[c.id] ? ' ksel-on' : '') + '">' + (massa ? '<td class="ksel"><input type="checkbox" data-sel="' + c.id + '"' + (sel[c.id] ? ' checked' : '') + ' aria-label="Selecionar"></td>' : '') + '<td class="mudo">' + (c.num || '') + '</td>' + (q.id === 'area' ? '<td>' + esc((quadroDe(c) || {}).nome || '') + '</td>' : '') + '<td><b>' + esc(c.titulo) + '</b>' + (bloqueios(c).length ? ' <span class="kbloq">⛔</span>' : '') + '</td><td>' + esc((lista(q, c.lista) || {}).nome) + '</td><td>' + seloPrioridade(c) + '</td><td>' + (c.etiquetas || []).map(function (id) { const x = q.etiquetas.find(function (y) { return y.id === id; }); return x ? '<span class="ket cor-' + x.cor + '">' + esc(x.nome) + '</span>' : ''; }).join(' ') + '</td><td>' + (c.membros || []).map(function (m) { return avatar(m); }).join('') + '</td><td>' + (c.inicio ? dataHora(c.inicio) : '—') + '</td><td class="' + (s || '') + '">' + (c.prazo ? dataHora(c.prazo) : '—') + '</td><td>' + (c.concluido ? '<span class="tag verde">Concluído</span>' : s === 'atrasado' ? '<span class="tag vermelho">Atrasado</span>' : '<span class="tag claro">Pendente</span>') + '</td><td class="n">' + (p.t ? p.f + '/' + p.t : '—') + '</td>' +
           q.campos.map(function (f) { const v = (c.valores || {})[f.id]; return '<td>' + (f.tipo === 'moeda' ? moeda(v) : f.tipo === 'data' ? data(v) : f.tipo === 'check' ? (v ? '✓' : '') : esc(v == null ? '' : v)) + '</td>'; }).join('') + '</tr>';
       }).join('') + '</tbody></table></div><p class="mini mudo">' + cs.length + ' cartão(ões). Clique no título da coluna para ordenar.</p></div>';
   }
@@ -425,6 +503,15 @@
     const raiz = el.querySelector('.kpagina');
     raiz.addEventListener('click', async function (ev) {
       const v = ev.target.closest('[data-visao]'); if (v) { est.visao = v.dataset.visao; App.redesenhar(); return; }
+      const uf = ev.target.closest('[data-uf]'); if (uf) { est.mapaUF = est.mapaUF === uf.dataset.uf ? null : uf.dataset.uf; App.redesenhar(); return; }
+      const sl = ev.target.closest('[data-sel]'); if (sl) { ev.stopPropagation(); est.sel = est.sel || {}; if (sl.checked) est.sel[sl.dataset.sel] = true; else delete est.sel[sl.dataset.sel]; redesenharVisao(el, q); return; }
+      const st = ev.target.closest('[data-sel-todos]'); if (st) { est.sel = {}; if (st.checked) visiveis(q).forEach(function (c) { est.sel[c.id] = true; }); redesenharVisao(el, q); return; }
+      const ma = ev.target.closest('[data-massa-acao]'); if (ma) {
+        const cs = selecionados(q); const t = ma.dataset.massaAcao;
+        if (t === 'limpar') { est.sel = {}; redesenharVisao(el, q); return; }
+        if (t === 'arquivar' && !(await confirmar('Arquivar cartões', 'Arquivar ' + cs.length + ' cartão(ões)?', 'Arquivar'))) return;
+        const n = K.emMassa(q, cs, { tipo: t }, ctx()); est.sel = {}; salvar(); aviso(n + ' cartão(ões): ' + (t === 'concluir' ? 'concluídos' : 'arquivados') + '.'); App.redesenhar(); return;
+      }
       const cal = ev.target.closest('[data-cal]'); if (cal) { const n = Number(cal.dataset.cal); const r = new Date(est.calRef || Date.now()); if (n === 0) est.calRef = new Date(); else if (est.calModo === 'semana') { r.setDate(r.getDate() + 7 * n); est.calRef = r; } else est.calRef = new Date(r.getFullYear(), r.getMonth() + n, 1); App.redesenhar(); return; }
       const cm = ev.target.closest('[data-calmodo]'); if (cm) { est.calModo = cm.dataset.calmodo; App.redesenhar(); return; }
       const ord = ev.target.closest('[data-ord]'); if (ord) { est.ord = { col: ord.dataset.ord, dir: est.ord.col === ord.dataset.ord ? -est.ord.dir : 1 }; App.redesenhar(); return; }
@@ -449,6 +536,18 @@
       }
       const k = ev.target.closest('[data-cartao]'); if (k && !ev.target.closest('a[href]')) { const c = cartao(q, k.dataset.cartao); if (c) abrirCartao(q, c); }
     });
+    raiz.addEventListener('change', function (ev) { const r = ev.target.closest('[data-raias]'); if (r) { q.config.raias = r.value; salvar(); App.redesenhar(); } });
+    raiz.addEventListener('submit', function (ev) {
+      const f = ev.target.closest('[data-massa]'); if (!f) return; ev.preventDefault();
+      const d = new FormData(f); const cs = selecionados(q); let n = 0; const cx = ctx();
+      if (d.get('lista')) { cs.forEach(function (c) { moverCartao(q, c, d.get('lista')); }); n++; }
+      if (d.get('etiqueta')) { K.emMassa(q, cs, { tipo: 'add-etiqueta', valor: d.get('etiqueta') }, cx); n++; }
+      if (d.get('membro')) { K.emMassa(q, cs, { tipo: 'add-membro', valor: d.get('membro') }, cx); n++; }
+      if (d.get('prioridade') !== '' && d.get('prioridade') != null) { K.emMassa(q, cs, { tipo: 'prioridade', valor: d.get('prioridade') }, cx); n++; }
+      if (d.get('prazo')) { K.emMassa(q, cs, { tipo: 'prazo-data', valor: d.get('prazo') }, cx); n++; }
+      if (!n) { aviso('Escolha o que aplicar aos cartões selecionados.', 'erro'); return; }
+      salvar(); aviso('Aplicado a ' + cs.length + ' cartão(ões).'); App.redesenhar();
+    });
     raiz.addEventListener('dblclick', async function (ev) {
       const d = ev.target.closest('.kdia'); if (!d || ev.target.closest('[data-cartao]')) return;
       const t = await pedir('Novo cartão em ' + d.dataset.dia.replace(/(\d{4})(\d{2})(\d{2})/, '$3/$2/$1'), 'Título', '');
@@ -466,6 +565,9 @@
     ligarArrastar(el, q);
     carregarImagens(el);
   }
+
+  function selecionados(q) { const sel = est.sel || {}; return q.cartoes.filter(function (c) { return sel[c.id] && !c.arquivado; }); }
+  function redesenharVisao(el, q) { const vz = el.querySelector('#kvisao'); if (!vz) return; vz.innerHTML = desenharVisao(q); ligarArrastar(el, q); carregarImagens(el); }
 
   function abrirCompositor(raiz, q, idLista, topo) {
     const box = raiz.querySelector('[data-compor="' + idLista + '"]'); if (!box) return;
@@ -604,10 +706,11 @@
     const capa = c.capaAnexo ? '<div class="kj-capa img"><img data-anexo-img="' + esc(c.capaAnexo) + '" alt=""></div>' : c.capa ? '<div class="kj-capa cor-' + c.capa + '"></div>' : '';
     jan.innerHTML = capa + '<button class="icone kj-fechar" data-k="fechar" aria-label="Fechar">×</button>' +
       '<header class="kj-cab"><textarea class="kj-titulo" data-campo="titulo" rows="1" spellcheck="false">' + esc(c.titulo) + '</textarea>' +
-      '<p class="mini">na lista <select data-campo="lista">' + opcoes(q.listas.filter(function (x) { return !x.arquivada; }).map(function (x) { return { v: x.id, t: x.nome }; }), c.lista) + '</select>' + (q.config.numeros && c.num ? ' · <b>#' + c.num + '</b>' : '') + (c.seguindo ? ' · 👁 seguindo' : '') + (c.arquivado ? ' · <span class="tag vermelho">Arquivado</span>' : '') + (c.modelo ? ' · <span class="tag ouro">Modelo</span>' : '') +
+      '<p class="mini">na lista <select data-campo="lista">' + opcoes(q.listas.filter(function (x) { return !x.arquivada; }).map(function (x) { return { v: x.id, t: x.nome }; }), c.lista) + '</select> · prioridade <select data-campo="prioridade" aria-label="Prioridade">' + opcoes(K.PRIORIDADES.map(function (n, i) { return { v: String(i), t: n }; }), String(c.prioridade || 0)) + '</select>' + (q.config.numeros && c.num ? ' · <b>#' + c.num + '</b>' : '') + (c.seguindo ? ' · 👁 seguindo' : '') + (c.arquivado ? ' · <span class="tag vermelho">Arquivado</span>' : '') + (c.modelo ? ' · <span class="tag ouro">Modelo</span>' : '') +
       (c.avisoId && Dados.e.avisos[c.avisoId] ? ' · <a href="' + esc(UI.url(Dados.e.avisos[c.avisoId].edital)) + '" target="_blank" rel="noopener">edital no PNCP ↗</a> · <button type="button" class="link-btn" data-op-abrir="' + esc(c.avisoId) + '">✎ Anotações da oportunidade (' + Telas.oport.quantas(c.avisoId) + ')</button>' : '') + '</p></header>' +
       '<div class="kj-corpo"><div class="kj-principal">' +
       (a.painel ? '<section class="kj-painel">' + painelCartao(a.painel) + '</section>' : '') +
+      (bloqueios(c).length ? '<p class="kbloqueio">⛔ Bloqueado por: ' + bloqueios(c).map(function (b) { return '<b>' + esc(b.titulo) + '</b>'; }).join(', ') + '. Conclua antes de avançar.</p>' : '') +
       '<div class="kj-badges">' +
       ((c.membros || []).length ? '<div><h4>Membros</h4><div class="kj-avatares">' + c.membros.map(function (m) { return avatar(m); }).join('') + '<button class="kav mais" data-painel="membros" aria-label="Membros">+</button></div></div>' : '') +
       (ets.length ? '<div><h4>Etiquetas</h4><div class="ketiquetas">' + ets.map(function (x) { return '<span class="ket grande cor-' + x.cor + '" data-painel="etiquetas">' + esc(x.nome || ' ') + '</span>'; }).join('') + '<button class="ket grande mais" data-painel="etiquetas" aria-label="Etiquetas">+</button></div></div>' : '') +
@@ -635,7 +738,7 @@
           }).join('') +
           '<form class="kitem-novo" data-novo-item="' + cl.id + '"><input placeholder="Adicionar um item… (@nome atribui, !dd/mm define prazo)"><button class="btn mini">Adicionar</button></form></section>';
       }).join('') +
-      ((c.vinculos || []).length ? '<section class="kj-sec"><h4>🔗 Cartões vinculados</h4><ul class="lista-links">' + c.vinculos.map(function (v, i) { const r = acharId(v.q, v.c); return '<li>' + (r ? '<a href="' + link(r.quadro, r.cartao) + '" data-ir="' + i + '">' + esc(r.cartao.titulo) + '</a> <span class="mudo">· ' + esc(r.quadro.nome) + ' · ' + esc((lista(r.quadro, r.cartao.lista) || {}).nome || '') + '</span>' : '<span class="mudo">cartão removido</span>') + ' <button class="icone" data-k="desvincular" data-i="' + i + '" aria-label="Desvincular">×</button></li>'; }).join('') + '</ul></section>' : '') +
+      ((c.vinculos || []).length ? '<section class="kj-sec"><h4>🔗 Cartões vinculados</h4><ul class="lista-links">' + c.vinculos.map(function (v, i) { const r = acharId(v.q, v.c); return '<li>' + (v.tipo ? '<span class="tag ' + (v.tipo === 'bloqueado-por' ? 'vermelho' : 'laranja') + '">' + (v.tipo === 'bloqueado-por' ? 'bloqueado por' : 'bloqueia') + '</span> ' : '') + (r ? '<a href="' + link(r.quadro, r.cartao) + '" data-ir="' + i + '">' + (r.cartao.concluido ? '✓ ' : '') + esc(r.cartao.titulo) + '</a> <span class="mudo">· ' + esc(r.quadro.nome) + ' · ' + esc((lista(r.quadro, r.cartao.lista) || {}).nome || '') + '</span>' : '<span class="mudo">cartão removido</span>') + ' <button class="icone" data-k="desvincular" data-i="' + i + '" aria-label="Desvincular">×</button></li>'; }).join('') + '</ul></section>' : '') +
       ((c.anexos || []).length ? '<section class="kj-sec"><h4>📎 Anexos <span class="kespaco"></span><button class="btn mini fantasma" data-painel="anexo">Adicionar</button></h4><ul class="kanexos">' + c.anexos.map(function (x) {
         const img = /^image\//.test(x.tipo || '') && !x.link;
         return '<li><span class="kanexo-mini">' + (img ? '<img data-anexo-img="' + esc(x.id) + '" alt="">' : '<b>' + esc((x.nome.split('.').pop() || 'link').slice(0, 4).toUpperCase()) + '</b>') + '</span><div><a href="' + (x.link ? esc(x.link) + '" target="_blank" rel="noopener' : '#" data-k="abrir-anexo" data-anexo="' + x.id) + '">' + esc(x.nome) + '</a><br><span class="mini mudo">' + (x.tamanho ? UI.num(x.tamanho / 1024, 0) + ' KB · ' : '') + dataHora(x.em) + '</span> ' +
@@ -714,7 +817,7 @@
     }
     if (p === 'vincular') {
       const opc = []; e().quadros.filter(function (x) { return !x.arquivado; }).forEach(function (x) { x.cartoes.forEach(function (k) { if (k !== c && !k.arquivado) opc.push({ v: x.id + ':' + k.id, t: x.nome + ' › ' + (k.num ? '#' + k.num + ' ' : '') + k.titulo.slice(0, 70) }); }); });
-      return fechar + '<h4>Vincular a outro cartão</h4><form data-vincular class="linha">' + campo('Cartão', '<input name="c" list="kvinc" placeholder="Digite para buscar…" required><datalist id="kvinc">' + opc.map(function (o) { return '<option value="' + esc(o.t) + '" data-v="' + esc(o.v) + '">'; }).join('') + '</datalist>') + '<button class="btn primario mini">Vincular</button></form><p class="mini mudo">O vínculo aparece nos dois cartões.</p>';
+      return fechar + '<h4>Vincular a outro cartão</h4><form data-vincular class="linha">' + campo('Cartão', '<input name="c" list="kvinc" placeholder="Digite para buscar…" required><datalist id="kvinc">' + opc.map(function (o) { return '<option value="' + esc(o.t) + '" data-v="' + esc(o.v) + '">'; }).join('') + '</datalist>') + campo('Tipo', '<select name="tipo"><option value="">Relacionado</option><option value="bloqueado-por">Este cartão é bloqueado por ele</option><option value="bloqueia">Este cartão bloqueia ele</option></select>') + '<button class="btn primario mini">Vincular</button></form><p class="mini mudo">O vínculo aparece nos dois cartões. Com dependência, o cartão bloqueado mostra ⛔ até o outro ser concluído.</p>';
     }
     return '';
   }
@@ -805,6 +908,7 @@
     if (t.hasAttribute('data-desc')) { if (t.value !== (c.descricao || '')) { c.descricao = t.value; a.editandoDesc = false; mudou('editou a descrição'); } return; }
     if (t.dataset.campo === 'titulo') { const v = t.value.replace(/\n/g, ' ').trim(); if (v && v !== c.titulo) { c.titulo = v; mudou('renomeou o cartão'); } return; }
     if (t.dataset.campo === 'lista') { moverCartao(q, c, t.value); a.painel = null; pintar(); return; }
+    if (t.dataset.campo === 'prioridade') { c.prioridade = Number(t.value) || 0; mudou(c.prioridade ? 'definiu a prioridade ' + K.PRIORIDADES[c.prioridade].toLowerCase() : 'removeu a prioridade'); return; }
     if (t.dataset.campo === 'concluido') { c.concluido = t.checked; if (c.concluido) K.dispararEvento(q, c, { tipo: 'concluir' }, ctx()); mudou(c.concluido ? 'marcou como concluído' : 'marcou como pendente'); return; }
     if (t.dataset.cf) { const f = q.campos.find(function (x) { return x.id === t.dataset.cf; }); c.valores = c.valores || {}; c.valores[f.id] = f.tipo === 'check' ? t.checked : f.tipo === 'moeda' || f.tipo === 'numero' ? (t.value ? Nucleo.lerNumeroBR(t.value) : null) : t.value; mudou('alterou ' + f.nome); return; }
     if (t.dataset.membro) { const m = t.dataset.membro; if (t.checked) { c.membros = (c.membros || []).concat(m); K.dispararEvento(q, c, { tipo: 'membro', membro: m }, ctx()); if (m !== eu()) notificar(eu() + ' adicionou ' + m + ' ao cartão "' + c.titulo + '"', link(q, c)); mudou('adicionou ' + m); } else { c.membros = c.membros.filter(function (x) { return x !== m; }); mudou('removeu ' + m); } return; }
@@ -836,7 +940,8 @@
       const op = Array.prototype.find.call(f.querySelectorAll('datalist option'), function (o) { return o.value === t; });
       if (!op) { aviso('Escolha um cartão da lista.', 'erro'); return; }
       const p = op.dataset.v.split(':'); const r = acharId(p[0], p[1]);
-      c.vinculos = (c.vinculos || []).concat({ q: p[0], c: p[1] }); r.cartao.vinculos = (r.cartao.vinculos || []).concat({ q: q.id, c: c.id });
+      const tp = new FormData(f).get('tipo') || ''; const inv = tp === 'bloqueado-por' ? 'bloqueia' : tp === 'bloqueia' ? 'bloqueado-por' : '';
+      c.vinculos = (c.vinculos || []).concat(Object.assign({ q: p[0], c: p[1] }, tp ? { tipo: tp } : {})); r.cartao.vinculos = (r.cartao.vinculos || []).concat(Object.assign({ q: q.id, c: c.id }, inv ? { tipo: inv } : {}));
       a.painel = null; mudou('vinculou a "' + r.cartao.titulo + '"'); return;
     }
     if (f.dataset.mover) {
@@ -988,10 +1093,19 @@
         '<div class="linha">' + campo('Prazo', '<select name="prazo">' + opcoes([{ v: '', t: 'Qualquer' }, { v: 'atrasado', t: 'Atrasados' }, { v: 'dia', t: 'Vencem no próximo dia' }, { v: 'semana', t: 'Vencem na próxima semana' }, { v: 'mes', t: 'Vencem no próximo mês' }, { v: 'com', t: 'Com data' }, { v: 'sem', t: 'Sem data' }], f.prazo) + '</select>') +
         campo('Status', '<select name="status">' + opcoes([{ v: '', t: 'Todos' }, { v: 'concluido', t: 'Marcados como concluídos' }, { v: 'pendente', t: 'Não concluídos' }], f.status) + '</select>') +
         campo('Atividade', '<select name="atividade">' + opcoes([{ v: '', t: 'Qualquer' }, { v: '1', t: 'Última semana' }, { v: '2', t: 'Últimas 2 semanas' }, { v: '4', t: 'Últimas 4 semanas' }, { v: 'sem4', t: 'Sem atividade há 4 semanas' }], f.atividade) + '</select>') +
-        campo('Combinar etiquetas', '<select name="modoEtiqueta">' + opcoes([{ v: 'any', t: 'Qualquer correspondência' }, { v: 'all', t: 'Correspondência exata (todas)' }], f.modoEtiqueta) + '</select>') + '</div>'
+        campo('Combinar etiquetas', '<select name="modoEtiqueta">' + opcoes([{ v: 'any', t: 'Qualquer correspondência' }, { v: 'all', t: 'Correspondência exata (todas)' }], f.modoEtiqueta) + '</select>') + '</div>' +
+        '<fieldset><legend>Prioridade</legend><div class="grade-checks">' + K.PRIORIDADES.map(function (n, i) { return '<label><input type="checkbox" name="prioridades" value="' + i + '"' + ((f.prioridades || []).indexOf(String(i)) >= 0 ? ' checked' : '') + '> ' + (i ? '<span class="kprio p' + i + '">⚑ ' + n + '</span>' : 'Sem prioridade') + '</label>'; }).join('') + '</div></fieldset>' +
+        ((Dados.e.empresas || []).length ? '<fieldset><legend>Empresa</legend><div class="grade-checks">' + Dados.e.empresas.map(function (x) { return '<label><input type="checkbox" name="empresas" value="' + esc(x.id) + '"' + ((f.empresas || []).indexOf(x.id) >= 0 ? ' checked' : '') + '> ' + esc(x.fantasia || x.razao) + (x.propria ? ' <small class="mudo">(minha empresa)</small>' : '') + '</label>'; }).join('') + '</div></fieldset>' : '') +
+        '<label class="check"><input type="checkbox" name="bloqueados"' + (f.bloqueados ? ' checked' : '') + '> Só cartões bloqueados por dependência ⛔</label>' +
+        '<fieldset><legend>Filtros salvos</legend>' + ((q.filtrosSalvos || []).length ? '<div class="grade-checks">' + q.filtrosSalvos.map(function (x) { return '<label><input type="radio" name="usarSalvo" value="' + esc(x.id) + '"> ' + esc(x.nome) + ' <button type="button" class="icone" data-del-filtro="' + esc(x.id) + '" aria-label="Excluir filtro salvo">×</button></label>'; }).join('') + '</div><p class="mini mudo">Marque um filtro salvo para aplicá-lo no lugar das opções acima.</p>' : '<p class="mini mudo">Nenhum filtro salvo neste quadro.</p>') +
+        campo('Salvar estas opções como', '<input name="salvarComo" placeholder="ex.: Urgentes da semana">') + '</fieldset>',
+      aoAbrir: function (form) { form.addEventListener('click', function (ev) { const b = ev.target.closest('[data-del-filtro]'); if (!b) return; ev.preventDefault(); q.filtrosSalvos = (q.filtrosSalvos || []).filter(function (x) { return x.id !== b.dataset.delFiltro; }); salvar(); b.closest('label').remove(); }); }
     });
     if (!r) return;
-    est.filtros[q.id] = { texto: r.get('texto'), membros: r.getAll('membros'), semMembro: !!r.get('semMembro'), meus: !!r.get('meus'), etiquetas: r.getAll('etiquetas'), semEtiqueta: !!r.get('semEtiqueta'), prazo: r.get('prazo'), status: r.get('status'), atividade: r.get('atividade'), modoEtiqueta: r.get('modoEtiqueta') };
+    const salvo = r.get('usarSalvo') && (q.filtrosSalvos || []).find(function (x) { return x.id === r.get('usarSalvo'); });
+    if (salvo) { est.filtros[q.id] = JSON.parse(JSON.stringify(salvo.f)); aviso('Filtro "' + salvo.nome + '" aplicado.'); return; }
+    est.filtros[q.id] = { texto: r.get('texto'), membros: r.getAll('membros'), semMembro: !!r.get('semMembro'), meus: !!r.get('meus'), etiquetas: r.getAll('etiquetas'), semEtiqueta: !!r.get('semEtiqueta'), prazo: r.get('prazo'), status: r.get('status'), atividade: r.get('atividade'), modoEtiqueta: r.get('modoEtiqueta'), prioridades: r.getAll('prioridades'), empresas: r.getAll('empresas'), bloqueados: !!r.get('bloqueados') };
+    const nomeS = String(r.get('salvarComo') || '').trim(); if (nomeS) { q.filtrosSalvos = (q.filtrosSalvos || []).concat({ id: Dados.id('fs'), nome: nomeS, f: JSON.parse(JSON.stringify(est.filtros[q.id])) }); salvar(); aviso('Filtro salvo: ' + nomeS + '.'); }
   }
 
   async function menuLista(q, l) {
@@ -1033,7 +1147,9 @@
       corpo: '<div class="linha">' + campo('Nome do quadro', '<input name="nome" value="' + esc(q.nome) + '">') + '</div>' +
         campo('Sobre este quadro (descrição, aceita Markdown)', '<textarea name="descricao" rows="3">' + esc(q.descricao || '') + '</textarea>') +
         '<fieldset><legend>Fundo</legend><div class="kfundos">' + Object.keys(FUNDOS).map(function (k) { return '<label><input type="radio" name="fundo" value="' + k + '"' + (q.fundo === k ? ' checked' : '') + '><span style="background:' + FUNDOS[k] + '"></span></label>'; }).join('') + '</div></fieldset>' +
-        '<fieldset><legend>Configurações</legend><div class="grade-checks"><label><input type="checkbox" name="numeros"' + (q.config.numeros ? ' checked' : '') + '> Mostrar número dos cartões</label><label><input type="checkbox" name="envelhecimento"' + (q.config.envelhecimento ? ' checked' : '') + '> Envelhecimento (cartões parados ficam mais apagados)</label><label><input type="checkbox" name="capas"' + (q.config.capas !== false ? ' checked' : '') + '> Mostrar capas</label><label><input type="checkbox" name="votacao"' + (q.config.votacao !== false ? ' checked' : '') + '> Votação nos cartões</label></div></fieldset>' +
+        '<fieldset><legend>Configurações</legend><div class="grade-checks"><label><input type="checkbox" name="numeros"' + (q.config.numeros ? ' checked' : '') + '> Mostrar número dos cartões</label><label><input type="checkbox" name="envelhecimento"' + (q.config.envelhecimento ? ' checked' : '') + '> Envelhecimento (cartões parados ficam mais apagados)</label><label><input type="checkbox" name="capas"' + (q.config.capas !== false ? ' checked' : '') + '> Mostrar capas</label><label><input type="checkbox" name="votacao"' + (q.config.votacao !== false ? ' checked' : '') + '> Votação nos cartões</label>' +
+          '<label><input type="checkbox" name="prioridade"' + (q.config.prioridade !== false ? ' checked' : '') + '> Mostrar prioridade nos cartões</label><label><input type="checkbox" name="valorNoCartao"' + (q.config.valorNoCartao !== false ? ' checked' : '') + '> Mostrar valor nos cartões</label><label><input type="checkbox" name="compacto"' + (q.config.compacto ? ' checked' : '') + '> Cartões compactos (mais cartões na tela)</label></div>' +
+          '<div class="linha">' + campo('Visão ao abrir o quadro', '<select name="visaoPadrao">' + opcoes(VISOES.map(function (v) { return { v: v[0], t: v[1] }; }), q.config.visaoPadrao || 'quadro') + '</select>') + campo('Raias no quadro', '<select name="raias">' + opcoes([{ v: '', t: 'Nenhuma' }, { v: 'membro', t: 'Por membro' }, { v: 'etiqueta', t: 'Por etiqueta' }, { v: 'prioridade', t: 'Por prioridade' }, { v: 'empresa', t: 'Por empresa' }], q.config.raias || '') + '</select>') + campo('Limite padrão de cartões por lista', '<input name="limitePadrao" inputmode="numeric" value="' + esc(q.config.limitePadrao || '') + '" placeholder="sem limite">', 'Vale para listas sem limite próprio.') + '</div></fieldset>' +
         '<fieldset><legend>Etiquetas</legend><table class="tabela compacta"><tbody>' + q.etiquetas.concat([{ id: '', nome: '', cor: 'cinza' }]).map(function (x, i) { return '<tr><td><span class="ket cor-' + x.cor + '">' + (i < 9 && x.id ? i + 1 : '') + '</span></td><td><input name="et_nome_' + i + '" value="' + esc(x.nome) + '" placeholder="' + (x.id ? '' : 'Nova etiqueta') + '"><input type="hidden" name="et_id_' + i + '" value="' + x.id + '"></td><td><select name="et_cor_' + i + '">' + opcoes(CORES, x.cor) + '</select></td><td>' + (x.id ? '<label class="check"><input type="checkbox" name="et_del_' + i + '"> excluir</label>' : '') + '</td></tr>'; }).join('') + '</tbody></table><small>As 9 primeiras podem ser alternadas com as teclas 1 a 9 sobre o cartão.</small></fieldset>' +
         '<fieldset><legend>Membros da equipe</legend><textarea name="membros" rows="3">' + esc(e().membros.join('\n')) + '</textarea><small>Um por linha. Valem para todos os quadros. Quem opera agora: ' + esc(eu()) + ' (mude em Configurações).</small></fieldset>' +
         '<fieldset><legend>Campos personalizados</legend><table class="tabela compacta"><tbody>' + q.campos.concat([{ id: '', nome: '', tipo: 'texto' }]).map(function (x, i) { return '<tr><td><input name="cf_nome_' + i + '" value="' + esc(x.nome) + '" placeholder="' + (x.id ? '' : 'Novo campo') + '"><input type="hidden" name="cf_id_' + i + '" value="' + x.id + '"></td><td><select name="cf_tipo_' + i + '">' + opcoes([{ v: 'texto', t: 'Texto' }, { v: 'numero', t: 'Número' }, { v: 'moeda', t: 'Moeda' }, { v: 'data', t: 'Data' }, { v: 'check', t: 'Caixa de seleção' }, { v: 'lista', t: 'Lista suspensa' }], x.tipo) + '</select></td><td><input name="cf_op_' + i + '" value="' + esc((x.opcoes || []).join(', ')) + '" placeholder="opções da lista, separadas por vírgula"></td><td>' + (x.id ? '<label class="check"><input type="checkbox" name="cf_del_' + i + '"> excluir</label>' : '') + '</td></tr>'; }).join('') + '</tbody></table></fieldset>' +
@@ -1043,7 +1159,7 @@
     });
     if (!f) return;
     q.nome = f.get('nome') || q.nome; q.descricao = f.get('descricao'); q.fundo = f.get('fundo') || q.fundo;
-    q.config = { numeros: !!f.get('numeros'), envelhecimento: !!f.get('envelhecimento'), capas: !!f.get('capas'), votacao: !!f.get('votacao') };
+    q.config = Object.assign({}, q.config, { numeros: !!f.get('numeros'), envelhecimento: !!f.get('envelhecimento'), capas: !!f.get('capas'), votacao: !!f.get('votacao'), prioridade: !!f.get('prioridade'), valorNoCartao: !!f.get('valorNoCartao'), compacto: !!f.get('compacto'), visaoPadrao: f.get('visaoPadrao') || 'quadro', raias: f.get('raias') || '', limitePadrao: Math.max(0, Math.round(Nucleo.lerNumeroBR(f.get('limitePadrao')) || 0)) || null }); est.visaoDe = null;
     const ets = [];
     for (let i = 0; i <= q.etiquetas.length; i++) {
       const id = f.get('et_id_' + i); const nome = f.get('et_nome_' + i); const cor = f.get('et_cor_' + i);
@@ -1284,6 +1400,7 @@
       if (aberto && (!document.getElementById('kov'))) aberto = null;
       garantirQuadroPadrao();
       const q = sub && e().quadros.find(function (x) { return x.id === sub; });
+      if (sub === 'area') { telaArea(el, param || 'tabela'); return; }
       if (!q) { telaInicio(el); return; }
       if (q.arquivado) { el.innerHTML = UI.vazio('Quadro fechado', 'Reabra o quadro pela página de quadros.', '<a class="btn" href="#/quadros">Ver quadros</a>'); return; }
       const reabrir = aberto && aberto.q === q && document.getElementById('kov');

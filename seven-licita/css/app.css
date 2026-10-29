@@ -2938,3 +2938,37 @@ html.lateral-recolhida .menu a.no-grupo-fechado { display: flex; } html.lateral-
 .papel-a4 td.papel-curta, .papel-a4 th.papel-curta { white-space: nowrap !important; overflow-wrap: normal; }
 .papel-a4, .papel-a4 * { font-variant-numeric: normal !important; font-feature-settings: normal !important; }
 .cm-linha-tempo li { align-content: start; }
+/* ---------- Seven Processo: recursos premium ---------- */
+.kcolunas { display: flex; gap: 12px; align-items: flex-start; }
+.kraias { display: flex; flex-direction: column; gap: 14px; overflow: auto; padding: 14px 16px 24px; height: 100%; }
+.kraia { display: flex; flex-direction: column; gap: 8px; }
+.kraia .kcolunas { overflow-x: visible; }
+.kraia .klista { max-height: none; }
+.kraia-cab { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 4px 12px; border-radius: 999px; background: rgba(0, 0, 0, .35); color: #fff; font-size: 13px; align-self: flex-start; }
+.kpagina.claro .kraia-cab { background: rgba(0, 0, 0, .08); color: var(--texto); }
+.kraia-cab b { background: rgba(255, 255, 255, .2); border-radius: 999px; padding: 0 8px; font-size: 12px; }
+.kraias-sel { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; } .kraias-sel select { padding: 4px 6px; font-size: 12px; }
+.kselos { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.kprio { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 4px; background: #e9ecef; color: #44515f; line-height: 1.5; white-space: nowrap; }
+.kprio.p2 { background: #dbe9ff; color: #1d4f9a; } .kprio.p3 { background: #ffe8cc; color: #9a4b00; } .kprio.p4 { background: #fdd8d6; color: #a1150f; }
+.kprio.grande { font-size: 13px; padding: 3px 10px; }
+.kbloq { display: inline-flex; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 4px; background: #fdd8d6; color: #a1150f; white-space: nowrap; }
+.kbloqueio { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: #fdecea; color: #8a1710; font-size: 13px; }
+.kcartao.compacto { padding: 6px 8px; } .kcartao.compacto .kmeta { gap: 6px; font-size: 11px; } .kcartao.compacto .ketiquetas .ket { font-size: 0; min-width: 28px; height: 6px; padding: 0; }
+.kmassa { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; margin-bottom: 10px; border-radius: 10px; background: var(--ouro-claro); border: 1px solid var(--ouro); }
+.kmassa select, .kmassa input { font-size: 13px; padding: 5px 8px; max-width: 190px; }
+.tabela .ksel { width: 34px; text-align: center; } tr.ksel-on td { background: var(--ouro-claro); }
+.karea-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.karea .kcab a.ativa, .kvisoes a.ativa { font-weight: 700; } .kvisoes a { padding: 6px 10px; border-radius: 8px; text-decoration: none; color: inherit; } .kvisoes a.ativa { background: rgba(0, 0, 0, .1); }
+.kmapa-folha h3 { margin: 0 0 4px; }
+.kmapa-corpo { display: grid; grid-template-columns: minmax(0, 520px) minmax(220px, 1fr); gap: 20px; align-items: start; margin-top: 12px; }
+.kmapa { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(8, auto); gap: 5px; max-width: 460px; }
+.kuf { aspect-ratio: 1; min-width: 0; border-radius: 8px; border: 1px solid var(--borda); background: var(--superficie-2); color: var(--mudo); display: grid; place-content: center; text-align: center; cursor: pointer; padding: 0; font: inherit; line-height: 1.1; }
+.kuf b { font-size: 12px; } .kuf small { font-size: 11px; display: block; min-height: 1em; }
+.kuf.tem { background: rgba(182, 141, 64, var(--a, .3)); color: #111; border-color: rgba(182, 141, 64, .6); }
+.kuf.sel { outline: 3px solid var(--texto); outline-offset: 1px; } .kuf:hover { filter: brightness(1.05); }
+.kmapa-rank { padding-left: 20px; margin: 6px 0; } .kmapa-rank li { margin: 4px 0; }
+@media (max-width: 760px) { .kmapa-corpo { grid-template-columns: 1fr; } .kmassa select, .kmassa input { max-width: 100%; flex: 1 1 140px; } }
+.kpagina.escuro .kraias-sel select { background: rgba(255, 255, 255, .16); color: #fff; border-color: rgba(255, 255, 255, .3); }
+.kpagina.escuro .kraias-sel select option { color: #111; background: #fff; }
+.kpagina.escuro .kraias-sel { color: #fff; }

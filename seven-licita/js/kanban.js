@@ -70,10 +70,10 @@
   // ---------- filtros ----------
   // f: { texto, etiquetas:[], semEtiqueta, modoEtiqueta:'any'|'all', membros:[], semMembro, meus, eu,
   //      prazo:'atrasado'|'dia'|'semana'|'mes'|'sem'|'com', status:'concluido'|'pendente', atividade:'1'|'2'|'4'|'sem4' }
-  function vazioFiltro() { return { texto: '', etiquetas: [], semEtiqueta: false, modoEtiqueta: 'any', membros: [], semMembro: false, meus: false, prazo: '', status: '', atividade: '' }; }
+  function vazioFiltro() { return { texto: '', etiquetas: [], semEtiqueta: false, modoEtiqueta: 'any', membros: [], semMembro: false, meus: false, prazo: '', status: '', atividade: '', prioridades: [], empresas: [], bloqueados: false }; }
   function contaFiltros(f) {
     if (!f) return 0;
-    return (f.texto ? 1 : 0) + (f.etiquetas || []).length + (f.semEtiqueta ? 1 : 0) + (f.membros || []).length + (f.semMembro ? 1 : 0) + (f.meus ? 1 : 0) + (f.prazo ? 1 : 0) + (f.status ? 1 : 0) + (f.atividade ? 1 : 0);
+    return (f.texto ? 1 : 0) + (f.etiquetas || []).length + (f.semEtiqueta ? 1 : 0) + (f.membros || []).length + (f.semMembro ? 1 : 0) + (f.meus ? 1 : 0) + (f.prazo ? 1 : 0) + (f.status ? 1 : 0) + (f.atividade ? 1 : 0) + (f.prioridades || []).length + (f.empresas || []).length + (f.bloqueados ? 1 : 0);
   }
   function passaFiltro(c, f, ctx) {
     ctx = ctx || {}; const agora = ctx.agora || Date.now();
@@ -104,6 +104,9 @@
       const lim = { dia: DIA, semana: 7 * DIA, mes: 30 * DIA }[f.prazo];
       if (lim && !(p && p >= agora && p - agora <= lim)) return false;
     }
+    if ((f.prioridades || []).length && f.prioridades.indexOf(String(c.prioridade || 0)) < 0) return false;
+    if ((f.empresas || []).length && f.empresas.indexOf(c.empresaId || '') < 0) return false;
+    if (f.bloqueados && !(ctx.bloqueadoPor && ctx.bloqueadoPor(c).length)) return false;
     if (f.status === 'concluido' && !c.concluido) return false;
     if (f.status === 'pendente' && c.concluido) return false;
     if (f.atividade) {
@@ -112,6 +115,43 @@
       else if (agora - ult > Number(f.atividade) * 7 * DIA) return false;
     }
     return true;
+  }
+
+  // ---------- prioridade, dependências, raias, mapa e ações em massa ----------
+  const PRIORIDADES = ['Nenhuma', 'Baixa', 'Média', 'Alta', 'Urgente'];
+  // cartões que bloqueiam c e ainda não foram concluídos. achar(v) → { cartao } ou null
+  function bloqueadoPor(c, achar) {
+    return (c.vinculos || []).filter(function (v) { return v.tipo === 'bloqueado-por'; }).map(function (v) { const r = achar(v); return r && r.cartao; }).filter(function (b) { return b && !b.concluido && !b.arquivado; });
+  }
+  // agrupa cartões em raias. modo: 'membro' | 'etiqueta' | 'prioridade' | 'empresa'. ctx: { etiquetas, nomeEmpresa(id) }
+  function raias(cs, modo, ctx) {
+    ctx = ctx || {}; const g = {}; const ordem = [];
+    const por = function (k, nome) { if (!g[k]) { g[k] = { chave: k, nome: nome, cartoes: [] }; ordem.push(k); } return g[k]; };
+    cs.forEach(function (c) {
+      let k = '', nome = '';
+      if (modo === 'membro') { k = (c.membros || [])[0] || ''; nome = k; }
+      else if (modo === 'etiqueta') { const et = (ctx.etiquetas || []).find(function (x) { return (c.etiquetas || []).indexOf(x.id) >= 0; }); k = et ? et.id : ''; nome = et ? (et.nome || et.cor) : ''; }
+      else if (modo === 'prioridade') { const p = c.prioridade || 0; k = p ? String(p) : ''; nome = p ? PRIORIDADES[p] : ''; }
+      else if (modo === 'empresa') { k = c.empresaId || ''; nome = k && ctx.nomeEmpresa ? ctx.nomeEmpresa(k) : k; }
+      por(k, nome || ({ membro: 'Sem membro', etiqueta: 'Sem etiqueta', prioridade: 'Sem prioridade', empresa: 'Sem empresa' }[modo] || 'Outros')).cartoes.push(c);
+    });
+    const lista = ordem.map(function (k) { return g[k]; });
+    if (modo === 'prioridade') lista.sort(function (a, b) { return (Number(b.chave) || 0) - (Number(a.chave) || 0); });
+    else lista.sort(function (a, b) { return (a.chave === '') - (b.chave === '') || String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
+    return lista;
+  }
+  const UFS_MAPA = [['RR', 0, 2], ['AP', 0, 4], ['AM', 1, 1], ['PA', 1, 3], ['MA', 1, 4], ['CE', 1, 5], ['RN', 1, 6], ['AC', 2, 0], ['RO', 2, 1], ['MT', 2, 2], ['TO', 2, 3], ['PI', 2, 4], ['PE', 2, 5], ['PB', 2, 6], ['MS', 3, 2], ['GO', 3, 3], ['DF', 3, 4], ['BA', 3, 5], ['AL', 3, 6], ['SP', 4, 2], ['MG', 4, 3], ['ES', 4, 4], ['SE', 4, 6], ['PR', 5, 2], ['RJ', 5, 3], ['SC', 6, 2], ['RS', 7, 2]];
+  // UF do cartão: dados da licitação, valores do cartão ou o aviso de origem
+  function ufDe(c, ctx) { const v = (c.licitacao && c.licitacao.uf) || (c.valores && c.valores.uf) || (ctx && ctx.ufAviso && ctx.ufAviso(c)) || ''; return String(v).trim().toUpperCase().slice(0, 2); }
+  function porUF(cs, ctx) { const m = {}; cs.forEach(function (c) { const u = ufDe(c, ctx) || '—'; const x = m[u] = m[u] || { uf: u, cartoes: 0, valor: 0, lista: [] }; x.cartoes++; x.valor += Number((c.valores && c.valores.valor) || (c.execucao && c.execucao.valor) || 0) || 0; x.lista.push(c); }); return m; }
+  // ação em massa: { tipo: 'mover'|'add-etiqueta'|'add-membro'|'prioridade'|'prazo-data'|'concluir'|'arquivar', valor }
+  function emMassa(q, cs, a, ctx) {
+    let n = 0;
+    cs.forEach(function (c) {
+      if (a.tipo === 'prazo-data') { c.prazo = a.valor ? String(a.valor) + (String(a.valor).length === 10 ? 'T12:00' : '') : ''; n++; if (ctx && ctx.registrar) ctx.registrar(q, c, 'definiu o prazo (ação em massa)'); return; }
+      aplicarAcoes(q, c, [a], Object.assign({}, ctx, { origem: 'Ação em massa' })); n++;
+    });
+    return n;
   }
 
   // ---------- automações ----------
@@ -128,7 +168,7 @@
     'mover': 'mover para a lista', 'mover-topo': 'mover para o topo da lista', 'add-etiqueta': 'adicionar a etiqueta', 'rem-etiqueta': 'remover a etiqueta',
     'add-membro': 'adicionar o membro', 'rem-membro': 'remover o membro', 'prazo': 'definir prazo em N dias', 'limpar-prazo': 'remover o prazo',
     'concluir': 'marcar como concluído', 'reabrir': 'marcar como pendente', 'arquivar': 'arquivar o cartão', 'checklist-etapa': 'adicionar o checklist da etapa',
-    'checklist': 'adicionar o checklist com itens (separe por ;)', 'comentar': 'comentar', 'ordenar-lista': 'ordenar a lista por prazo', 'notificar': 'enviar notificação'
+    'prioridade': 'definir a prioridade (0 a 4)', 'checklist': 'adicionar o checklist com itens (separe por ;)', 'comentar': 'comentar', 'ordenar-lista': 'ordenar a lista por prazo', 'notificar': 'enviar notificação'
   };
 
   function listaPorNomeOuId(q, v) { return q.listas.find(function (l) { return l.id === v || normalizar(l.nome) === normalizar(v); }); }
@@ -179,6 +219,7 @@
       if (a.tipo === 'rem-membro') c.membros = (c.membros || []).filter(function (x) { return x !== v; });
       if (a.tipo === 'prazo' && v !== '' && v != null) { c.prazo = dataLocal(new Date((ctx.agora || Date.now()) + Number(v) * DIA)); c.concluido = false; reg('definiu prazo para daqui a ' + v + ' dia(s)'); }
       if (a.tipo === 'limpar-prazo') { c.prazo = ''; c.inicio = ''; }
+      if (a.tipo === 'prioridade') { const pr = Math.max(0, Math.min(4, Math.round(Number(v) || 0))); if ((c.prioridade || 0) !== pr) { c.prioridade = pr; reg('definiu a prioridade ' + (PRIORIDADES[pr] || 'nenhuma').toLowerCase()); } }
       if (a.tipo === 'concluir' && !c.concluido) { c.concluido = true; reg('marcou como concluído'); dispararEvento(q, c, { tipo: 'concluir' }, ctx); }
       if (a.tipo === 'reabrir') c.concluido = false;
       if (a.tipo === 'arquivar') { c.arquivado = true; reg('arquivou'); }
@@ -303,6 +344,7 @@
   return {
     markdown: markdown, mencoes: mencoes, statusPrazo: statusPrazo, ultimaAtividade: ultimaAtividade, vazioFiltro: vazioFiltro, contaFiltros: contaFiltros,
     passaFiltro: passaFiltro, GATILHOS: GATILHOS, ACOES: ACOES, migrarRegra: migrarRegra, dispararEvento: dispararEvento, aplicarAcoes: aplicarAcoes,
+    PRIORIDADES: PRIORIDADES, bloqueadoPor: bloqueadoPor, raias: raias, UFS_MAPA: UFS_MAPA, ufDe: ufDe, porUF: porUF, emMassa: emMassa,
     varrer: varrer, copiarCartao: copiarCartao, somarPeriodo: somarPeriodo, dataLocal: dataLocal, importarTrello: importarTrello, corTrello: corTrello
   };
 });

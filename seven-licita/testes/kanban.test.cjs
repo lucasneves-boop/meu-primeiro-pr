@@ -134,3 +134,22 @@ test('copiar cartão zera comentários e checklists marcados', () => {
   const n = K.copiarCartao(c, { id });
   assert.notEqual(n.id, 'a'); assert.equal(n.comentarios.length, 0); assert.equal(n.checklists[0].itens[0].feito, false); assert.equal(n.anexos.length, 0); assert.equal(n.num, null);
 });
+
+test('Premium: prioridade, dependências, raias, mapa e ações em massa', () => {
+  const K2 = require('../js/kanban.js');
+  const q = { listas: [{ id: 'l1', nome: 'A fazer' }, { id: 'l2', nome: 'Feito' }], etiquetas: [{ id: 'e1', nome: 'Urgente', cor: 'vermelho' }], cartoes: [] };
+  const a = { id: 'a', titulo: 'A', lista: 'l1', prioridade: 4, membros: ['Lucas'], empresaId: 'x', licitacao: { uf: 'go' }, valores: { valor: 100 } };
+  const b = { id: 'b', titulo: 'B', lista: 'l1', prioridade: 2, vinculos: [{ q: 'q', c: 'a', tipo: 'bloqueado-por' }], etiquetas: ['e1'] };
+  const c = { id: 'c', titulo: 'C', lista: 'l1' }; q.cartoes = [a, b, c];
+  const achar = v => ({ cartao: q.cartoes.find(x => x.id === v.c) });
+  assert.deepEqual(K2.bloqueadoPor(b, achar).map(x => x.id), ['a']); a.concluido = true; assert.equal(K2.bloqueadoPor(b, achar).length, 0); a.concluido = false;
+  const f = Object.assign(K2.vazioFiltro(), { prioridades: ['4'] }); assert.equal(q.cartoes.filter(x => K2.passaFiltro(x, f)).length, 1);
+  assert.equal(q.cartoes.filter(x => K2.passaFiltro(x, Object.assign(K2.vazioFiltro(), { bloqueados: true }), { bloqueadoPor: y => K2.bloqueadoPor(y, achar) })).length, 1);
+  const r = K2.raias(q.cartoes, 'prioridade'); assert.deepEqual(r.map(x => x.nome), ['Urgente', 'Média', 'Sem prioridade']);
+  assert.deepEqual(K2.raias(q.cartoes, 'membro').map(x => x.nome), ['Lucas', 'Sem membro']);
+  assert.equal(K2.raias(q.cartoes, 'etiqueta', { etiquetas: q.etiquetas })[0].nome, 'Urgente');
+  const m = K2.porUF(q.cartoes); assert.equal(m.GO.cartoes, 1); assert.equal(m.GO.valor, 100); assert.equal(m['—'].cartoes, 2);
+  assert.equal(K2.emMassa(q, [b, c], { tipo: 'mover', valor: 'Feito' }, {}), 2); assert.equal(c.lista, 'l2');
+  K2.emMassa(q, [c], { tipo: 'prioridade', valor: 3 }, {}); assert.equal(c.prioridade, 3);
+  K2.emMassa(q, [c], { tipo: 'prazo-data', valor: '2026-12-01' }, {}); assert.equal(c.prazo, '2026-12-01T12:00');
+});
