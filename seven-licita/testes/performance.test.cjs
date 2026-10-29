@@ -65,3 +65,19 @@ test('extrato de comissões com fixo mensal e situação pelo Seven Financeiro',
   perto(x.gerada, 1600 + 4500); perto(x.recebida, 1500); perto(x.cobrada, 1500); perto(x.aCobrar, 3100); perto(x.repasses, 400);
   assert.deepStrictEqual(P.meses('2026-11', '2027-02'), ['2026-11', '2026-12', '2027-01', '2027-02']);
 });
+
+test('Seven Relatórios: período anterior, comparação, veredito e evolução', () => {
+  assert.deepStrictEqual(P.periodoAnterior('2026-10-01', '2026-10-31'), { de: '2026-09-01', ate: '2026-09-30' });
+  assert.deepStrictEqual(P.periodoAnterior('2026-07-01', '2026-09-30'), { de: '2026-04-01', ate: '2026-06-30' }, 'trimestre');
+  assert.deepStrictEqual(P.periodoAnterior('2026-01-01', '2026-12-31'), { de: '2025-01-01', ate: '2025-12-31' }, 'ano');
+  assert.deepStrictEqual(P.periodoAnterior('2026-10-10', '2026-10-19'), { de: '2026-09-30', ate: '2026-10-09' }, 'personalizado: mesma quantidade de dias');
+  const e = estado(); const cfg = () => ({ base: 'venda', pct: 5 });
+  const out = P.resumoPeriodo(e, { empresaId: 'A', cfgDe: cfg, de: '2026-10-01', ate: '2026-10-31' });
+  assert.strictEqual(out.ganhas, 1); assert.strictEqual(out.perdidas, 1); perto(out.taxa, 50); perto(out.recebido, 40000); perto(out.comissao, 2000);
+  const set = P.resumoPeriodo(e, { empresaId: 'A', cfgDe: cfg, de: '2026-09-01', ate: '2026-09-30' });
+  const c = P.comparar(out, set); const vg = c.find(x => x.chave === 'valorGanho');
+  assert.strictEqual(vg.sentido, 'subiu'); assert.strictEqual(vg.pct, null, 'sem base no anterior não há %');
+  assert.strictEqual(P.veredito(c), 'avancando');
+  const ev = P.evolucao(e, { empresaId: null, cfgDe: cfg, de: '2026-09-01', ate: '2026-11-30' });
+  assert.deepStrictEqual(ev.map(x => x.mes), ['2026-09', '2026-10', '2026-11']); assert.strictEqual(ev[0].ganhas, 1, 'ganho do cliente B em setembro'); assert.strictEqual(ev[1].ganhas, 1);
+});

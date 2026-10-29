@@ -21,56 +21,63 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
         execucao: { valor: 120000, empenhos: [{ id: 'e1', numero: '2026NE001', valor: 120000 }], notas: [{ id: 'n1', numero: '501', data: hoje, valor: 60000, vencimento: '2099-12-31' }, { id: 'n2', numero: '502', data: hoje, valor: 30000, vencimento: '2000-01-01' }], pagamentos: [{ id: 'g1', notaId: 'n1', data: hoje, valor: 60000 }] } });
       Dados.e.comissao = { base: 'venda', pct: '5', venda: '120.000', alvo: '5.000' }; Dados.salvar();
     });
-    await pg.goto(url + '#/comissao'); await pg.waitForSelector('.cm-abas'); ok(await pg.locator('.cm-abas a').count() === 5, 'abas: simulador, licitações ganhas, performance, relatório do mês e extrato');
-    // performance
-    await pg.click('.cm-abas a[href="#/comissao/performance"]'); await pg.waitForSelector('#cm-perf-f');
-    ok(await pg.inputValue('#cm-perf-f [name=cliente]') === 'cliA', 'abre no cliente ativo');
-    let txt = await pg.innerText('.cm-relatorio');
-    ok(/Licitações acompanhadas\s*4/.test(txt) && /Ganhas\s*1/.test(txt) && /Perdidas\s*1/.test(txt) && /Taxa de sucesso\s*50%/.test(txt), 'números do cliente vindos do Seven Processo');
-    ok(/Valor ganho\s*R\$\s?120\.000,00/.test(txt) && /Recebido\s*R\$\s?60\.000,00/.test(txt) && /A receber\s*R\$\s?30\.000,00/.test(txt) && /Em atraso\s*R\$\s?30\.000,00/.test(txt), 'execução: ganho, recebido, a receber e atraso');
-    ok(/Comissão sobre o recebido\s*R\$\s?3\.000,00/.test(txt), 'comissão de 5% sobre o recebido');
-    ok(/R\$\s?3\.000,00 de R\$\s?5\.000,00 \(60%\)/.test(txt), 'progresso da meta do mês');
-    ok(await pg.locator('.cm-relatorio a[href^="#/quadros/"]').count() >= 3, 'licitações com link para o cartão no Seven Processo');
-    // condições do cliente
-    await pg.fill('#cm-perf-f [name=pct]', '10'); await pg.press('#cm-perf-f [name=pct]', 'Tab'); await pg.waitForTimeout(150);
-    ok(/Comissão sobre o recebido\s*R\$\s?6\.000,00/.test(await pg.innerText('.cm-relatorio')), 'condições da comissão por cliente');
-    await foto('comissao-performance');
+    await pg.goto(url + '#/comissao'); await pg.waitForSelector('.cm-abas'); ok(await pg.locator('.cm-abas a').count() === 5 && await pg.locator('.cm-abas a[href="#/relatorios"]').count() === 1, 'Seven Comissão: simulador, licitações ganhas, condições, extrato e atalho para o Seven Relatórios');
+    await pg.goto(url + '#/comissao/performance'); await pg.waitForFunction(() => location.hash === '#/relatorios'); ok(true, 'o antigo relatório do cliente na comissão leva ao Seven Relatórios');
+    // condições do cliente (comissão)
+    await pg.goto(url + '#/comissao/condicoes'); await pg.waitForSelector('#cm-cond-f');
+    ok(await pg.inputValue('#cm-cond-f [name=cliente]') === 'cliA', 'condições abrem no cliente ativo');
+    await preencher('#cm-cond-f [name=pct]', '10'); ok(/Resumo: 10% sobre o preço de venda/.test(await pg.innerText('#cm-cond-f')), 'condições da comissão por cliente');
     await pg.click('[data-a=usar-funil]'); await pg.waitForSelector('#cm-funil');
     ok(await pg.inputValue('#cm-funil [name=f_encontrados]') === '4' && await pg.isChecked('#cm-funil input[name=funilModo][value=qtd]'), 'funil real levado para o simulador');
-    // relatório do mês
-    await pg.goto(url + '#/comissao/mes'); await pg.waitForSelector('#cm-mes-f');
-    txt = await pg.innerText('.cm-relatorio');
-    ok(/Ganhas no mês\s*1/.test(txt) && /Faturado no mês\s*R\$\s?90\.000,00/.test(txt) && /Recebido no mês\s*R\$\s?60\.000,00/.test(txt) && /Comissão do mês \(sobre o recebido\)\s*R\$\s?6\.000,00/.test(txt), 'relatório do mês');
-    ok(await pg.locator('.cm-relatorio tr.cm-total').count() === 1 && /501/.test(txt) && /502/.test(txt), 'NFs e pagamentos do mês listados');
-    await pg.fill('#cm-mes-f [name=mes]', '2020-01'); await pg.dispatchEvent('#cm-mes-f [name=mes]', 'change'); await pg.waitForTimeout(150);
-    ok(/Recebido no mês\s*R\$\s?0,00/.test(await pg.innerText('.cm-relatorio')) && /janeiro de 2020/.test(await pg.innerText('.cm-relatorio')), 'troca o mês');
-    await pg.selectOption('#cm-mes-f [name=cliente]', ''); await pg.waitForTimeout(150); ok(/todos os clientes/.test(await pg.innerText('.cm-relatorio')), 'todos os clientes');
-    // impressão
+    // Seven Relatórios: relatório de performance do cliente
+    await pg.goto(url + '#/relatorios'); await pg.waitForSelector('#rl-f');
+    ok(await pg.locator('.menu a[data-rota=relatorios].ativo').count() === 1 && await pg.inputValue('#rl-f [name=cliente]') === 'cliA', 'Seven Relatórios no menu, no cliente ativo');
+    let txt = await pg.innerText('.cm-relatorio');
+    ok(/Relatório de performance · Alfa/.test(txt) && /Estamos avançando/.test(txt), 'cabeçalho e veredito do período');
+    ok(/Licitações ganhas\s*1/.test(txt) && /Taxa de sucesso\s*50%/.test(txt) && /Valor ganho\s*R\$\s?120\.000,00/.test(txt) && /Faturado\s*R\$\s?90\.000,00/.test(txt) && /Recebido\s*R\$\s?60\.000,00/.test(txt), 'números do período vindos do Seven Processo');
+    ok(/A receber \(total\)\s*R\$\s?30\.000,00/.test(txt) && /R\$\s?30\.000,00 em atraso/.test(txt), 'a receber e atraso');
+    ok(/O valor ganho cresceu: de R\$\s?0,00 para R\$\s?120\.000,00/.test(txt) && /notas fiscais vencidas/.test(txt), 'leitura do período em frases');
+    ok(await pg.locator('.rl-graf svg').count() === 1 && await pg.locator('.rl tr.rl-no-periodo').count() === 1, 'evolução mês a mês com gráfico e o mês do período destacado');
+    ok(await pg.locator('.cm-relatorio a[href^="#/quadros/"]').count() >= 3 && !/Comissão da Seven/.test(txt), 'licitações com link para o cartão; comissão fora do relatório por padrão');
+    await pg.check('#rl-f [name=comissao]'); await pg.waitForTimeout(150);
+    ok(/Comissão do período \(sobre o recebido\)\s*R\$\s?6\.000,00/.test(await pg.innerText('.cm-relatorio')), 'comissão da Seven quando marcada (10% de 60 mil)');
+    await pg.uncheck('#rl-f [name=comissao]'); await pg.waitForTimeout(150);
+    await foto('relatorios-cliente');
+    // períodos
+    await pg.fill('#rl-f [name=mes]', '2020-01'); await pg.dispatchEvent('#rl-f [name=mes]', 'change'); await pg.waitForTimeout(150);
+    ok(/janeiro de 2020/.test(await pg.innerText('.cm-relatorio')) && /Licitações ganhas\s*0/.test(await pg.innerText('.cm-relatorio')), 'troca o mês');
+    await pg.selectOption('#rl-f [name=tipo]', 'ano'); await pg.waitForSelector('#rl-f [name=ano]'); ok(/ano de \d{4} · comparado com janeiro de \d{4} a dezembro de \d{4}/.test(await pg.innerText('.cm-relatorio')), 'período anual comparado com o ano anterior');
+    await pg.selectOption('#rl-f [name=tipo]', 'trimestre'); await pg.waitForSelector('#rl-f [name=trimestre]'); ok(/trimestre de \d{4}/.test(await pg.innerText('.cm-relatorio')), 'período trimestral');
+    await pg.selectOption('#rl-f [name=tipo]', 'mes'); await pg.waitForSelector('#rl-f [name=mes]'); await pg.fill('#rl-f [name=mes]', new Date().toISOString().slice(0, 7)); await pg.dispatchEvent('#rl-f [name=mes]', 'change'); await pg.waitForTimeout(150);
+    await pg.selectOption('#rl-f [name=cliente]', ''); await pg.waitForTimeout(150); ok(/todos os clientes/.test(await pg.innerText('.cm-relatorio')), 'todos os clientes');
+    // impressão e PDF
     await pg.evaluate(() => { window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; });
-    await pg.click('[data-a=imprimir]'); await pg.waitForTimeout(300); ok(await pg.evaluate(() => window.__imprimiu) === 1, 'imprime o relatório do mês');
-    // PDF (no claude.ai a impressão é bloqueada; o PDF é o caminho)
+    await pg.click('[data-a=imprimir]'); await pg.waitForTimeout(300); ok(await pg.evaluate(() => window.__imprimiu) === 1, 'imprime o relatório');
     const [arq] = await Promise.all([pg.waitForEvent('download', { timeout: 60000 }), pg.click('[data-a=pdf]')]);
-    const bin = require('fs').readFileSync(await arq.path()); ok(bin.slice(0, 4).toString() === '%PDF' && bin.length > 20000 && /^seven-comissao-mes-/.test(arq.suggestedFilename()), 'baixa o relatório do mês em PDF (' + Math.round(bin.length / 1024) + ' KB)');
-    await pg.emulateMedia({ media: 'print' }); ok(await pg.locator('.lateral').isHidden() && await pg.locator('.cm-rel-form').isHidden() && await pg.locator('.cm-relatorio').isVisible(), 'na impressão só aparece o relatório'); await pg.emulateMedia({ media: 'screen' });
-    // envio do resumo do mês (texto para revisão antes de abrir o WhatsApp)
-    await pg.selectOption('#cm-mes-f [name=cliente]', 'cliA'); await pg.waitForSelector('[data-a=enviar-whatsapp]:not([disabled])');
-    await pg.fill('#cm-mes-f [name=mes]', new Date().toISOString().slice(0, 7)); await pg.dispatchEvent('#cm-mes-f [name=mes]', 'change'); await pg.waitForTimeout(150);
-    await pg.click('[data-a=enviar-whatsapp]'); await pg.waitForSelector('.modal textarea[name=t]');
+    const bin = require('fs').readFileSync(await arq.path()); ok(bin.slice(0, 4).toString() === '%PDF' && bin.length > 20000 && /^seven-relatorio-performance-/.test(arq.suggestedFilename()), 'baixa o relatório em PDF (' + Math.round(bin.length / 1024) + ' KB)');
+    await pg.emulateMedia({ media: 'print' }); ok(await pg.locator('.lateral').isHidden() && await pg.locator('#rl-f').isHidden() && await pg.locator('.cm-relatorio').isVisible(), 'na impressão só aparece o relatório'); await pg.emulateMedia({ media: 'screen' });
+    // envio ao cliente
+    await pg.selectOption('#rl-f [name=cliente]', 'cliA'); await pg.waitForSelector('[data-a=whatsapp]:not([disabled])');
+    await pg.click('[data-a=whatsapp]'); await pg.waitForSelector('.modal textarea[name=t]');
     const msg = await pg.inputValue('.modal textarea[name=t]');
-    ok(/Ganhas: 1 \(R\$\s?120\.000,00\)/.test(msg) && /Recebido: R\$\s?60\.000,00/.test(msg) && /Lucas Neves \| Seven/.test(msg) && /\(61\) 98347-2232/.test(msg), 'resumo do mês pronto para revisar, com assinatura');
+    ok(/Licitações ganhas: 1/.test(msg) && /Valor ganho: R\$\s?120\.000,00/.test(msg) && /Estamos avançando/.test(msg) && /Lucas Neves \| Seven/.test(msg) && /\(61\) 98347-2232/.test(msg), 'relatório pronto para revisar e enviar, com assinatura');
     await pg.click('.modal .cancelar');
+    // base de performance
+    await pg.click('.abas a[href="#/relatorios/base"]'); await pg.waitForSelector('.cm-relatorio table');
+    ok(await pg.locator('.cm-relatorio tbody tr').count() === 1 && /avançando/.test(await pg.innerText('.cm-relatorio tbody')), 'base de performance com todos os clientes');
+    await pg.click('.cm-relatorio [data-cliente=cliA]'); await pg.waitForSelector('#rl-f [name=cliente]'); ok(await pg.inputValue('#rl-f [name=cliente]') === 'cliA', 'da base para o relatório do cliente');
     // condições avançadas do cliente: faixas, fixo, parceiros e Seven Financeiro automático
-    await pg.goto(url + '#/comissao/performance'); await pg.waitForSelector('#cm-perf-f');
+    await pg.goto(url + '#/comissao/condicoes'); await pg.waitForSelector('#cm-cond-f');
     await pg.evaluate(() => document.querySelectorAll('.cm-avancado').forEach(d => { d.open = true; }));
-    await pg.check('#cm-perf-f [name=usarFaixas]'); await pg.waitForSelector('#cm-perf-f .cm-faixas:not([hidden])');
-    await preencher('#cm-perf-f [name=faixa_ate_0]', '100.000'); await preencher('#cm-perf-f [name=faixa_pct_0]', '5'); await preencher('#cm-perf-f [name=faixa_pct_1]', '8');
-    let pt = await pg.innerText('.cm-relatorio');
-    ok(/Comissão prevista \(ganhos\)\s*R\$\s?9\.600,00/.test(pt), 'faixa: 120 mil cai na faixa de 8%');
-    await pg.click('#cm-perf-f [data-a=add-parceiro]'); await pg.waitForSelector('#cm-perf-f [name=parc_nome_0]');
-    await preencher('#cm-perf-f [name=parc_nome_0]', 'Carlos Indicador'); await preencher('#cm-perf-f [name=parc_pct_0]', '25');
-    ok(/Comissão prevista \(ganhos\)\s*R\$\s?7\.200,00/.test(await pg.innerText('.cm-relatorio')) && /parceiros: Carlos Indicador 25%/.test(await pg.innerText('.cm-relatorio')), 'parceiro fica com 25% da comissão');
-    await preencher('#cm-perf-f [name=fixo]', '1.500'); await pg.fill('#cm-perf-f [name=fixoDesde]', new Date().toISOString().slice(0, 7)); await pg.press('#cm-perf-f [name=fixo]', 'Tab'); await pg.waitForTimeout(150);
-    ok(/Mensalidade do BPO\s*R\$\s?1\.500,00/.test(await pg.innerText('.cm-relatorio')), 'fixo mensal na performance');
+    await pg.check('#cm-cond-f [name=usarFaixas]'); await pg.waitForSelector('#cm-cond-f .cm-faixas:not([hidden])');
+    await preencher('#cm-cond-f [name=faixa_ate_0]', '100.000'); await preencher('#cm-cond-f [name=faixa_pct_0]', '5'); await preencher('#cm-cond-f [name=faixa_pct_1]', '8');
+    ok(/faixas 5% até R\$\s?100\.000,00, 8% acima/.test(await pg.innerText('#cm-cond-f')), 'faixas nas condições do cliente');
+    await pg.click('#cm-cond-f [data-a=add-parceiro]'); await pg.waitForSelector('#cm-cond-f [name=parc_nome_0]');
+    await preencher('#cm-cond-f [name=parc_nome_0]', 'Carlos Indicador'); await preencher('#cm-cond-f [name=parc_pct_0]', '25');
+    await preencher('#cm-cond-f [name=fixo]', '1.500'); await pg.fill('#cm-cond-f [name=fixoDesde]', new Date().toISOString().slice(0, 7)); await pg.press('#cm-cond-f [name=fixo]', 'Tab'); await pg.waitForTimeout(150);
+    ok(/parceiros: Carlos Indicador 25%/.test(await pg.innerText('#cm-cond-f')) && /fixo de R\$\s?1\.500,00\/mês/.test(await pg.innerText('#cm-cond-f')), 'parceiro e fixo mensal nas condições');
+    await pg.goto(url + '#/comissao/ganhas'); await pg.waitForSelector('#cm-gf');
+    ok(/Comissão gerada \(contratos\)\s*R\$\s?7\.200,00/.test(await pg.innerText('.cm-relatorio')), 'faixa de 8% sobre 120 mil, menos 25% do parceiro');
     await foto('comissao-perf-avancado');
     // extrato
     await pg.click('.cm-abas a[href="#/comissao/extrato"]'); await pg.waitForSelector('#cm-ext-f');
@@ -87,8 +94,8 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.click('[data-a=repasses]'); await pg.waitForTimeout(150);
     ok(await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => /^repasse:/.test(l.origem) && l.tipo === 'despesa' && l.valor === 1200).length) === 1, 'repasse lançado em contas a pagar');
     // automático
-    await pg.goto(url + '#/comissao/performance'); await pg.waitForSelector('#cm-perf-f'); await pg.evaluate(() => document.querySelectorAll('.cm-avancado').forEach(d => { d.open = true; }));
-    await pg.check('#cm-perf-f [name=autoFinanceiro]'); await pg.waitForTimeout(150);
+    await pg.goto(url + '#/comissao/condicoes'); await pg.waitForSelector('#cm-cond-f'); await pg.evaluate(() => document.querySelectorAll('.cm-avancado').forEach(d => { d.open = true; }));
+    await pg.check('#cm-cond-f [name=autoFinanceiro]'); await pg.waitForTimeout(150);
     await pg.evaluate(() => { const q = Dados.e.quadros.find(x => x.listas.some(l => l.nome === 'Oportunidade')); const c = q.cartoes.find(k => k.execucao); c.execucao.pagamentos.push({ id: 'g2', notaId: 'n2', data: new Date().toISOString().slice(0, 10), valor: 30000 }); Dados.salvar(); });
     ok(await pg.evaluate(() => Dados.e.financas.lancamentos.some(l => /^comissao:pg:.*:g2$/.test(l.origem) && Math.abs(l.valor - 1800) < 0.01)), 'novo pagamento do órgão gera a cobrança automaticamente');
     await pg.goto(url + '#/comissao/extrato'); await pg.waitForSelector('#cm-ext-f'); await foto('comissao-extrato');

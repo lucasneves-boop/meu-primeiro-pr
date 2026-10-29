@@ -27,23 +27,23 @@
     const parc = (x.parceiros || []).filter(function (p) { return p.pct > 0; });
     return pcTxt + (x.base === 'lucro' ? ' sobre o lucro líquido (margem ' + (x.margem != null ? pc(x.margem) : '—') + ')' : ' sobre o preço de venda') + (x.retencao ? ', retenção de ' + pc(x.retencao) : '') + (x.fixo ? ' + fixo de ' + moeda(x.fixo) + '/mês' : '') + (parc.length ? ' · parceiros: ' + parc.map(function (p) { return (p.nome || 'Parceiro') + ' ' + pc(p.pct); }).join(', ') : '');
   }
-  function arquivo(tipo) { const id = prefs().cliente; const nome = id ? nomeEmpresa(id) : 'todos'; return ('seven-comissao-' + tipo + '-' + Nucleo.normalizar(nome).replace(/[^a-z0-9]+/g, '-') + '-' + T.hoje()).replace(/-+/g, '-') + '.pdf'; }
+  function arquivo(tipo, cliente) { const id = cliente !== undefined ? cliente : prefs().cliente; const nome = id ? nomeEmpresa(id) : 'todos'; return ('seven-' + (/^(performance|base)/.test(tipo) ? 'relatorio-' : 'comissao-') + tipo + '-' + Nucleo.normalizar(nome).replace(/[^a-z0-9]+/g, '-') + '-' + T.hoje()).replace(/-+/g, '-') + '.pdf'; }
   let tipoRel = 'relatorio';
   // imprimir: fora do claude.ai abre a impressão; no claude.ai (onde a impressão é bloqueada) gera o PDF
-  async function imprimir(soPdf) {
+  async function imprimir(soPdf, tipo, cliente) {
     Dados.salvar(); const el = document.querySelector('.cm-relatorio'); if (!el) return;
     const b = document.querySelectorAll('[data-a=imprimir],[data-a=pdf]'); b.forEach(function (x) { x.disabled = true; });
     try {
       if (!soPdf && !RelatorioPDF.emQuadro()) { window.print(); return; }
-      aviso('Gerando o PDF…'); const r = await RelatorioPDF.gerar(el, arquivo(tipoRel));
+      aviso('Gerando o PDF…'); const r = await RelatorioPDF.gerar(el, arquivo(tipo || tipoRel, cliente));
       if (r === 'recusado') aviso('Download cancelado.'); else aviso('PDF pronto. Abra o arquivo para imprimir ou enviar ao cliente.');
     } catch (e) { aviso('Não foi possível gerar o PDF: ' + (e && e.message || e), 'erro'); }
     finally { b.forEach(function (x) { x.disabled = false; }); }
   }
 
   function abas(sub) {
-    const a = [['', '🧮 Simulador'], ['ganhas', '🏆 Licitações ganhas'], ['performance', '📈 Performance do cliente'], ['mes', '🗓 Relatório do mês'], ['extrato', '💰 Extrato']];
-    return '<nav class="abas cm-abas no-print" aria-label="Seven Comissão">' + a.map(function (x) { return '<a href="#/comissao' + (x[0] ? '/' + x[0] : '') + '" class="' + ((sub || '') === x[0] ? 'ativa' : '') + '"' + ((sub || '') === x[0] ? ' aria-current="page"' : '') + '>' + x[1] + '</a>'; }).join('') + '</nav>';
+    const a = [['', '🧮 Simulador'], ['ganhas', '🏆 Licitações ganhas'], ['condicoes', '⚙ Condições do cliente'], ['extrato', '💰 Extrato']];
+    return '<nav class="abas cm-abas no-print" aria-label="Seven Comissão">' + a.map(function (x) { return '<a href="#/comissao' + (x[0] ? '/' + x[0] : '') + '" class="' + ((sub || '') === x[0] ? 'ativa' : '') + '"' + ((sub || '') === x[0] ? ' aria-current="page"' : '') + '>' + x[1] + '</a>'; }).join('') + '<a href="#/relatorios" class="cm-aba-ext" title="Relatório de performance para o cliente">📊 Seven Relatórios ↗</a></nav>';
   }
   function cabecalho(titulo, sub) {
     return '<header class="cabecalho-seven cm-cab-rel"><img src="img/plataforma-logo-preta.png" alt="Plataforma 7" class="cm-logo-rel"><div><b>' + esc(titulo) + '</b><small>' + esc(sub) + '</small></div><span class="cm-gerado">Gerado em ' + new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + '</span></header>';
@@ -80,48 +80,18 @@
   }
   function semDados() { return '<div class="cartao"><p class="mudo">Ainda não há licitações deste cliente no Seven Processo. Os números aparecem aqui à medida que os cartões avançam (proposta, disputa, Ganha/Perdida, contrato, notas e pagamentos).</p><a class="btn" href="#/quadros">Abrir o Seven Processo</a></div>'; }
 
-  // ---------- Performance do cliente ----------
-  function telaPerformance(el) {
-    tipoRel = 'performance';
-    const pr = prefs(); const id = pr.cliente || null; const c = cfgCliente(id); const x = cfgCalc(c);
-    const m = P.mes(mesAtual()); const r = P.desempenho(Dados.e, Object.assign({ empresaId: id, cfgDe: cfgDe }, m)); const t = r.totais;
-    const fr = funilReal(r.funil);
-    el.innerHTML = abas('performance') +
-      '<form class="cartao cm-rel-form no-print" id="cm-perf-f" autocomplete="off"><div class="linha">' + seletorCliente(id) + '</div><h4>Condições da comissão deste cliente</h4>' + formCondicoes(c) +
-      '<div class="grupo-botoes"><button type="button" class="btn primario" data-a="imprimir">🖨 Imprimir relatório</button><button type="button" class="btn" data-a="pdf">⬇ Baixar PDF</button><button type="button" class="btn" data-a="usar-funil"' + (r.cartoes.length ? '' : ' disabled') + '>Usar este funil no simulador</button><a class="btn fantasma" href="#/comissao/mes">Relatório do mês</a></div></form>' +
-      '<div class="cm-relatorio">' + cabecalho('Performance' + (id ? ' · ' + nomeEmpresa(id) : ' · todos os clientes'), 'Comissão: ' + textoCfg(c) + ' · dados do Seven Processo') +
-      (r.cartoes.length ? kpis([
-        ['Licitações acompanhadas', t.oportunidades], ['Em andamento', t.emAndamento], ['Ganhas', t.ganhas, 'ok'], ['Perdidas', t.perdidas, t.perdidas ? 'ruim' : ''],
-        ['Taxa de sucesso', t.taxaSucesso == null ? '—' : pc(t.taxaSucesso, 1)], ['Valor ganho', moeda(t.valorGanho)], ['Faturado', moeda(t.faturado)], ['Recebido', moeda(t.recebido), 'ok'],
-        ['A receber', moeda(t.aReceber)], ['Em atraso', moeda(t.atrasado), t.atrasado ? 'ruim' : ''], ['Comissão prevista (ganhos)', moeda(t.comissaoPrevista)], ['Comissão sobre o recebido', moeda(t.comissaoRecebida), 'ok']
-      ].concat(r.periodo.fixo ? [['Mensalidade do BPO', moeda(r.periodo.fixo)]] : [])) + barraMeta(r.periodo.total || 0, x.meta, nomeMes(mesAtual()) + ': comissão sobre o recebido no mês' + (r.periodo.fixo ? ' + mensalidade' : '')) +
-      '<section class="cartao"><h3>Funil real</h3>' + fr.html + (fr.calc.taxaDisputa != null ? '<p class="mini">Taxa de sucesso por disputa: <b>' + pc(fr.calc.taxaDisputa, 1) + '</b>' + (fr.calc.gargalo ? ' · maior perda em <b>' + esc(fr.calc.gargalo.nome) + '</b>' : '') + '.</p>' : '') + '<p class="mini mudo">Contagem pelos cartões do Seven Processo: cada cartão conta em todas as etapas que já passou; Perdida conta até a disputa.</p></section>' +
-      '<section class="cartao"><h3>Contratos ganhos</h3>' + tabela([['Licitação'], ['Órgão'], ['Etapa'], ['Valor', 1], ['Faturado', 1], ['Recebido', 1], ['A receber', 1], ['Comissão', 1]], r.contratos.map(function (k) { return '<tr><td>' + linkCartao(k) + '</td><td>' + esc(k.orgao) + '</td><td>' + esc(k.lista) + '</td><td class="n">' + moeda(k.valor) + '</td><td class="n">' + moeda(k.faturado) + '</td><td class="n">' + moeda(k.recebido) + '</td><td class="n">' + moeda(k.aReceber) + '</td><td class="n">' + moeda(k.comissao) + '</td></tr>'; }), 'Nenhuma licitação ganha ainda.') + '</section>' +
-      '<section class="cartao"><h3>Em andamento</h3>' + tabela([['Licitação'], ['Órgão'], ['Etapa'], ['Valor estimado', 1]], r.emDisputa.map(function (k) { return '<tr><td>' + linkCartao(k) + '</td><td>' + esc(k.orgao) + '</td><td>' + esc(k.lista) + '</td><td class="n">' + moeda(k.valor) + '</td></tr>'; }), 'Nada em andamento.') + '</section>' +
-      '<section class="cartao"><h3>Próximos recebimentos</h3>' + tabela([['Vencimento'], ['NF'], ['Licitação'], ['Em aberto', 1], ['Comissão', 1]], r.proximos.map(function (n) { return '<tr' + (n.atrasada ? ' class="cm-atrasada"' : '') + '><td>' + (n.vencimento ? dataBR(n.vencimento) : '—') + (n.atrasada ? ' <span class="tag vermelho">atrasada</span>' : '') + '</td><td>' + esc(n.numero || '') + '</td><td>' + esc(n.cartao) + '</td><td class="n">' + moeda(n.aberto) + '</td><td class="n">' + moeda(n.comissao) + '</td></tr>'; }), 'Nenhuma nota fiscal em aberto.') + '</section>' +
-      (!id && r.porCliente.length > 1 ? '<section class="cartao"><h3>Por cliente</h3>' + tabela([['Cliente'], ['Licitações', 1], ['Ganhas', 1], ['Perdidas', 1], ['Taxa', 1], ['Valor ganho', 1], ['Recebido', 1], ['Comissão', 1]], r.porCliente.map(function (k) { return '<tr><td>' + esc(nomeEmpresa(k.empresaId)) + '</td><td class="n">' + k.oportunidades + '</td><td class="n">' + k.ganhas + '</td><td class="n">' + k.perdidas + '</td><td class="n">' + (k.taxaSucesso == null ? '—' : pc(k.taxaSucesso, 0)) + '</td><td class="n">' + moeda(k.valorGanho) + '</td><td class="n">' + moeda(k.recebido) + '</td><td class="n">' + moeda(k.comissao) + '</td></tr>'; }), '') + '</section>' : '') : semDados()) + '</div>';
+  // ---------- Condições da comissão de cada cliente ----------
+  function telaCondicoes(el) {
+    tipoRel = 'condicoes';
+    const pr = prefs(); const id = pr.cliente || null; const c = cfgCliente(id);
+    const r = P.desempenho(Dados.e, { empresaId: id, cfgDe: cfgDe });
+    el.innerHTML = abas('condicoes') +
+      '<form class="cartao cm-rel-form" id="cm-cond-f" autocomplete="off"><div class="linha">' + seletorCliente(id) + '</div><h4>Condições da comissão ' + (id ? 'de ' + esc(nomeEmpresa(id)) : 'padrão (todos os clientes sem condição própria)') + '</h4>' + formCondicoes(c) +
+      '<p class="mini mudo">Resumo: ' + esc(textoCfg(c)) + '. Valem para as licitações ganhas, o extrato e os relatórios.</p>' +
+      '<div class="grupo-botoes"><button type="button" class="btn" data-a="usar-funil"' + (r.cartoes.length ? '' : ' disabled') + '>Levar o funil real deste cliente para o simulador</button><a class="btn fantasma" href="#/relatorios">📊 Relatório de performance (Seven Relatórios)</a></div></form>';
     ligarRel(el, id, function () {
       const k = Dados.e.comissao = T.estado(); k.funil = Object.assign({}, k.funil, { modo: 'qtd', qtd: Object.assign({}, r.funil) }); Dados.salvar(); aviso('Funil real levado para o simulador (modo quantidades).'); location.hash = '#/comissao';
     });
-  }
-
-  // ---------- Relatório do mês ----------
-  function telaMes(el) {
-    tipoRel = 'mes-' + (prefs().mes || mesAtual());
-    const pr = prefs(); const id = pr.cliente || null; const c = cfgCliente(id); const x = cfgCalc(c); const mm = /^\d{4}-\d{2}$/.test(pr.mes) ? pr.mes : mesAtual();
-    const r = P.desempenho(Dados.e, Object.assign({ empresaId: id, cfgDe: cfgDe }, P.mes(mm))); const p = r.periodo;
-    el.innerHTML = abas('mes') +
-      '<form class="cartao cm-rel-form no-print" id="cm-mes-f" autocomplete="off"><div class="linha">' + campo('Mês', '<input type="month" name="mes" value="' + esc(mm) + '">') + seletorCliente(id) + '</div><details><summary>Condições da comissão</summary>' + formCondicoes(c) + '</details>' +
-      '<div class="grupo-botoes"><button type="button" class="btn primario" data-a="imprimir">🖨 Imprimir relatório do mês</button><button type="button" class="btn" data-a="pdf">⬇ Baixar PDF</button><button type="button" class="btn" data-a="enviar-whatsapp"' + (id ? '' : ' disabled title="Escolha um cliente"') + '>WhatsApp</button><button type="button" class="btn" data-a="enviar-email"' + (id ? '' : ' disabled title="Escolha um cliente"') + '>E-mail</button><a class="btn fantasma" href="#/comissao/performance">Performance completa</a></div></form>' +
-      '<div class="cm-relatorio">' + cabecalho('Relatório de ' + nomeMes(mm) + (id ? ' · ' + nomeEmpresa(id) : ' · todos os clientes'), 'Comissão: ' + textoCfg(c) + ' · dados do Seven Processo') +
-      kpis([['Novas oportunidades', p.novas.length], ['Ganhas no mês', p.ganhas.length, 'ok'], ['Perdidas no mês', p.perdidas.length, p.perdidas.length ? 'ruim' : ''], ['Taxa de sucesso no mês', p.taxaSucesso == null ? '—' : pc(p.taxaSucesso, 1)], ['Valor ganho no mês', moeda(p.valorGanho)], ['Faturado no mês', moeda(p.faturado)], ['Recebido no mês', moeda(p.recebido), 'ok'], ['Comissão do mês (sobre o recebido)', moeda(p.comissao), 'ok'], ['Comissão gerada pelos ganhos', moeda(p.comissaoGanhos)], ['A receber (total)', moeda(r.totais.aReceber)]].concat(p.fixo ? [['Mensalidade do BPO', moeda(p.fixo)], ['Total do mês (comissão + mensalidade)', moeda(p.total), 'ok']] : [])) +
-      barraMeta(p.total, x.meta, 'Meta do mês' + (p.fixo ? ' (comissão + mensalidade)' : '')) +
-      '<section class="cartao"><h3>Licitações ganhas no mês</h3>' + tabela([['Data'], ['Licitação'], ['Órgão'], ['Valor', 1], ['Comissão', 1]], p.ganhas.map(function (k) { return '<tr><td>' + dataBR(k.dataGanho) + '</td><td>' + linkCartao(k) + '</td><td>' + esc(k.orgao) + '</td><td class="n">' + moeda(k.valor) + '</td><td class="n">' + moeda(k.comissao) + '</td></tr>'; }), 'Nenhuma licitação ganha neste mês.') + '</section>' +
-      '<section class="cartao"><h3>Não vencidas no mês</h3>' + tabela([['Data'], ['Licitação'], ['Órgão'], ['Valor estimado', 1]], p.perdidas.map(function (k) { return '<tr><td>' + dataBR(k.dataPerda) + '</td><td>' + linkCartao(k) + '</td><td>' + esc(k.orgao) + '</td><td class="n">' + moeda(k.valor) + '</td></tr>'; }), 'Nenhuma.') + '</section>' +
-      '<section class="cartao"><h3>Notas fiscais emitidas</h3>' + tabela([['Emissão'], ['NF'], ['Licitação'], ['Valor', 1], ['Vencimento']], p.notas.map(function (n) { return '<tr><td>' + dataBR(n.data) + '</td><td>' + esc(n.numero || '') + '</td><td>' + esc(n.cartao) + '</td><td class="n">' + moeda(n.valor) + '</td><td>' + (n.vencimento ? dataBR(n.vencimento) : '—') + '</td></tr>'; }), 'Nenhuma nota fiscal emitida neste mês.') + '</section>' +
-      '<section class="cartao"><h3>Pagamentos recebidos</h3>' + tabela([['Data'], ['Licitação'], ['Valor recebido', 1], ['Comissão', 1]], p.pagamentos.map(function (g) { return '<tr><td>' + dataBR(g.data) + '</td><td>' + esc(g.cartao) + '</td><td class="n">' + moeda(g.valor) + '</td><td class="n">' + moeda(g.comissao) + '</td></tr>'; }).concat(p.pagamentos.length ? ['<tr class="cm-total"><th colspan="2">Total</th><td class="n">' + moeda(p.recebido) + '</td><td class="n">' + moeda(p.comissao) + '</td></tr>'] : []), 'Nenhum pagamento recebido neste mês.') + '</section>' +
-      '<section class="cartao"><h3>Próximos recebimentos</h3>' + tabela([['Vencimento'], ['NF'], ['Licitação'], ['Em aberto', 1], ['Comissão', 1]], r.proximos.slice(0, 15).map(function (n) { return '<tr' + (n.atrasada ? ' class="cm-atrasada"' : '') + '><td>' + (n.vencimento ? dataBR(n.vencimento) : '—') + (n.atrasada ? ' <span class="tag vermelho">atrasada</span>' : '') + '</td><td>' + esc(n.numero || '') + '</td><td>' + esc(n.cartao) + '</td><td class="n">' + moeda(n.aberto) + '</td><td class="n">' + moeda(n.comissao) + '</td></tr>'; }), 'Nenhuma nota fiscal em aberto.') + '</section></div>';
-    ligarRel(el, id, null, function (via) { enviarResumo(via, id, mm, r, x); });
   }
 
   function ligarRel(el, id, usarFunil, enviar) {
@@ -140,33 +110,6 @@
       if (a === 'imprimir') imprimir(); if (a === 'pdf') imprimir(true); if (a === 'usar-funil' && usarFunil) usarFunil();
       if ((a === 'enviar-whatsapp' || a === 'enviar-email') && enviar) enviar(a === 'enviar-whatsapp' ? 'whatsapp' : 'email');
     };
-  }
-
-  // ---------- envio do resumo do mês (o texto abre para revisão; quem envia é você) ----------
-  function textoResumo(id, mm, r, x) {
-    const p = r.periodo; const emp = Dados.empresa(id) || {}; const quem = (emp.representante || emp.fantasia || emp.razao || '').split(' ')[0];
-    const l = ['Olá' + (quem ? ', ' + quem : '') + '! Segue o resumo de ' + nomeMes(mm) + ' das suas licitações:', '',
-      '• Novas oportunidades: ' + p.novas.length,
-      '• Ganhas: ' + p.ganhas.length + (p.valorGanho ? ' (' + moeda(p.valorGanho) + ')' : '') + ' · Não vencidas: ' + p.perdidas.length,
-      '• Taxa de sucesso no mês: ' + (p.taxaSucesso == null ? '—' : pc(p.taxaSucesso, 0)),
-      '• Faturado: ' + moeda(p.faturado) + ' · Recebido: ' + moeda(p.recebido),
-      '• A receber: ' + moeda(r.totais.aReceber) + (r.totais.atrasado ? ' (em atraso: ' + moeda(r.totais.atrasado) + ')' : '')];
-    p.ganhas.slice(0, 5).forEach(function (k) { l.push('   ✓ ' + k.titulo + (k.orgao ? ' · ' + k.orgao : '') + ' · ' + moeda(k.valor)); });
-    const prox = r.proximos.filter(function (n) { return !n.atrasada; }).slice(0, 3);
-    if (prox.length) { l.push('', 'Próximos recebimentos:'); prox.forEach(function (n) { l.push('• NF ' + (n.numero || '') + ' · ' + moeda(n.aberto) + (n.vencimento ? ' · ' + dataBR(n.vencimento) : '')); }); }
-    l.push('', 'Comissão do mês: ' + moeda(p.comissao) + (p.fixo ? ' + mensalidade ' + moeda(p.fixo) + ' = ' + moeda(p.total) : '') + '.');
-    l.push('', 'Qualquer dúvida, estou à disposição.', '', 'Lucas Neves | Seven', '(61) 98347-2232');
-    return l.join('\n');
-  }
-  async function enviarResumo(via, id, mm, r, x) {
-    const emp = Dados.empresa(id) || {};
-    const f = await UI.modal({ titulo: via === 'whatsapp' ? 'Enviar resumo por WhatsApp' : 'Enviar resumo por e-mail', largo: true, botao: via === 'whatsapp' ? 'Abrir WhatsApp' : 'Abrir e-mail',
-      corpo: '<p class="mini mudo">Revise o texto antes de enviar. O sistema só abre o ' + (via === 'whatsapp' ? 'WhatsApp' : 'e-mail') + ' com a mensagem pronta; o envio é feito por você. Para mandar o relatório em PDF, use Imprimir → Salvar como PDF e anexe.</p>' +
-        (via === 'whatsapp' ? campo('WhatsApp (com DDD)', '<input name="dest" inputmode="tel" value="' + esc(emp.telefone || '') + '">', 'Em branco: o WhatsApp abre para você escolher o contato.') : campo('E-mail do cliente', '<input name="dest" type="email" value="' + esc(emp.email || '') + '">')) +
-        campo('Mensagem', '<textarea name="t" rows="16">' + esc(textoResumo(id, mm, r, x)) + '</textarea>') });
-    if (!f) return; const txt = f.get('t'), dest = String(f.get('dest') || '').trim();
-    if (via === 'whatsapp') { let nn = dest.replace(/\D/g, ''); if (nn && nn.length <= 11) nn = '55' + nn; window.open('https://wa.me/' + nn + '?text=' + encodeURIComponent(txt), '_blank', 'noopener'); }
-    else location.href = 'mailto:' + encodeURIComponent(dest) + '?subject=' + encodeURIComponent('Resumo de ' + nomeMes(mm) + ' · Seven') + '&body=' + encodeURIComponent(txt);
   }
 
   // ---------- extrato de comissões e Seven Financeiro ----------
@@ -357,9 +300,10 @@
     el.onclick = function (ev) { const b = ev.target.closest('[data-a]'); if (b && b.dataset.a === 'imprimir') imprimir(); if (b && b.dataset.a === 'pdf') imprimir(true); };
   }
 
+  T.rel = { cabecalho: cabecalho, kpis: kpis, tabela: tabela, linkCartao: linkCartao, cfgDe: cfgDe, cfgCliente: cfgCliente, cfgCalc: cfgCalc, textoCfg: textoCfg, nomeEmpresa: nomeEmpresa, imprimir: imprimir, funilReal: funilReal, barraMeta: barraMeta, mesAtual: mesAtual, nomeMes: nomeMes };
   T.render = function (el, sub) {
-    if (sub === 'performance') return telaPerformance(el);
-    if (sub === 'mes') return telaMes(el);
+    if (sub === 'performance' || sub === 'mes') { location.replace('#/relatorios'); return; }
+    if (sub === 'condicoes') return telaCondicoes(el);
     if (sub === 'extrato') return telaExtrato(el);
     if (sub === 'ganhas') return telaGanhas(el);
     if (sub === 'relatorio') return telaRelatorioSimulacao(el);

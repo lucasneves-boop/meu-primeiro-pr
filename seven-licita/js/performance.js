@@ -136,8 +136,39 @@
     return { itens: itens, gerada: tot(), aCobrar: tot('a cobrar'), cobrada: tot('cobrada'), recebida: tot('recebida'), repasses: soma([].concat.apply([], itens.map(function (i) { return i.repasses; }))) };
   }
 
+  // ---------- Seven Relatórios: período, comparação com o anterior e evolução mês a mês ----------
+  function isoDe(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function somaDia(iso, n) { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return isoDe(d); }
+  // período anterior de mesma duração; meses inteiros viram os meses imediatamente anteriores
+  function periodoAnterior(de, ate) {
+    const ini = new Date(de + 'T12:00:00'), fim = new Date(ate + 'T12:00:00');
+    const mesesInteiros = ini.getDate() === 1 && somaDia(ate, 1).slice(8) === '01';
+    if (mesesInteiros) { const n = (fim.getFullYear() - ini.getFullYear()) * 12 + fim.getMonth() - ini.getMonth() + 1; const a = new Date(ini.getFullYear(), ini.getMonth() - n, 1); const b = new Date(ini.getFullYear(), ini.getMonth(), 0); return { de: isoDe(a), ate: isoDe(b) }; }
+    const dias = Math.round((fim - ini) / 864e5) + 1; return { de: somaDia(de, -dias), ate: somaDia(de, -1) };
+  }
+  function resumoPeriodo(e, o) {
+    const d = desempenho(e, { empresaId: o.empresaId, cfgDe: o.cfgDe, de: o.de, ate: o.ate, hoje: o.hoje }); const p = d.periodo;
+    return { de: o.de, ate: o.ate, novas: p.novas.length, ganhas: p.ganhas.length, perdidas: p.perdidas.length, disputadas: p.ganhas.length + p.perdidas.length, taxa: p.taxaSucesso, valorGanho: p.valorGanho, faturado: p.faturado, recebido: p.recebido, comissao: p.comissao, fixo: p.fixo || 0, desempenho: d };
+  }
+  const METRICAS = [['novas', 'Novas oportunidades'], ['disputadas', 'Licitações decididas'], ['ganhas', 'Licitações ganhas'], ['taxa', 'Taxa de sucesso'], ['valorGanho', 'Valor ganho'], ['faturado', 'Faturado'], ['recebido', 'Recebido']];
+  function comparar(a, b) {
+    return METRICAS.map(function (m) {
+      const x = a[m[0]], y = b[m[0]]; const delta = x != null && y != null ? x - y : null;
+      return { chave: m[0], nome: m[1], atual: x, anterior: y, delta: delta, pct: delta != null && y ? delta / y * 100 : null, sentido: delta == null || Math.abs(delta) < 1e-9 ? 'igual' : delta > 0 ? 'subiu' : 'caiu' };
+    });
+  }
+  // veredito: quantos indicadores principais melhoraram e quantos pioraram
+  function veredito(c) {
+    const pesos = { ganhas: 1, taxa: 1, valorGanho: 1, recebido: 1 }; let mais = 0, menos = 0;
+    c.forEach(function (x) { if (!pesos[x.chave]) return; if (x.sentido === 'subiu') mais++; if (x.sentido === 'caiu') menos++; });
+    return mais > menos ? 'avancando' : menos > mais ? 'atencao' : 'estavel';
+  }
+  function evolucao(e, o) {
+    return meses(o.de.slice(0, 7), o.ate.slice(0, 7)).map(function (mm) { const p = mes(mm); const r = resumoPeriodo(e, Object.assign({}, o, p)); delete r.desempenho; r.mes = mm; return r; });
+  }
+
   // primeiro e último dia do mês 'AAAA-MM'
   function mes(aaaamm) { const m = String(aaaamm || '').match(/^(\d{4})-(\d{2})$/); if (!m) return null; const ult = new Date(Number(m[1]), Number(m[2]), 0).getDate(); return { de: m[1] + '-' + m[2] + '-01', ate: m[1] + '-' + m[2] + '-' + String(ult).padStart(2, '0') }; }
 
-  return { desempenho: desempenho, extrato: extrato, meses: meses, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
+  return { desempenho: desempenho, extrato: extrato, meses: meses, periodoAnterior: periodoAnterior, resumoPeriodo: resumoPeriodo, comparar: comparar, veredito: veredito, evolucao: evolucao, METRICAS: METRICAS, cartoes: cartoes, etapaDaLista: etapaDaLista, fator: fator, mes: mes };
 });

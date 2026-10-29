@@ -2752,3 +2752,13 @@ tr.cm-total th, tr.cm-total td { font-weight: 700; border-top: 2px solid var(--o
 .cm-acoes { white-space: nowrap; } .cm-acoes .btn { margin: 1px; }
 .cm-etapas-l { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin: 8px 0; }
 .cm-etapa-l { display: grid; grid-template-columns: 1fr 70px 130px; gap: 6px; align-items: center; } .cm-etapa-l span { font-size: 13px; }
+/* Seven Relatórios */
+.rl-ctrl .linha .campo { min-width: 0; }
+.cm-aba-ext { margin-left: auto; color: var(--marca) !important; }
+.rl-veredito { display: grid; gap: 2px; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; background: var(--superficie-2); border-left: 5px solid var(--mudo); }
+.rl-veredito b { font-size: 18px; } .rl-veredito span { color: var(--mudo); font-size: 13px; }
+.rl-veredito.ok { border-left-color: var(--c-verde, #1baf7a); } .rl-veredito.ruim { border-left-color: var(--c-vermelho, #e34948); }
+.rl-var { font-size: 12px; font-weight: 700; } .rl-sobe { color: var(--c-verde, #1baf7a); } .rl-cai { color: var(--c-vermelho, #e34948); } .rl-igual { color: var(--mudo); }
+.rl-leitura { margin: 0; padding-left: 18px; } .rl-leitura li { margin: 4px 0; }
+.rl-graf { overflow-x: auto; } .rl-graf svg { max-width: 100%; height: auto; }
+.rl tr.rl-no-periodo th, .rl tr.rl-no-periodo td { background: rgba(182, 141, 64, .10); font-weight: 600; }
