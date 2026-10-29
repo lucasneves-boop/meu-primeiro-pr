@@ -12,7 +12,7 @@
     const w = jan.offsetWidth; const x = Math.max(8, Math.min(innerWidth - w - 8, p.x == null ? innerWidth - w - 340 : p.x)); const y = Math.max(8, Math.min(innerHeight - 48, p.y == null ? 84 : p.y));
     jan.style.left = x + 'px'; jan.style.top = y + 'px';
   }
-  function atualizarResumo() { if (!jan) return; jan.querySelector('.cmf-res').innerHTML = T().resumo(Comissao.calcular(T().entrada()), true); }
+  function atualizarResumo() { if (!jan) return; jan.querySelector('.cmf-res').innerHTML = T().resumo(Comissao.calcular(T().entrada()), true) + T().resumoExtra(T().extras(), true); }
   function desenharCampos() {
     const s = T().estado(); const f = jan.querySelector('.cmf-form');
     f.innerHTML = T().camposBase(s, true) + (s.usarCustos ? '<p class="mini mudo">Margem calculada pelos custos na tela completa.</p>' : '');

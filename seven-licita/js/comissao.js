@@ -65,7 +65,60 @@
     return { colunas: colunas, linhas: linhas, margensNecessarias: margensNec };
   }
 
+  // ---------- prazo para recebimento: etapas em dias corridos a partir da sessão ----------
+  const ETAPAS = [
+    { id: 'homologacao', nome: 'Homologação e adjudicação', dias: 15 },
+    { id: 'contrato', nome: 'Assinatura do contrato / empenho', dias: 10 },
+    { id: 'entrega', nome: 'Entrega ou execução', dias: 30 },
+    { id: 'atesto', nome: 'Recebimento e atesto da nota fiscal', dias: 5 },
+    { id: 'pagamento', nome: 'Pagamento pelo órgão', dias: 30 },
+    { id: 'comissao', nome: 'Repasse da comissão', dias: 5 }
+  ];
+  function somarDias(iso, d) { const x = new Date(iso + 'T12:00:00'); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+  function prazos(inicio, etapas) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(inicio || ''))) return null;
+    let total = 0; const linhas = (etapas || ETAPAS).map(function (e) { const d = Math.max(0, Math.round(num(e.dias) || 0)); total += d; return { id: e.id, nome: e.nome, dias: d, acumulado: total, data: somarDias(inicio, total) }; });
+    const pg = linhas.find(function (l) { return l.id === 'pagamento'; });
+    return { inicio: inicio, etapas: linhas, totalDias: total, dataFinal: somarDias(inicio, total), diasAtePagamento: pg ? pg.acumulado : null, dataPagamento: pg ? pg.data : null };
+  }
+
+  // ---------- quantas licitações disputar: taxa de sucesso p (%) ----------
+  function chances(taxa, vitorias) {
+    const p = pos(taxa); if (!p || p > 100) return null; const q = p / 100; const v = Math.max(1, Math.round(num(vitorias) || 1));
+    const prob = function (n) { return (1 - Math.pow(1 - q, n)) * 100; };
+    const paraConfianca = function (c) { return q >= 1 ? 1 : Math.ceil(Math.log(1 - c / 100) / Math.log(1 - q)); };
+    return {
+      taxa: p, vitorias: v,
+      esperadoPrimeira: 1 / q,                  // em média, disputas até a 1ª vitória
+      esperadoVitorias: v / q,                  // em média, disputas para v vitórias
+      confianca: [50, 80, 90, 95].map(function (c) { return { confianca: c, disputas: paraConfianca(c) }; }),
+      tabela: [1, 2, 3, 5, 10, 15, 20, 30, 50].map(function (n) { return { disputas: n, chance: prob(n), esperadas: n * q }; })
+    };
+  }
+
+  // ---------- prazo de retorno: custos mensais e por disputa contra comissões recebidas com atraso ----------
+  // o: { taxa, disputasMes, custoDisputa, custoFixo, comissaoPorVitoria, diasRecebimento, meses }
+  function retorno(o) {
+    o = o || {}; const q = (pos(o.taxa) || 0) / 100, d = Math.max(0, num(o.disputasMes) || 0), cv = num(o.comissaoPorVitoria) || 0;
+    if (!q || !d || cv <= 0) return null;
+    const atraso = Math.max(0, Math.ceil((num(o.diasRecebimento) || 0) / 30)); const meses = Math.min(120, Math.max(6, Math.round(num(o.meses) || 36)));
+    const custoMes = (num(o.custoFixo) || 0) + d * (num(o.custoDisputa) || 0);
+    let acum = 0, mesRetorno = null, menor = 0, mesMenor = 0; const linhas = [];
+    for (let m = 1; m <= meses; m++) {
+      const vit = d * q; const receita = m > atraso ? vit * cv : 0; acum += receita - custoMes;
+      if (acum < menor) { menor = acum; mesMenor = m; }
+      if (mesRetorno == null && acum >= 0 && m > atraso) mesRetorno = m;
+      linhas.push({ mes: m, disputas: d, vitorias: vit, receita: receita, custo: custoMes, saldo: receita - custoMes, acumulado: acum });
+    }
+    const lucroMes = d * q * cv - custoMes;
+    return {
+      linhas: linhas, custoMes: custoMes, receitaMes: d * q * cv, lucroMes: lucroMes, atrasoMeses: atraso,
+      mesPrimeiraVitoria: Math.ceil(1 / (q * d)), mesPrimeiroRecebimento: Math.ceil(1 / (q * d)) + atraso,
+      mesRetorno: mesRetorno, investimentoMaximo: -menor, mesInvestimentoMaximo: mesMenor, viavel: lucroMes > 0
+    };
+  }
+
   function lerLista(txt) { return String(txt || '').split(/[\s;]+/).map(function (s) { return Number(s.replace(/\./g, '').replace(',', '.').replace('%', '')); }).filter(function (x) { return isFinite(x) && x > 0; }).slice(0, 16); }
 
-  return { calcular: calcular, cenarios: cenarios, margemDosCustos: margemDosCustos, lerLista: lerLista, PCTS: PCTS, MARGENS: MARGENS, div: div };
+  return { calcular: calcular, cenarios: cenarios, prazos: prazos, chances: chances, retorno: retorno, ETAPAS: ETAPAS, somarDias: somarDias, margemDosCustos: margemDosCustos, lerLista: lerLista, PCTS: PCTS, MARGENS: MARGENS, div: div };
 });

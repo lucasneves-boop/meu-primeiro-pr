@@ -5,7 +5,7 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, campo, aviso } = UI;
   const K = Comissao;
-  const PADRAO = { base: 'venda', pct: '5', venda: '', margem: '', alvo: '', retencao: '', contratos: '1', usarCustos: false, custo: '', impostos: '', despesas: '', pcts: '1 2 3 4 5 7,5 10 15 20 25 30', margens: '5 10 15 20 25 30' };
+  const PADRAO = { base: 'venda', pct: '5', venda: '', margem: '', alvo: '', retencao: '', contratos: '1', usarCustos: false, custo: '', impostos: '', despesas: '', pcts: '1 2 3 4 5 7,5 10 15 20 25 30', margens: '5 10 15 20 25 30', dataSessao: '', prazos: {}, taxa: '20', disputasMes: '8', custoDisputa: '', custoFixo: '' };
 
   function estado() { const d = Dados.e; d.comissao = Object.assign({}, PADRAO, d.comissao || {}); return d.comissao; }
   function n(v) { if (v == null || String(v).trim() === '') return null; const x = Nucleo.lerNumeroBR(v); return isFinite(x) ? x : null; }
@@ -54,9 +54,61 @@
   function lerForm(form) {
     const s = estado(); const fd = new FormData(form);
     ['pct', 'venda', 'margem', 'alvo', 'retencao', 'contratos', 'custo', 'impostos', 'despesas', 'pcts', 'margens'].forEach(function (k) { if (form.elements[k] && !form.elements[k].disabled) s[k] = fd.get(k); });
+    ['dataSessao', 'taxa', 'disputasMes', 'custoDisputa', 'custoFixo'].forEach(function (k) { if (form.elements[k]) s[k] = fd.get(k); });
+    K.ETAPAS.forEach(function (e) { if (form.elements['p_' + e.id]) { s.prazos = Object.assign({}, s.prazos); s.prazos[e.id] = fd.get('p_' + e.id); } });
     if (fd.get('base')) s.base = fd.get('base');
     if (form.elements.usarCustos) s.usarCustos = form.elements.usarCustos.checked;
     return s;
+  }
+
+  // ---------- prazos, chances e retorno ----------
+  function hoje() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function etapas(s) { return K.ETAPAS.map(function (e) { const v = (s.prazos || {})[e.id]; return { id: e.id, nome: e.nome, dias: v == null || String(v).trim() === '' ? e.dias : n(v) }; }); }
+  function dataBR(iso) { return iso ? new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'; }
+  function extras(s) {
+    s = s || estado(); const r = K.calcular(entrada(s));
+    const pz = K.prazos(s.dataSessao || hoje(), etapas(s));
+    const ch = K.chances(n(s.taxa), n(s.contratos));
+    const rt = K.retorno({ taxa: n(s.taxa), disputasMes: n(s.disputasMes), custoDisputa: n(s.custoDisputa), custoFixo: n(s.custoFixo), comissaoPorVitoria: r.comissaoLiquida, diasRecebimento: pz ? pz.totalDias : 0, meses: 36 });
+    return { r: r, prazo: pz, chances: ch, retorno: rt };
+  }
+  function meses(m) { return m == null ? '—' : m + (m === 1 ? ' mês' : ' meses'); }
+  function resumoExtra(x, compacto) {
+    const dl = [];
+    if (x.prazo) dl.push(['Comissão chega em', dataBR(x.prazo.dataFinal) + ' (' + x.prazo.totalDias + ' dias)']);
+    if (x.chances) dl.push(['Disputas para a 1ª vitória', '~' + Math.ceil(x.chances.esperadoPrimeira) + ' (90% de chance: ' + x.chances.confianca[2].disputas + ')']);
+    if (x.chances && x.chances.vitorias > 1) dl.push(['Disputas para ' + x.chances.vitorias + ' vitórias', '~' + Math.ceil(x.chances.esperadoVitorias)]);
+    if (x.retorno) dl.push(['Retorno do investimento', x.retorno.mesRetorno ? 'no ' + x.retorno.mesRetorno + 'º mês' : 'não se paga em 36 meses', 1]);
+    if (x.retorno && !compacto) dl.push(['Caixa necessário até o retorno', moeda(x.retorno.investimentoMaximo)]);
+    return dl.length ? '<dl class="cl-res cm-extra-res">' + dl.map(function (l) { return '<div' + (l[2] ? ' class="dest"' : '') + '><dt>' + esc(l[0]) + '</dt><dd>' + l[1] + '</dd></div>'; }).join('') + '</dl>' : '';
+  }
+  function secoesExtras(s) {
+    const x = extras(s); let h = '';
+    // prazo
+    h += '<section class="cartao"><h3>Prazo para recebimento</h3>';
+    h += x.prazo ? '<ol class="cm-linha-tempo"><li class="ini"><b>' + dataBR(x.prazo.inicio) + '</b><span>Sessão da licitação</span></li>' + x.prazo.etapas.map(function (e) { return '<li' + (e.id === 'pagamento' ? ' class="pg"' : e.id === 'comissao' ? ' class="fim"' : '') + '><b>' + dataBR(e.data) + '</b><span>' + esc(e.nome) + '</span><small>+' + e.dias + ' dias · ' + e.acumulado + ' no total</small></li>'; }).join('') + '</ol>' +
+      '<p class="cm-prazo-res">O órgão paga por volta de <b>' + dataBR(x.prazo.dataPagamento) + '</b> (' + x.prazo.diasAtePagamento + ' dias após a sessão) e a comissão chega por volta de <b>' + dataBR(x.prazo.dataFinal) + '</b> (' + x.prazo.totalDias + ' dias).</p>' : '<p class="mudo">Informe a data da sessão.</p>';
+    h += '<p class="mini mudo">Dias corridos e prazos médios: ajuste cada etapa pelo edital, pelo contrato e pelo histórico de pagamento do órgão (veja o Seven CAPAG).</p></section>';
+    // chances
+    h += '<section class="cartao"><h3>Quantas licitações disputar para ganhar</h3>';
+    if (x.chances) {
+      const c = x.chances;
+      h += '<div class="cm-numeros"><div><small>Em média, para a 1ª vitória</small><b>' + Math.ceil(c.esperadoPrimeira) + ' disputas</b></div>' + (c.vitorias > 1 ? '<div><small>Em média, para ' + c.vitorias + ' vitórias</small><b>' + Math.ceil(c.esperadoVitorias) + ' disputas</b></div>' : '') + c.confianca.map(function (k) { return '<div><small>' + k.confianca + '% de chance de ganhar ao menos uma</small><b>' + k.disputas + ' disputas</b></div>'; }).join('') + '</div>' +
+        '<div class="tabela-rolagem"><table class="tabela compacta"><thead><tr><th>Disputas</th>' + c.tabela.map(function (t) { return '<th class="n">' + t.disputas + '</th>'; }).join('') + '</tr></thead><tbody><tr><th>Chance de ganhar ao menos 1</th>' + c.tabela.map(function (t) { return '<td class="n">' + pc(t.chance, 0) + '</td>'; }).join('') + '</tr><tr><th>Vitórias esperadas</th>' + c.tabela.map(function (t) { return '<td class="n">' + Number(t.esperadas).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+        '<p class="mini mudo">Com taxa de sucesso de ' + pc(c.taxa) + ' por disputa. Cada licitação é tratada como independente; a taxa real sai do seu histórico de propostas ganhas e perdidas.</p>';
+    } else h += '<p class="mudo">Informe a taxa de sucesso (de 1% a 100%).</p>';
+    h += '</section>';
+    // retorno
+    h += '<section class="cartao"><h3>Prazo de retorno</h3>';
+    if (x.retorno) {
+      const t = x.retorno; const ate = Math.min(t.linhas.length, Math.max(12, (t.mesRetorno || 0) + 3));
+      h += '<div class="cm-numeros"><div><small>1ª vitória esperada</small><b>' + meses(t.mesPrimeiraVitoria) + '</b></div><div><small>1º recebimento</small><b>' + meses(t.mesPrimeiroRecebimento) + '</b></div><div class="' + (t.mesRetorno ? 'ok' : 'ruim') + '"><small>Retorno (acumulado positivo)</small><b>' + (t.mesRetorno ? 'no ' + t.mesRetorno + 'º mês' : 'não se paga') + '</b></div><div><small>Caixa necessário até lá</small><b>' + moeda(t.investimentoMaximo) + '</b></div><div class="' + (t.viavel ? 'ok' : 'ruim') + '"><small>Resultado por mês, depois de receber</small><b>' + moeda(t.lucroMes) + '</b></div></div>' +
+        (t.viavel ? '' : '<p class="alerta mini">Os custos por mês (' + moeda(t.custoMes) + ') são maiores que as comissões esperadas (' + moeda(t.receitaMes) + '). Aumente o ritmo de disputas, a taxa de sucesso ou a comissão, ou reduza os custos.</p>') +
+        '<div class="tabela-rolagem"><table class="tabela compacta cm-retorno"><thead><tr><th>Mês</th><th class="n">Vitórias</th><th class="n">Comissões recebidas</th><th class="n">Custos</th><th class="n">Saldo do mês</th><th class="n">Acumulado</th></tr></thead><tbody>' + t.linhas.slice(0, ate).map(function (l) { return '<tr' + (l.mes === t.mesRetorno ? ' class="cm-atual"' : '') + '><th>' + l.mes + 'º</th><td class="n">' + Number(l.vitorias).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '</td><td class="n">' + moeda(l.receita) + '</td><td class="n">' + moeda(l.custo) + '</td><td class="n">' + moeda(l.saldo) + '</td><td class="n ' + (l.acumulado >= 0 ? 'pos' : 'neg') + '">' + moeda(l.acumulado) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+        '<p class="mini mudo">Média esperada: ' + Number(n(s.disputasMes)).toLocaleString('pt-BR') + ' disputas por mês × ' + pc(n(s.taxa)) + ' de sucesso × ' + moeda(x.r.comissaoLiquida) + ' por vitória, recebidas ' + t.atrasoMeses + ' mês(es) depois (prazo para recebimento acima).</p>';
+    } else h += '<p class="mudo">Informe a comissão e a venda (para saber quanto cada vitória rende), a taxa de sucesso e quantas licitações disputa por mês.</p>';
+    h += '</section>';
+    return h;
   }
 
   // ---------- cenários ----------
@@ -80,6 +132,9 @@
       '<div class="linha cm-custos"' + (s.usarCustos ? '' : ' hidden') + '>' + campo('Custo dos produtos/serviços (R$)', '<input name="custo" inputmode="decimal" value="' + esc(s.custo) + '">') + campo('Impostos sobre a venda (%)', '<input name="impostos" inputmode="decimal" value="' + esc(s.impostos) + '">') + campo('Outras despesas (%)', '<input name="despesas" inputmode="decimal" value="' + esc(s.despesas) + '">', 'Frete, taxas, financeiro.') + '</div>' +
       '<div class="grupo-botoes"><button type="button" class="btn mini" data-a="janela" title="Abre a Seven Comissão em janela por cima de qualquer tela (Alt+M)">⧉ Abrir em janela flutuante</button><button type="button" class="btn mini fantasma" data-a="limpar">Limpar</button></div></form>' +
       '<section class="cartao cm-res" id="cm-res" aria-live="polite"></section></div>' +
+      '<form class="cartao cm-extra" id="cm-extra" autocomplete="off"><h3>Prazos, chances e retorno</h3><div class="linha">' + campo('Data da sessão', '<input type="date" name="dataSessao" value="' + esc(s.dataSessao || hoje()) + '">') + campo('Taxa de sucesso (%)', '<input name="taxa" inputmode="decimal" value="' + esc(s.taxa) + '">', 'De cada 100 disputas, quantas você ganha.') + campo('Disputas por mês', '<input name="disputasMes" inputmode="decimal" value="' + esc(s.disputasMes) + '">') + campo('Custo por disputa (R$)', '<input name="custoDisputa" inputmode="decimal" value="' + esc(s.custoDisputa) + '">', 'Certidões, garantias, viagens, plataformas.') + campo('Custo fixo mensal (R$)', '<input name="custoFixo" inputmode="decimal" value="' + esc(s.custoFixo) + '">', 'Equipe, sistemas, escritório.') + '</div>' +
+      '<details class="cm-etapas"><summary>Dias de cada etapa até receber</summary><div class="linha">' + etapas(s).map(function (e) { return campo(e.nome, '<input name="p_' + e.id + '" inputmode="numeric" value="' + esc(String(e.dias)) + '">'); }).join('') + '</div></details></form>' +
+      '<div id="cm-extra-res"></div>' +
       '<form class="cartao cm-listas" id="cm-listas"><h3>Todos os cenários</h3><div class="linha">' + campo('Percentuais de comissão', '<input name="pcts" value="' + esc(s.pcts) + '">', 'Separe por espaço. Ex.: 1 2 5 10 20 30') + campo('Margens de lucro líquido (%)', '<input name="margens" value="' + esc(s.margens) + '">', 'Colunas das tabelas de comissão sobre o lucro.') + '</div></form>' +
       '<div id="cm-cen"></div>' +
       '<details class="cartao cm-formulas"><summary>Como é calculado</summary><ul class="mini">' +
@@ -87,20 +142,23 @@
       '<li><b>Sobre o lucro líquido:</b> lucro = venda × margem · comissão = lucro × % · venda necessária = meta ÷ (% × margem) · margem necessária = meta ÷ (venda × %)</li>' +
       '<li><b>Retenções:</b> a meta é o que você recebe líquido; a comissão bruta necessária = meta ÷ (1 − retenção).</li>' +
       '<li><b>Equivalência:</b> X% do lucro com margem M% = X × M% da venda. Ex.: 30% do lucro com 12% de margem = 3,6% da venda.</li>' +
-      '<li><b>Margem pelos custos:</b> (venda − custo − impostos − despesas) ÷ venda.</li></ul></details>';
-    const form = el.querySelector('#cm-form'), listas = el.querySelector('#cm-listas');
+      '<li><b>Margem pelos custos:</b> (venda − custo − impostos − despesas) ÷ venda.</li>' +
+      '<li><b>Disputas para ganhar:</b> em média 1 ÷ taxa de sucesso; para ter C% de chance de ao menos uma vitória, n = ln(1 − C) ÷ ln(1 − taxa).</li>' +
+      '<li><b>Retorno:</b> por mês, vitórias = disputas × taxa; a comissão de cada vitória entra depois do prazo para recebimento; o retorno é o mês em que o acumulado (comissões − custos) fica positivo.</li></ul></details>';
+    const form = el.querySelector('#cm-form'), listas = el.querySelector('#cm-listas'), extra = el.querySelector('#cm-extra');
     const atualizar = function () {
       const r = K.calcular(entrada()); el.querySelector('#cm-res').innerHTML = '<h3>Resultado</h3>' + resumo(r, false);
       el.querySelector('#cm-cen').innerHTML = tabelaCenarios(estado());
+      el.querySelector('#cm-extra-res').innerHTML = secoesExtras(estado());
       if (estado().usarCustos) { const m = entrada().margem; form.elements.margem.value = m == null ? '' : String(Math.round(m * 100) / 100).replace('.', ','); }
     };
     const mudou = function (ev) {
-      lerForm(form); lerForm(listas);
+      lerForm(form); lerForm(listas); lerForm(extra);
       if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; form.elements.margem.disabled = estado().usarCustos; }
       atualizar(); salvarDepois(); avisarMudanca('tela');
     };
-    form.oninput = form.onchange = mudou; listas.oninput = mudou;
-    form.onsubmit = listas.onsubmit = function (ev) { ev.preventDefault(); };
+    form.oninput = form.onchange = mudou; listas.oninput = mudou; extra.oninput = extra.onchange = mudou;
+    form.onsubmit = listas.onsubmit = extra.onsubmit = function (ev) { ev.preventDefault(); };
     el.onclick = function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return;
       if (b.dataset.a === 'janela') ComissaoFlutuante.abrir();
@@ -111,5 +169,5 @@
   // a janela flutuante mudou algo: redesenha a tela se ela estiver aberta
   document.addEventListener('comissao:mudou', function (ev) { if (ev.detail && ev.detail.origem === 'janela' && /^#\/comissao/.test(location.hash) && document.querySelector('#cm-form')) render(document.getElementById('conteudo')); });
 
-  Telas.comissao = { titulo: 'Seven Comissão', render: render, estado: estado, entrada: entrada, camposBase: camposBase, resumo: resumo, lerForm: lerForm, salvarDepois: salvarDepois, avisarMudanca: avisarMudanca };
+  Telas.comissao = { titulo: 'Seven Comissão', render: render, estado: estado, entrada: entrada, camposBase: camposBase, resumo: resumo, lerForm: lerForm, extras: extras, resumoExtra: resumoExtra, salvarDepois: salvarDepois, avisarMudanca: avisarMudanca };
 })();

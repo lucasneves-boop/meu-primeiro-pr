@@ -2692,3 +2692,17 @@ html.com-fundo-animado body { background: transparent; }
 .cm-custos[hidden] { display: none; }
 .cmf .cf-dica { display: none; }
 .cmf .cm-falta, .cmf .cm-ok { font-size: 13px; }
+.cm-extra .linha .campo { min-width: 0; }
+.cm-etapas summary { cursor: pointer; font-weight: 600; margin: 4px 0 10px; }
+.cm-linha-tempo { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.cm-linha-tempo li { display: grid; gap: 2px; padding: 10px; border-radius: 10px; border: 1px solid var(--borda); border-top: 3px solid var(--borda); }
+.cm-linha-tempo li b { font-variant-numeric: tabular-nums; } .cm-linha-tempo li span { font-size: 13px; } .cm-linha-tempo li small { color: var(--mudo); font-size: 11px; }
+.cm-linha-tempo li.ini { border-top-color: var(--mudo); } .cm-linha-tempo li.pg { border-top-color: var(--ouro); } .cm-linha-tempo li.fim { border-top-color: var(--c-verde, #1baf7a); background: rgba(27, 175, 122, .08); }
+.cm-prazo-res { margin: 6px 0; }
+.cm-numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.cm-numeros div { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--superficie-2); }
+.cm-numeros small { color: var(--mudo); font-size: 12px; } .cm-numeros b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.cm-numeros .ok b { color: var(--c-verde, #1baf7a); } .cm-numeros .ruim b { color: var(--c-vermelho, #e34948); }
+.cm-retorno td.pos { color: var(--c-verde, #1baf7a); font-weight: 600; } .cm-retorno td.neg { color: var(--c-vermelho, #e34948); }
+.cm-retorno tr.cm-atual td, .cm-retorno tr.cm-atual th { background: rgba(27, 175, 122, .12); }
+.cmf .cm-extra-res { margin-top: 6px; border-top: 1px solid #222; padding-top: 4px; }

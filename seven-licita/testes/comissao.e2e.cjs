@@ -31,9 +31,21 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     ok(await pg.locator('.cm-tab tr.cm-atual').count() === 2, 'linha do percentual atual destacada');
     await foto('comissao-tela');
     await pg.reload(); await pg.waitForSelector('#cm-form'); ok(await pg.inputValue('#cm-form [name=pct]') === '30', 'valores ficam salvos');
+    // prazo para recebimento, disputas necessárias e retorno
+    await pg.fill('#cm-extra [name=dataSessao]', '2026-11-02'); await pg.fill('#cm-extra [name=taxa]', '20'); await pg.fill('#cm-extra [name=disputasMes]', '10'); await pg.fill('#cm-extra [name=custoDisputa]', '100'); await pg.fill('#cm-extra [name=custoFixo]', '2.000');
+    let x = await pg.innerText('#cm-extra-res');
+    ok(/O órgão paga por volta de 31\/01\/2027 \(90 dias/.test(x) && /comissão chega por volta de 05\/02\/2027 \(95 dias\)/.test(x), 'prazo para recebimento a partir da sessão');
+    ok(/Em média, para a 1ª vitória\s*5 disputas/.test(x) && /90% de chance de ganhar ao menos uma\s*11 disputas/.test(x) && /Em média, para 5 vitórias\s*25 disputas/.test(x), 'quantas licitações disputar');
+    ok(/1º recebimento\s*5 meses/.test(x) && /Retorno \(acumulado positivo\)\s*no \d+º mês/.test(x) && await pg.locator('.cm-retorno tbody tr').count() >= 12, 'prazo de retorno com tabela mês a mês');
+    await pg.click('.cm-etapas summary'); await pg.fill('#cm-extra [name=p_pagamento]', '60');
+    ok(/comissão chega por volta de 07\/03\/2027 \(125 dias\)/.test(await pg.innerText('#cm-extra-res')), 'etapas editáveis (pagamento em 60 dias)');
+    await pg.fill('#cm-extra [name=custoFixo]', '90.000'); ok(/não se paga/.test(await pg.innerText('#cm-extra-res')) && await pg.locator('#cm-extra-res .alerta').count() === 1, 'avisa quando os custos não se pagam');
+    await pg.fill('#cm-extra [name=custoFixo]', '2.000');
+    await pg.locator('#cm-extra-res').screenshot({ path: path.join(saida, 'comissao-prazos.png') });
     // janela flutuante em outra tela, com os mesmos valores
     await pg.goto(url + '#/painel'); await pg.click('#botao-comissao'); await pg.waitForSelector('#comissao-flutuante:not([hidden])');
     ok(await pg.inputValue('#comissao-flutuante [name=pct]') === '30' && /R\$\s?6\.480,00/.test(await pg.innerText('.cmf-res')), 'janela flutuante abre com os mesmos valores (7.200 − 10%)');
+    ok(/Comissão chega em\s*07\/03\/2027/.test(await pg.innerText('.cmf-res')) && /Disputas para a 1ª vitória\s*~5/.test(await pg.innerText('.cmf-res')), 'janela mostra prazo e disputas');
     await pg.click('#comissao-flutuante .cm-pilula:has(input[value=venda])'); await pg.fill('#comissao-flutuante [name=pct]', '4');
     ok(/R\$\s?7\.200,00/.test(await pg.innerText('.cmf-res')), 'calcula na janela: 4% de 200 mil − 10%');
     await foto('comissao-flutuante');
