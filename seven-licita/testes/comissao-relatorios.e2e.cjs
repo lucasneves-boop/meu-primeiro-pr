@@ -4,6 +4,7 @@ const path = require('path'); const { abrir } = require('./apoio.cjs');
 const saida = process.argv[2] || path.join(__dirname, 'capturas');
 (async () => {
   const t = await abrir(saida); const { pg, ok, url, foto } = t;
+  const preencher = async (sel, v) => { await pg.fill(sel, v); await pg.press(sel, 'Tab'); await pg.waitForTimeout(120); };
   try {
     await pg.goto(url + '#/quadros'); await pg.waitForSelector('#botao-tema'); await pg.waitForTimeout(300);
     // cliente e cartões no Seven Processo
@@ -18,7 +19,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
         execucao: { valor: 120000, empenhos: [{ id: 'e1', numero: '2026NE001', valor: 120000 }], notas: [{ id: 'n1', numero: '501', data: hoje, valor: 60000, vencimento: '2099-12-31' }, { id: 'n2', numero: '502', data: hoje, valor: 30000, vencimento: '2000-01-01' }], pagamentos: [{ id: 'g1', notaId: 'n1', data: hoje, valor: 60000 }] } });
       Dados.e.comissao = { base: 'venda', pct: '5', venda: '120.000', alvo: '5.000' }; Dados.salvar();
     });
-    await pg.goto(url + '#/comissao'); await pg.waitForSelector('.cm-abas'); ok(await pg.locator('.cm-abas a').count() === 3, 'abas: simulador, performance e relatório do mês');
+    await pg.goto(url + '#/comissao'); await pg.waitForSelector('.cm-abas'); ok(await pg.locator('.cm-abas a').count() === 4, 'abas: simulador, performance, relatório do mês e extrato');
     // performance
     await pg.click('.cm-abas a[href="#/comissao/performance"]'); await pg.waitForSelector('#cm-perf-f');
     ok(await pg.inputValue('#cm-perf-f [name=cliente]') === 'cliA', 'abre no cliente ativo');
@@ -46,6 +47,53 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.evaluate(() => { window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; });
     await pg.click('[data-a=imprimir]'); await pg.waitForTimeout(300); ok(await pg.evaluate(() => window.__imprimiu) === 1, 'imprime o relatório do mês');
     await pg.emulateMedia({ media: 'print' }); ok(await pg.locator('.lateral').isHidden() && await pg.locator('.cm-rel-form').isHidden() && await pg.locator('.cm-relatorio').isVisible(), 'na impressão só aparece o relatório'); await pg.emulateMedia({ media: 'screen' });
+    // envio do resumo do mês (texto para revisão antes de abrir o WhatsApp)
+    await pg.selectOption('#cm-mes-f [name=cliente]', 'cliA'); await pg.waitForSelector('[data-a=enviar-whatsapp]:not([disabled])');
+    await pg.fill('#cm-mes-f [name=mes]', new Date().toISOString().slice(0, 7)); await pg.dispatchEvent('#cm-mes-f [name=mes]', 'change'); await pg.waitForTimeout(150);
+    await pg.click('[data-a=enviar-whatsapp]'); await pg.waitForSelector('.modal textarea[name=t]');
+    const msg = await pg.inputValue('.modal textarea[name=t]');
+    ok(/Ganhas: 1 \(R\$\s?120\.000,00\)/.test(msg) && /Recebido: R\$\s?60\.000,00/.test(msg) && /Lucas Neves \| Seven/.test(msg) && /\(61\) 98347-2232/.test(msg), 'resumo do mês pronto para revisar, com assinatura');
+    await pg.click('.modal .cancelar');
+    // condições avançadas do cliente: faixas, fixo, parceiros e Seven Financeiro automático
+    await pg.goto(url + '#/comissao/performance'); await pg.waitForSelector('#cm-perf-f');
+    await pg.evaluate(() => document.querySelectorAll('.cm-avancado').forEach(d => { d.open = true; }));
+    await pg.check('#cm-perf-f [name=usarFaixas]'); await pg.waitForSelector('#cm-perf-f .cm-faixas:not([hidden])');
+    await preencher('#cm-perf-f [name=faixa_ate_0]', '100.000'); await preencher('#cm-perf-f [name=faixa_pct_0]', '5'); await preencher('#cm-perf-f [name=faixa_pct_1]', '8');
+    let pt = await pg.innerText('.cm-relatorio');
+    ok(/Comissão prevista \(ganhos\)\s*R\$\s?9\.600,00/.test(pt), 'faixa: 120 mil cai na faixa de 8%');
+    await pg.click('#cm-perf-f [data-a=add-parceiro]'); await pg.waitForSelector('#cm-perf-f [name=parc_nome_0]');
+    await preencher('#cm-perf-f [name=parc_nome_0]', 'Carlos Indicador'); await preencher('#cm-perf-f [name=parc_pct_0]', '25');
+    ok(/Comissão prevista \(ganhos\)\s*R\$\s?7\.200,00/.test(await pg.innerText('.cm-relatorio')) && /parceiros: Carlos Indicador 25%/.test(await pg.innerText('.cm-relatorio')), 'parceiro fica com 25% da comissão');
+    await preencher('#cm-perf-f [name=fixo]', '1.500'); await pg.fill('#cm-perf-f [name=fixoDesde]', new Date().toISOString().slice(0, 7)); await pg.press('#cm-perf-f [name=fixo]', 'Tab'); await pg.waitForTimeout(150);
+    ok(/Mensalidade do BPO\s*R\$\s?1\.500,00/.test(await pg.innerText('.cm-relatorio')), 'fixo mensal na performance');
+    await foto('comissao-perf-avancado');
+    // extrato
+    await pg.click('.cm-abas a[href="#/comissao/extrato"]'); await pg.waitForSelector('#cm-ext-f');
+    let ex = await pg.innerText('.cm-relatorio');
+    ok(await pg.locator('.cm-relatorio tbody tr').count() === 2 && /A cobrar\s*R\$\s?5\.100,00/.test(ex), 'extrato: comissão do pagamento (60 mil × 8% × 75%) + mensalidade');
+    ok(/Carlos Indicador R\$\s?1\.200,00 \(pendente\)/.test(ex), 'repasse do parceiro no extrato');
+    await pg.click('[data-a=lancar-todas]'); await pg.waitForTimeout(150);
+    ex = await pg.innerText('.cm-relatorio'); ok(/Cobrada\s*R\$\s?5\.100,00/.test(ex), 'cobranças lançadas no Seven Financeiro');
+    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => /^comissao:/.test(l.origem)).length) === 2, 'contas a receber criadas no Seven Financeiro');
+    // baixa no financeiro → recebida → repasse
+    await pg.evaluate(() => { Dados.e.financas.lancamentos.filter(l => /^comissao:pg:/.test(l.origem)).forEach(l => { l.pago = true; }); Dados.salvar(); });
+    await pg.reload(); await pg.waitForSelector('#cm-ext-f'); ex = await pg.innerText('.cm-relatorio');
+    ok(/Recebida\s*R\$\s?3\.600,00/.test(ex) && await pg.locator('[data-a=repasses]').count() === 1, 'baixa no financeiro marca como recebida');
+    await pg.click('[data-a=repasses]'); await pg.waitForTimeout(150);
+    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.filter(l => /^repasse:/.test(l.origem) && l.tipo === 'despesa' && l.valor === 1200).length) === 1, 'repasse lançado em contas a pagar');
+    // automático
+    await pg.goto(url + '#/comissao/performance'); await pg.waitForSelector('#cm-perf-f'); await pg.evaluate(() => document.querySelectorAll('.cm-avancado').forEach(d => { d.open = true; }));
+    await pg.check('#cm-perf-f [name=autoFinanceiro]'); await pg.waitForTimeout(150);
+    await pg.evaluate(() => { const q = Dados.e.quadros.find(x => x.listas.some(l => l.nome === 'Oportunidade')); const c = q.cartoes.find(k => k.execucao); c.execucao.pagamentos.push({ id: 'g2', notaId: 'n2', data: new Date().toISOString().slice(0, 10), valor: 30000 }); Dados.salvar(); });
+    ok(await pg.evaluate(() => Dados.e.financas.lancamentos.some(l => /^comissao:pg:.*:g2$/.test(l.origem) && Math.abs(l.valor - 1800) < 0.01)), 'novo pagamento do órgão gera a cobrança automaticamente');
+    await pg.goto(url + '#/comissao/extrato'); await pg.waitForSelector('#cm-ext-f'); await foto('comissao-extrato');
+    // simulador: faixas e fixo
+    await pg.goto(url + '#/comissao'); await pg.waitForSelector('#cm-form'); await pg.evaluate(() => document.querySelectorAll('.cm-avancado').forEach(d => { d.open = true; }));
+    await pg.fill('#cm-form [name=venda]', '800.000'); await pg.fill('#cm-form [name=alvo]', ''); await pg.check('#cm-form [name=usarFaixas]');
+    await pg.fill('#cm-form [name=faixa_ate_0]', '500.000'); await pg.fill('#cm-form [name=faixa_pct_0]', '3'); await pg.fill('#cm-form [name=faixa_pct_1]', '5'); await pg.selectOption('#cm-form [name=faixaModo]', 'progressiva');
+    ok(/R\$\s?30\.000,00/.test(await pg.innerText('#cm-res')) && /efetivo 3,75%/.test(await pg.innerText('#cm-res')), 'simulador com faixas progressivas');
+    await pg.fill('#cm-form [name=fixo]', '2.000'); ok(/Total no mês \(comissão \+ fixo\)\s*R\$\s?32\.000,00/.test(await pg.innerText('#cm-res')), 'simulador com fixo mensal');
+    await pg.uncheck('#cm-form [name=usarFaixas]'); await pg.fill('#cm-form [name=fixo]', '');
     // relatório completo da simulação
     await pg.goto(url + '#/comissao'); await pg.click('a[href="#/comissao/relatorio"]'); await pg.waitForSelector('.cm-rel-sim');
     txt = await pg.innerText('.cm-rel-sim');

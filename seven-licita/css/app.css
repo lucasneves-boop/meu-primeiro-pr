@@ -2738,3 +2738,8 @@ tr.cm-total th, tr.cm-total td { font-weight: 700; border-top: 2px solid var(--o
   .cm-relatorio .cm-tab, .cm-relatorio .tabela { font-size: 10px; }
   .cm-rel-2 { grid-template-columns: 1fr 1fr; }
 }
+.cm-avancado { margin: 10px 0; } .cm-avancado > summary { cursor: pointer; font-weight: 700; margin-bottom: 8px; }
+.cm-av { border: 1px solid var(--borda); border-radius: 10px; padding: 8px 12px 10px; margin: 0 0 10px; } .cm-av legend { font-weight: 700; font-size: 13px; padding: 0 4px; }
+.cm-faixas[hidden] { display: none; }
+.cm-linha-av { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; } .cm-linha-av input { width: 130px; } .cm-linha-av input[name^=parc_nome] { width: 220px; } .cm-linha-av input[name^=faixa_pct], .cm-linha-av input[name^=parc_pct] { width: 70px; } .cm-linha-av span { font-size: 13px; color: var(--mudo); }
+.cm-auto { margin: 6px 0 10px; }

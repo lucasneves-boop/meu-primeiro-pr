@@ -47,3 +47,21 @@ test('relatório do mês', () => {
   assert.strictEqual(r.porCliente.length, 2); assert.strictEqual(r.porCliente[0].empresaId, 'A');
   assert.strictEqual(P.mes('x'), null);
 });
+
+test('faixas e parceiros por cliente na performance', () => {
+  const cfg = { A: { base: 'venda', faixas: [{ ate: 50000, pct: 2 }, { ate: '', pct: 4 }], parceiros: [{ nome: 'Ana', pct: 25 }] }, B: { base: 'venda', pct: 10 } };
+  const r = P.desempenho(estado(), { cfgDe: id => cfg[id], hoje: '2026-11-10' });
+  const g = r.contratos.find(c => c.id === 'ganho'); perto(g.comissao, 100000 * 0.04 * 0.75, 'faixa de 4% e 25% para a parceira');
+  perto(g.comissaoRecebida, 40000 * 0.03); perto(r.contratos.find(c => c.id === 'ganhoB').comissao, 5000, 'cliente B: 10% de 50 mil');
+});
+
+test('extrato de comissões com fixo mensal e situação pelo Seven Financeiro', () => {
+  const e = estado(); const cfg = { A: { base: 'venda', pct: 5, parceiros: [{ nome: 'Ana', pct: 20 }], fixo: 1500, fixoDesde: '2026-09', diaVenc: 10 } };
+  const lancs = [{ id: 'L1', origem: 'comissao:fixo:A:2026-09', pago: true }, { id: 'L2', origem: 'comissao:fixo:A:2026-10', pago: false }];
+  const x = P.extrato(e, { empresaId: 'A', cfgDe: id => cfg[id], hoje: '2026-11-10', lancamentos: lancs, registros: {} });
+  assert.strictEqual(x.itens.length, 4, '1 pagamento + 3 mensalidades (set, out, nov)');
+  const pg = x.itens.find(i => i.tipo === 'comissao'); perto(pg.valor, 40000 * 0.05 * 0.8); perto(pg.repasses[0].valor, 400); assert.strictEqual(pg.status, 'a cobrar');
+  assert.strictEqual(x.itens.find(i => i.chave === 'fixo:A:2026-09').status, 'recebida'); assert.strictEqual(x.itens.find(i => i.chave === 'fixo:A:2026-10').status, 'cobrada');
+  perto(x.gerada, 1600 + 4500); perto(x.recebida, 1500); perto(x.cobrada, 1500); perto(x.aCobrar, 3100); perto(x.repasses, 400);
+  assert.deepStrictEqual(P.meses('2026-11', '2027-02'), ['2026-11', '2026-12', '2027-01', '2027-02']);
+});

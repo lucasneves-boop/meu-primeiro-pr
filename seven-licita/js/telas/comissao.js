@@ -5,7 +5,7 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, campo, aviso } = UI;
   const K = Comissao;
-  const PADRAO = { base: 'venda', pct: '5', venda: '', margem: '', alvo: '', retencao: '', contratos: '1', usarCustos: false, custo: '', impostos: '', despesas: '', pcts: '1 2 3 4 5 7,5 10 15 20 25 30', margens: '5 10 15 20 25 30', dataSessao: '', prazos: {}, funil: { modo: 'pct', pct: {}, qtd: {} }, taxa: '20', disputasMes: '8', custoDisputa: '', custoFixo: '' };
+  const PADRAO = { base: 'venda', pct: '5', venda: '', margem: '', alvo: '', retencao: '', contratos: '1', usarCustos: false, custo: '', impostos: '', despesas: '', pcts: '1 2 3 4 5 7,5 10 15 20 25 30', margens: '5 10 15 20 25 30', dataSessao: '', prazos: {}, funil: { modo: 'pct', pct: {}, qtd: {} }, taxa: '20', disputasMes: '8', custoDisputa: '', custoFixo: '', usarFaixas: false, faixaModo: 'total', faixas: [{ ate: '500.000', pct: '3' }, { ate: '', pct: '5' }], fixo: '', parceiros: [] };
 
   function estado() { const d = Dados.e; d.comissao = Object.assign({}, PADRAO, d.comissao || {}); return d.comissao; }
   function n(v) { if (v == null || String(v).trim() === '') return null; const x = Nucleo.lerNumeroBR(v); return isFinite(x) ? x : null; }
@@ -14,8 +14,40 @@
   function entrada(s) {
     s = s || estado(); const venda = n(s.venda);
     const margem = s.usarCustos ? K.margemDosCustos(venda, n(s.custo), n(s.impostos), n(s.despesas)) : n(s.margem);
-    return { base: s.base, pct: n(s.pct), venda: venda, margem: margem, alvo: n(s.alvo), retencao: n(s.retencao), contratos: n(s.contratos) };
+    return Object.assign({ base: s.base, pct: n(s.pct), venda: venda, margem: margem, alvo: n(s.alvo), retencao: n(s.retencao), contratos: n(s.contratos) }, cfgAvancado(s));
   }
+  // ---------- faixas, fixo mensal e parceiros (simulador e condições de cada cliente) ----------
+  function cfgAvancado(c) {
+    return { faixas: c.usarFaixas ? (c.faixas || []).map(function (f) { return { ate: n(f.ate), pct: n(f.pct) }; }) : null, faixaModo: c.faixaModo, fixo: n(c.fixo), parceiros: (c.parceiros || []).map(function (x) { return { nome: x.nome, pct: n(x.pct) }; }) };
+  }
+  function editorAvancado(c, doCliente) {
+    const fx = c.faixas && c.faixas.length ? c.faixas : PADRAO.faixas; const ps = c.parceiros || [];
+    return '<fieldset class="cm-av"><legend>Comissão em faixas</legend><label class="check"><input type="checkbox" name="usarFaixas"' + (c.usarFaixas ? ' checked' : '') + '> O percentual muda conforme o valor (substitui o % fixo)</label>' +
+      '<div class="cm-faixas"' + (c.usarFaixas ? '' : ' hidden') + '>' + campo('Como aplicar', '<select name="faixaModo"><option value="total"' + (c.faixaModo !== 'progressiva' ? ' selected' : '') + '>A faixa do valor vale para o total</option><option value="progressiva"' + (c.faixaModo === 'progressiva' ? ' selected' : '') + '>Progressiva (cada parte na sua faixa, como no IR)</option></select>') +
+      fx.map(function (f, i) { return '<div class="cm-linha-av"><span>' + (i === 0 ? 'Até' : 'De ' + esc(fx[i - 1].ate || '…') + ' até') + '</span><input name="faixa_ate_' + i + '" inputmode="decimal" placeholder="sem limite" value="' + esc(f.ate || '') + '" aria-label="Limite da faixa ' + (i + 1) + ' (R$)"><span>R$ →</span><input name="faixa_pct_' + i + '" inputmode="decimal" value="' + esc(f.pct || '') + '" aria-label="Percentual da faixa ' + (i + 1) + '"><span>%</span>' + (fx.length > 1 ? '<button type="button" class="icone" data-a="del-faixa" data-i="' + i + '" aria-label="Remover faixa">×</button>' : '') + '</div>'; }).join('') +
+      '<button type="button" class="btn mini" data-a="add-faixa">+ Faixa</button><p class="mini mudo">Deixe o limite da última faixa em branco para "acima disso". A base é a venda ou o lucro, conforme a escolha acima.</p></div></fieldset>' +
+      '<fieldset class="cm-av"><legend>Fixo mensal + êxito</legend><div class="linha">' + campo('Mensalidade do BPO (R$)', '<input name="fixo" inputmode="decimal" value="' + esc(c.fixo || '') + '" placeholder="0,00">', 'Somada à comissão. A meta desconta o fixo.') +
+      (doCliente ? campo('Cobrada desde', '<input type="month" name="fixoDesde" value="' + esc(c.fixoDesde || '') + '">') + campo('Dia do vencimento', '<input name="diaVenc" inputmode="numeric" value="' + esc(c.diaVenc || '10') + '">') : '') + '</div></fieldset>' +
+      '<fieldset class="cm-av"><legend>Divisão com parceiros</legend>' + (ps.length ? ps.map(function (x, i) { return '<div class="cm-linha-av"><input name="parc_nome_' + i + '" value="' + esc(x.nome || '') + '" placeholder="Nome do parceiro ou indicador" aria-label="Parceiro ' + (i + 1) + '"><input name="parc_pct_' + i + '" inputmode="decimal" value="' + esc(x.pct || '') + '" placeholder="%" aria-label="Percentual do parceiro ' + (i + 1) + '"><span>% da comissão</span><button type="button" class="icone" data-a="del-parceiro" data-i="' + i + '" aria-label="Remover parceiro">×</button></div>'; }).join('') : '<p class="mini mudo">Nenhum parceiro. O repasse sai da comissão bruta, antes das retenções.</p>') + '<button type="button" class="btn mini" data-a="add-parceiro">+ Parceiro</button></fieldset>' +
+      (doCliente ? '<label class="check cm-auto"><input type="checkbox" name="autoFinanceiro"' + (c.autoFinanceiro ? ' checked' : '') + '> Lançar automaticamente no Seven Financeiro: cada pagamento do órgão gera a cobrança da comissão (e a mensalidade, todo mês); quando ela é recebida, entram os repasses aos parceiros.</label>' : '');
+  }
+  function lerAvancado(form, c) {
+    const el = form.elements; if (!el.fixo) return c;
+    c.usarFaixas = !!(el.usarFaixas && el.usarFaixas.checked); if (el.faixaModo) c.faixaModo = el.faixaModo.value;
+    const fx = []; for (let i = 0; el['faixa_pct_' + i]; i++) fx.push({ ate: el['faixa_ate_' + i].value, pct: el['faixa_pct_' + i].value }); if (fx.length) c.faixas = fx;
+    c.fixo = el.fixo.value; if (el.fixoDesde) c.fixoDesde = el.fixoDesde.value; if (el.diaVenc) c.diaVenc = el.diaVenc.value;
+    const ps = []; for (let i = 0; el['parc_nome_' + i]; i++) ps.push({ nome: el['parc_nome_' + i].value, pct: el['parc_pct_' + i].value }); c.parceiros = ps;
+    if (el.autoFinanceiro) c.autoFinanceiro = el.autoFinanceiro.checked;
+    return c;
+  }
+  function acaoAvancado(c, a, i) {
+    if (a === 'add-faixa') { c.faixas = (c.faixas && c.faixas.length ? c.faixas : PADRAO.faixas).slice(); const ult = c.faixas[c.faixas.length - 1]; c.faixas.splice(c.faixas.length - (ult && !ult.ate ? 1 : 0), 0, { ate: '', pct: '' }); c.usarFaixas = true; return true; }
+    if (a === 'del-faixa') { c.faixas = (c.faixas || []).filter(function (x, k) { return k !== Number(i); }); return true; }
+    if (a === 'add-parceiro') { c.parceiros = (c.parceiros || []).concat([{ nome: '', pct: '' }]); return true; }
+    if (a === 'del-parceiro') { c.parceiros = (c.parceiros || []).filter(function (x, k) { return k !== Number(i); }); return true; }
+    return false;
+  }
+
   let tSalvar = null;
   function salvarDepois() { clearTimeout(tSalvar); tSalvar = setTimeout(function () { tSalvar = null; Dados.salvar(); }, 500); }
   function salvarJa() { if (tSalvar) { clearTimeout(tSalvar); tSalvar = null; Dados.salvar(); } }
@@ -43,6 +75,9 @@
       if (r.base === 'lucro' && r.margemNecessaria != null) dl.push(['Margem líquida necessária', r.margemImpossivel ? pc(r.margemNecessaria, 1) + ' (inviável)' : pc(r.margemNecessaria, 2), 1]);
       if (r.pctNecessario != null) dl.push(['Comissão necessária nesta venda', pc(r.pctNecessario, 2)]);
     }
+    if (r.faixas) dl.push([r.faixaAplicada ? 'Faixa aplicada' : 'Faixas progressivas', (r.faixaAplicada ? pc(r.faixaAplicada.pct) + (r.faixaAplicada.ate ? ' (até ' + moeda(r.faixaAplicada.ate) + ')' : ' (acima da última faixa)') + ' · ' : '') + 'efetivo ' + pc(r.pctEfetivo, 2)]);
+    if (r.repasse) { dl.push(['Repasse a parceiros', moeda(r.repasse)]); if (!compacto) r.porParceiro.forEach(function (x) { dl.push(['· ' + (x.nome || 'Parceiro') + ' (' + pc(x.pct) + ')', moeda(x.valor)]); }); }
+    if (r.fixo) { dl.push(['Fixo mensal', moeda(r.fixo)]); dl.push(['Total no mês (comissão + fixo)', moeda(r.totalMes), 1]); }
     if (r.lucro != null) dl.push(['Lucro líquido do contrato', moeda(r.lucro) + ' (' + pc(r.margem, 2) + ')']);
     if (r.equivalente != null) dl.push([r.base === 'lucro' ? 'Equivale sobre a venda a' : 'Equivale sobre o lucro a', pc(r.equivalente, 2)]);
     if (!compacto && r.comissaoSobreVenda != null && r.comissaoSobreLucro != null) dl.push(['Comparando no mesmo %', 'venda ' + moeda(r.comissaoSobreVenda) + ' · lucro ' + moeda(r.comissaoSobreLucro)]);
@@ -59,6 +94,7 @@
     K.ETAPAS.forEach(function (e) { if (form.elements['p_' + e.id]) { s.prazos = Object.assign({}, s.prazos); s.prazos[e.id] = fd.get('p_' + e.id); } });
     if (fd.get('base')) s.base = fd.get('base');
     if (form.elements.usarCustos) s.usarCustos = form.elements.usarCustos.checked;
+    lerAvancado(form, s);
     return s;
   }
 
@@ -73,7 +109,7 @@
     s = s || estado(); const r = K.calcular(entrada(s)); const fu = calcFunil(s); const taxa = fu.taxaDisputa;
     const pz = K.prazos(s.dataSessao || hoje(), etapas(s));
     const ch = K.chances(taxa, n(s.contratos));
-    const rt = K.retorno({ taxa: taxa, disputasMes: n(s.disputasMes), custoDisputa: n(s.custoDisputa), custoFixo: n(s.custoFixo), comissaoPorVitoria: r.comissaoLiquida, diasRecebimento: pz ? pz.totalDias : 0, meses: 36 });
+    const rt = K.retorno({ fixoMes: n(s.fixo), taxa: taxa, disputasMes: n(s.disputasMes), custoDisputa: n(s.custoDisputa), custoFixo: n(s.custoFixo), comissaoPorVitoria: r.comissaoLiquida, diasRecebimento: pz ? pz.totalDias : 0, meses: 36 });
     return { r: r, prazo: pz, chances: ch, retorno: rt, funil: fu, taxa: taxa };
   }
   function meses(m) { return m == null ? '—' : m + (m === 1 ? ' mês' : ' meses'); }
@@ -149,6 +185,7 @@
     el.innerHTML = '<div class="cm"><form class="cartao cm-form" id="cm-form" autocomplete="off"><h3>Dados da comissão</h3>' + camposBase(s, false) +
       '<label class="check"><input type="checkbox" name="usarCustos"' + (s.usarCustos ? ' checked' : '') + '> Calcular a margem pelos custos do contrato</label>' +
       '<div class="linha cm-custos"' + (s.usarCustos ? '' : ' hidden') + '>' + campo('Custo dos produtos/serviços (R$)', '<input name="custo" inputmode="decimal" value="' + esc(s.custo) + '">') + campo('Impostos sobre a venda (%)', '<input name="impostos" inputmode="decimal" value="' + esc(s.impostos) + '">') + campo('Outras despesas (%)', '<input name="despesas" inputmode="decimal" value="' + esc(s.despesas) + '">', 'Frete, taxas, financeiro.') + '</div>' +
+      '<details class="cm-avancado"' + (s.usarFaixas || n(s.fixo) || (s.parceiros || []).length ? ' open' : '') + '><summary>Faixas, fixo mensal e parceiros</summary>' + editorAvancado(s, false) + '</details>' +
       '<div class="grupo-botoes"><button type="button" class="btn mini" data-a="janela" title="Abre a Seven Comissão em janela por cima de qualquer tela (Alt+M)">⧉ Abrir em janela flutuante</button><button type="button" class="btn mini fantasma" data-a="limpar">Limpar</button></div></form>' +
       '<section class="cartao cm-res" id="cm-res" aria-live="polite"></section></div>' +
       '<form class="cartao cm-funil-form" id="cm-funil" autocomplete="off">' + formFunil(s) + '</form>' +
@@ -163,6 +200,8 @@
       '<li><b>Retenções:</b> a meta é o que você recebe líquido; a comissão bruta necessária = meta ÷ (1 − retenção).</li>' +
       '<li><b>Equivalência:</b> X% do lucro com margem M% = X × M% da venda. Ex.: 30% do lucro com 12% de margem = 3,6% da venda.</li>' +
       '<li><b>Margem pelos custos:</b> (venda − custo − impostos − despesas) ÷ venda.</li>' +
+      '<li><b>Faixas:</b> sobre o total, a faixa em que o valor cai define o % de tudo; progressiva, cada parte do valor paga o % da sua faixa.</li>' +
+      '<li><b>Parceiros e fixo:</b> o repasse sai da comissão bruta; as retenções incidem sobre a sua parte; o fixo mensal soma ao que você recebe e reduz a comissão necessária para a meta.</li>' +
       '<li><b>Disputas para ganhar:</b> em média 1 ÷ taxa de sucesso; para ter C% de chance de ao menos uma vitória, n = ln(1 − C) ÷ ln(1 − taxa).</li>' +
       '<li><b>Retorno:</b> por mês, vitórias = disputas × taxa; a comissão de cada vitória entra depois do prazo para recebimento; o retorno é o mês em que o acumulado (comissões − custos) fica positivo.</li></ul></details>';
     const form = el.querySelector('#cm-form'), listas = el.querySelector('#cm-listas'), extra = el.querySelector('#cm-extra'), funilF = el.querySelector('#cm-funil');
@@ -175,6 +214,7 @@
     const mudou = function (ev) {
       lerForm(form); lerForm(listas); lerForm(extra);
       if (ev && ev.target && ev.target.name === 'funilModo') { lerForm(funilF); funilF.innerHTML = formFunil(estado()); } else lerForm(funilF);
+      if (ev && ev.target && ev.target.name === 'usarFaixas') { form.querySelector('.cm-faixas').hidden = !estado().usarFaixas; }
       if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; form.elements.margem.disabled = estado().usarCustos; }
       atualizar(); salvarDepois(); avisarMudanca('tela');
     };
@@ -182,6 +222,7 @@
     form.onsubmit = listas.onsubmit = extra.onsubmit = funilF.onsubmit = function (ev) { ev.preventDefault(); };
     el.onclick = function (ev) {
       const b = ev.target.closest('[data-a]'); if (!b) return;
+      if (acaoAvancado(estado(), b.dataset.a, b.dataset.i)) { Dados.salvar(); avisarMudanca('tela'); App.redesenhar(); return; }
       if (b.dataset.a === 'janela') ComissaoFlutuante.abrir();
       if (b.dataset.a === 'usar-disputas') { const i = el.querySelector('#cm-extra [name=disputasMes]'); i.value = String(b.dataset.v).replace('.', ','); i.dispatchEvent(new Event('input', { bubbles: true })); aviso('Disputas por mês: ' + i.value + ' (vindas do funil).'); }
       if (b.dataset.a === 'limpar') { Dados.e.comissao = Object.assign({}, PADRAO); Dados.salvar(); avisarMudanca('tela'); App.redesenhar(); aviso('Campos limpos.'); }
@@ -191,5 +232,5 @@
   // a janela flutuante mudou algo: redesenha a tela se ela estiver aberta
   document.addEventListener('comissao:mudou', function (ev) { if (ev.detail && ev.detail.origem === 'janela' && /^#\/comissao\/?$/.test(location.hash) && document.querySelector('#cm-form')) App.redesenhar(); });
 
-  Telas.comissao = { titulo: 'Seven Comissão', render: render, simulador: render, tabelaCenarios: tabelaCenarios, secoesExtras: secoesExtras, calcFunil: calcFunil, dataBR: dataBR, pc: pc, hoje: hoje, estado: estado, entrada: entrada, camposBase: camposBase, resumo: resumo, lerForm: lerForm, extras: extras, resumoExtra: resumoExtra, salvarDepois: salvarDepois, avisarMudanca: avisarMudanca };
+  Telas.comissao = { titulo: 'Seven Comissão', editorAvancado: editorAvancado, lerAvancado: lerAvancado, acaoAvancado: acaoAvancado, cfgAvancado: cfgAvancado, render: render, simulador: render, tabelaCenarios: tabelaCenarios, secoesExtras: secoesExtras, calcFunil: calcFunil, dataBR: dataBR, pc: pc, hoje: hoje, estado: estado, entrada: entrada, camposBase: camposBase, resumo: resumo, lerForm: lerForm, extras: extras, resumoExtra: resumoExtra, salvarDepois: salvarDepois, avisarMudanca: avisarMudanca };
 })();

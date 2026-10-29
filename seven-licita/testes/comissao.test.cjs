@@ -107,3 +107,33 @@ test('sem custos o caixa necessário é zero (não -0)', () => {
   const r = C.retorno({ taxa: 20, disputasMes: 5, comissaoPorVitoria: 1000, diasRecebimento: 60 });
   assert.ok(Object.is(r.investimentoMaximo, 0));
 });
+
+test('faixas sobre o total e progressivas', () => {
+  const fx = [{ ate: 500000, pct: 3 }, { ate: '', pct: 5 }];
+  perto(C.comissaoFaixas(400000, fx, 'total'), 12000); perto(C.comissaoFaixas(800000, fx, 'total'), 40000);
+  perto(C.comissaoFaixas(800000, fx, 'progressiva'), 15000 + 15000, '3% de 500 mil + 5% de 300 mil');
+  const r = C.calcular({ base: 'venda', venda: 800000, faixas: fx, faixaModo: 'progressiva', alvo: 30000 });
+  perto(r.comissaoLiquida, 30000); perto(r.pctEfetivo, 3.75); assert.strictEqual(r.pctNecessario, null);
+  perto(r.vendaNecessaria, 800000, 'resolve a venda necessária com faixas');
+  const t = C.calcular({ base: 'venda', venda: 400000, faixas: fx, alvo: 20000 });
+  assert.strictEqual(t.faixaAplicada.pct, 3); assert.ok(Math.abs(t.vendaNecessaria - 500000) < 1, 'até 500 mil o máximo é 15 mil (3%); acima, 5% já passa de 20 mil');
+});
+
+test('parceiros e fixo mensal', () => {
+  const r = C.calcular({ base: 'venda', pct: 10, venda: 100000, retencao: 10, parceiros: [{ nome: 'Ana', pct: 20 }, { nome: 'Bia', pct: 10 }], fixo: 2000, alvo: 8300 });
+  perto(r.comissaoBruta, 10000); perto(r.repasse, 3000); perto(r.retida, 700); perto(r.comissaoLiquida, 6300);
+  perto(r.porParceiro[0].valor, 2000); perto(r.totalMes, 8300); assert.strictEqual(r.atingiu, true);
+  perto(r.vendaNecessaria, 100000, '(8300 − 2000) ÷ (10% × 70% × 90%)');
+  const v = C.valorComissao(50000, { base: 'venda', pct: 10, parceiros: [{ nome: 'Ana', pct: 50 }] });
+  perto(v.liquida, 2500); perto(v.repasse, 2500);
+});
+
+test('retorno com mensalidade', () => {
+  const r = C.retorno({ taxa: 10, disputasMes: 10, custoFixo: 3000, comissaoPorVitoria: 5000, fixoMes: 3000, diasRecebimento: 90 });
+  assert.strictEqual(r.mesRetorno, 1, 'a mensalidade cobre o custo fixo desde o 1º mês'); perto(r.lucroMes, 5000);
+});
+
+test('margem necessária com faixas tem precisão de centésimos', () => {
+  const r = C.calcular({ base: 'lucro', venda: 200000, faixas: [{ ate: '', pct: 30 }], alvo: 9000 });
+  perto(r.margemNecessaria, 15);
+});
