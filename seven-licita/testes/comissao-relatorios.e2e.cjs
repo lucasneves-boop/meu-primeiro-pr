@@ -51,8 +51,8 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.selectOption('#rl-f [name=tipo]', 'mes'); await pg.waitForSelector('#rl-f [name=mes]'); await pg.fill('#rl-f [name=mes]', new Date().toISOString().slice(0, 7)); await pg.dispatchEvent('#rl-f [name=mes]', 'change'); await pg.waitForTimeout(150);
     await pg.selectOption('#rl-f [name=cliente]', ''); await pg.waitForTimeout(150); ok(/todos os clientes/.test(await pg.innerText('.cm-relatorio')), 'todos os clientes');
     // impressão e PDF
-    await pg.evaluate(() => { window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; });
-    await pg.click('[data-a=imprimir]'); await pg.waitForTimeout(300); ok(await pg.evaluate(() => window.__imprimiu) === 1, 'imprime o relatório');
+    await pg.evaluate(() => { window.__aba = { closed: false, location: {} }; window.open = () => window.__aba; window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; });
+    await pg.click('[data-a=imprimir]'); await pg.waitForFunction(() => /^blob:/.test(String(window.__aba.location.href || '')), null, { timeout: 60000 }); ok(await pg.evaluate(() => window.__imprimiu) === 0, 'imprimir abre o PDF timbrado numa aba (pronto para imprimir)');
     const [arq] = await Promise.all([pg.waitForEvent('download', { timeout: 60000 }), pg.click('[data-a=pdf]')]);
     const bin = require('fs').readFileSync(await arq.path()); ok(bin.slice(0, 4).toString() === '%PDF' && bin.length > 20000 && /^seven-relatorio-performance-/.test(arq.suggestedFilename()), 'baixa o relatório em PDF (' + Math.round(bin.length / 1024) + ' KB)');
     await pg.emulateMedia({ media: 'print' }); ok(await pg.locator('.lateral').isHidden() && await pg.locator('#rl-f').isHidden() && await pg.locator('.cm-relatorio').isVisible(), 'na impressão só aparece o relatório'); await pg.emulateMedia({ media: 'screen' });
@@ -150,7 +150,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.goto(url + '#/comissao'); await pg.click('a[href="#/comissao/relatorio"]'); await pg.waitForSelector('.cm-rel-sim');
     txt = await pg.innerText('.cm-rel-sim');
     ok(/Simulação de comissão/.test(txt) && /Funil das licitações/.test(txt) && /Prazo para recebimento/.test(txt) && /Quanto você recebe em cada cenário/.test(txt) && /Prazo de retorno/.test(txt), 'relatório completo da simulação com todos os números');
-    await pg.evaluate(() => { window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; }); await pg.click('[data-a=imprimir]'); await pg.waitForTimeout(300); ok(await pg.evaluate(() => window.__imprimiu) === 1, 'imprime a simulação');
+    await pg.evaluate(() => { window.__aba = { closed: false, location: {} }; window.open = () => window.__aba; window.__imprimiu = 0; window.print = () => { window.__imprimiu++; }; }); await pg.click('[data-a=imprimir]'); await pg.waitForFunction(() => /^blob:/.test(String(window.__aba.location.href || '')), null, { timeout: 60000 }); ok(true, 'imprime a simulação no papel timbrado');
     await pg.emulateMedia({ media: 'print' }); await pg.screenshot({ path: path.join(saida, 'comissao-rel-impressao.png'), fullPage: true }); await pg.emulateMedia({ media: 'screen' });
   } catch (e) { console.error(e.message || e); await foto('erro'); process.exit(1); }
   await t.fechar();

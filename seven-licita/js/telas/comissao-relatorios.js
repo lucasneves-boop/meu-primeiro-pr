@@ -35,9 +35,10 @@
     Dados.salvar(); const el = document.querySelector('.cm-relatorio'); if (!el) return;
     const b = document.querySelectorAll('[data-a=imprimir],[data-a=pdf]'); b.forEach(function (x) { x.disabled = true; });
     try {
-      if (!soPdf && !RelatorioPDF.emQuadro()) { window.print(); return; }
-      aviso('Gerando o PDF…'); const r = await RelatorioPDF.gerar(el, arquivo(tipo || tipoRel, cliente));
-      if (r === 'recusado') aviso('Download cancelado.'); else aviso('PDF pronto. Abra o arquivo para imprimir ou enviar ao cliente.');
+      // o PDF sai no papel timbrado da Plataforma 7; "Imprimir" abre esse PDF pronto para imprimir (no claude.ai, baixa)
+      aviso('Gerando o PDF no papel timbrado…'); const nome = arquivo(tipo || tipoRel, cliente);
+      const r = soPdf ? await RelatorioPDF.gerar(el, nome) : await RelatorioPDF.imprimir(el, nome);
+      if (r === 'recusado') aviso('Download cancelado.'); else if (r === 'aberto') aviso('PDF aberto em outra aba: use Imprimir do navegador.'); else aviso('PDF pronto. Abra o arquivo para imprimir ou enviar ao cliente.');
     } catch (e) { aviso('Não foi possível gerar o PDF: ' + (e && e.message || e), 'erro'); }
     finally { b.forEach(function (x) { x.disabled = false; }); }
   }

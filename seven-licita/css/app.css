@@ -2896,3 +2896,45 @@ html.sem-descricoes #desc-tela { display: none !important; }
 .menu p.grupo.fechado .grupo-seta { transform: rotate(-90deg); }
 .menu a.no-grupo-fechado:not(.ativo) { display: none; }
 html.lateral-recolhida .menu a.no-grupo-fechado { display: flex; } html.lateral-recolhida .menu .grupo-seta { display: none; }
+/* ---------- folha A4 do PDF (papel timbrado da Plataforma 7) ---------- */
+.papel-a4-caixa { position: absolute; left: -20000px; top: 0; z-index: -1; pointer-events: none; }
+.papel-a4 { --texto: #1a1a1a; --mudo: #5f5f5f; --superficie: #ffffff; --superficie-2: #f7f4ee; --borda: #e4ddd0; --marca: #7a5a1e; --ouro: #b68d40; --ouro-claro: #f7f0e1;
+  box-sizing: border-box; background: #ffffff !important; color: #1a1a1a; font-size: 11px; line-height: 1.45; padding: 0 2px 8px; margin: 0; zoom: 1 !important; }
+.papel-a4 *, .papel-a4 *::before, .papel-a4 *::after { box-sizing: border-box; animation: none !important; transition: none !important; backdrop-filter: none !important; box-shadow: none !important; text-shadow: none !important; }
+.papel-a4 * { max-width: 100%; overflow-wrap: anywhere; word-break: normal; }
+.papel-a4 .cm-cab-rel, .papel-a4 .cabecalho-seven { border: 0; padding: 0 0 6px; margin: 0 0 10px; display: block; }
+.papel-a4 .cm-cab-rel img, .papel-a4 .cabecalho-seven img, .papel-a4 .cm-gerado { display: none !important; }
+.papel-a4 .cm-cab-rel b, .papel-a4 .cabecalho-seven b { display: block; font-size: 17px; line-height: 1.25; letter-spacing: 0; color: #111; }
+.papel-a4 .cm-cab-rel small, .papel-a4 .cabecalho-seven small { display: block; font-size: 10.5px; letter-spacing: 0; text-transform: none; color: #7a5a1e; font-weight: 600; margin-top: 2px; }
+.papel-a4 .cartao, .papel-a4 section.cartao { background: #fff !important; border: 0 !important; border-radius: 0 !important; padding: 0 !important; margin: 0 0 14px !important; }
+.papel-a4 h3 { font-size: 12.5px; margin: 0 0 8px; padding: 0 0 4px 8px; border-left: 3px solid #b68d40; border-bottom: 1px solid #eee6d6; color: #111; line-height: 1.3; }
+.papel-a4 h3 .btn { display: none; }
+.papel-a4 h4 { font-size: 11px; margin: 8px 0 4px; color: #333; }
+.papel-a4 p, .papel-a4 li { font-size: 10.5px; }
+.papel-a4 .mini, .papel-a4 small { font-size: 9px; }
+.papel-a4 .cm-numeros, .papel-a4 .cm-kpis { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px !important; margin: 0 0 12px !important; }
+.papel-a4 .cm-numeros > div, .papel-a4 .cm-kpis > div { background: #f7f4ee !important; border: 0 !important; border-radius: 6px !important; padding: 7px 9px !important; min-height: 0 !important; }
+.papel-a4 .cm-numeros small, .papel-a4 .cm-kpis small { display: block; font-size: 8.5px; color: #6a6a6a; text-transform: none; letter-spacing: 0; line-height: 1.25; }
+.papel-a4 .cm-numeros b, .papel-a4 .cm-kpis b { display: block; font-size: 13px; line-height: 1.25; color: #111; }
+.papel-a4 .cm-numeros .ok b, .papel-a4 .cm-kpis .ok b { color: #13795b; } .papel-a4 .cm-numeros .ruim b, .papel-a4 .cm-kpis .ruim b { color: #b42318; }
+.papel-a4 .rl-var { display: block; font-size: 8.5px; margin-top: 2px; }
+.papel-a4 .rl-veredito { background: #f7f0e1 !important; border-radius: 6px; padding: 8px 12px; margin: 0 0 12px; }
+.papel-a4 .rl-veredito b { font-size: 13px; }
+.papel-a4 .tabela-rolagem { overflow: visible !important; }
+.papel-a4 table { width: 100% !important; table-layout: auto; border-collapse: collapse; font-size: 9.5px; }
+.papel-a4 th { background: #f7f4ee !important; color: #333; font-size: 8.5px; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; padding: 4px 6px !important; text-align: left; border-bottom: 1px solid #e4ddd0; white-space: normal !important; }
+.papel-a4 td { padding: 4px 6px !important; border-bottom: 1px solid #f0ebe1; white-space: normal !important; vertical-align: top; }
+.papel-a4 td.n, .papel-a4 th.n { text-align: right; white-space: nowrap !important; overflow-wrap: normal; }
+.papel-a4 tr.rl-no-periodo td, .papel-a4 tr.rl-no-periodo th { background: #f7f0e1 !important; }
+.papel-a4 a { color: #1a1a1a !important; text-decoration: none !important; }
+.papel-a4 .tag { border: 1px solid #e4ddd0; background: #fff !important; color: #444 !important; font-size: 8.5px; padding: 0 5px; }
+.papel-a4 svg { max-width: 100%; height: auto; }
+.papel-a4 .rl-dist { grid-template-columns: 1fr !important; }
+.papel-a4 .cl-res div { padding: 4px 0; } .papel-a4 .cl-res dt, .papel-a4 .cl-res dd { font-size: 10px; } .papel-a4 .cl-res div.dest dd { font-size: 14px; }
+.papel-a4 .cm-meta-barra { background: #eee6d6; } .papel-a4 .cm-passos { background: #f7f4ee; border: 0; }
+.papel-a4 .papel-campo { font-weight: 600; }
+.papel-a4 .linha { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
+.papel-a4 td, .papel-a4 th { overflow-wrap: break-word; word-break: normal; hyphens: manual; }
+.papel-a4 td.papel-curta, .papel-a4 th.papel-curta { white-space: nowrap !important; overflow-wrap: normal; }
+.papel-a4, .papel-a4 * { font-variant-numeric: normal !important; font-feature-settings: normal !important; }
+.cm-linha-tempo li { align-content: start; }
