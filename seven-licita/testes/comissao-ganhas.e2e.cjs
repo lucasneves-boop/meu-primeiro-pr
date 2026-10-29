@@ -37,7 +37,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     await pg.selectOption('#cm-gf [name=cliente]', 'cB'); await pg.waitForTimeout(150);
     ok(await pg.locator('[data-a=add-pg][disabled]').count() === 1, 'pagamento só depois da NF');
     await pg.click('[data-a=add-nf]'); await pg.fill('.modal [name=n]', '77'); await pg.fill('.modal [name=v]', '80.000'); await pg.click('.modal [type=submit]'); await pg.waitForTimeout(200);
-    await pg.click('[data-a=add-pg]'); ok(await pg.inputValue('.modal [name=v]') === '80000', 'pagamento sugere o valor em aberto da NF'); await pg.click('.modal [type=submit]'); await pg.waitForTimeout(200);
+    await pg.click('[data-a=add-pg]'); ok(await pg.inputValue('.modal [name=v]') === '80.000,00', 'pagamento sugere o valor em aberto da NF, em reais'); await pg.click('.modal [type=submit]'); await pg.waitForTimeout(200);
     txt = await pg.innerText('.cm-relatorio'); ok(/Recebido\s*R\$\s?80\.000,00/.test(txt) && /A receber\s*R\$\s?0,00/.test(txt), 'NF e pagamento registrados na execução');
     // editar
     await pg.selectOption('#cm-gf [name=cliente]', 'cA'); await pg.waitForTimeout(150);

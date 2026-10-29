@@ -45,12 +45,39 @@
     ns.forEach(function (n) { const v = plurais(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
   }
 
+  // ---------- campos em reais: 350000 → 350.000,00 (ao sair do campo e ao abrir a tela) ----------
+  // É campo de dinheiro quando tem data-moeda, quando o rótulo fala em R$ ou quando a unidade ao lado é R$.
+  function ehMoeda(i) {
+    if (!i || i.tagName !== 'INPUT' || i.readOnly || i.dataset.moeda === 'nao' || !/^(text|search|tel|)$/.test(i.type || '')) return false;
+    if (i.dataset.moeda !== undefined) return true;
+    const rot = i.closest('.campo') && i.closest('.campo').querySelector(':scope > span'); const t = rot ? rot.textContent : '';
+    if (/%|\b(dias?|meses|qtd|quantidade|cnpj|cpf|telefone|whatsapp)\b/i.test(t)) return false;
+    const un = i.nextElementSibling && i.nextElementSibling.tagName === 'SPAN' ? i.nextElementSibling.textContent.trim() : '';
+    if (un && un !== 'R$') return false; // unidade ao lado: %, dias, un.…
+    if (/R\$/.test(t)) return true;
+    // nomes que sempre são valores em reais (cartões, financeiro, propostas, disputas, cotações, loja)
+    if (/^(valor|preco|custo|limite|lance|unitario|saldo|frete|ticket|refUnitaria|referencia|nossoValor|valorVencedor|emp_valor|nf_valor|pg_valor|mens\d|impl\d)/i.test(i.name || '') && !/(pct|perc|qtd|dias)/i.test(i.name || '')) return true;
+    const vizinho = i.nextElementSibling; return !!(vizinho && vizinho.textContent.trim() === 'R$');
+  }
+  function lerBR(v) { let s = String(v || '').trim().replace(/[R$\s]/g, ''); if (!s) return NaN; if (s.indexOf(',') >= 0 || /^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '').replace(',', '.'); return Number(s); }
+  function formatarMoeda(i, avisar) {
+    if (!ehMoeda(i) || !String(i.value).trim()) return;
+    const v = lerBR(i.value); if (!isFinite(v)) return;
+    const f = v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); if (f === i.value) return;
+    i.value = f; if (avisar) { i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+  function moedasEm(raiz) { if (raiz && raiz.querySelectorAll) raiz.querySelectorAll('input').forEach(function (i) { if (document.activeElement !== i) formatarMoeda(i, false); }); }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('focusout', function (ev) { formatarMoeda(ev.target, true); }, true);
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && ev.target && ev.target.tagName === 'INPUT') formatarMoeda(ev.target, true); }, true);
+  }
+
   // aplica as flexões em tudo que é desenhado na tela (telas, janelas, modais e avisos)
   if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
     const fila = new Set(); let agendado = false;
-    const processar = function () { agendado = false; fila.forEach(function (n) { if (n.isConnected) { if (n.nodeType === 3) { if (!n.parentElement || !n.parentElement.closest('textarea,script,style,[contenteditable],pre,code')) { const v = plurais(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } } else pluraisEm(n); } }); fila.clear(); };
+    const processar = function () { agendado = false; fila.forEach(function (n) { if (n.isConnected) { if (n.nodeType === 1) moedasEm(n); if (n.nodeType === 3) { if (!n.parentElement || !n.parentElement.closest('textarea,script,style,[contenteditable],pre,code')) { const v = plurais(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } } else pluraisEm(n); } }); fila.clear(); };
     const obs = new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1 || (n.nodeType === 3 && n.nodeValue.indexOf('(') >= 0)) fila.add(n); }); }); if (fila.size && !agendado) { agendado = true; Promise.resolve().then(processar); } });
-    const iniciar = function () { obs.observe(document.body, { childList: true, subtree: true }); pluraisEm(document.body); };
+    const iniciar = function () { obs.observe(document.body, { childList: true, subtree: true }); pluraisEm(document.body); moedasEm(document.body); };
     if (document.body) iniciar(); else document.addEventListener('DOMContentLoaded', iniciar);
   }
 
@@ -172,6 +199,6 @@
   self.UI = {
     esc: esc, moeda: moeda, num: num, pct: pct, data: data, dataHora: dataHora, cnpj: cnpj, emQuanto: emQuanto, $: $, $$: $$,
     aviso: aviso, modal: modal, confirmar: confirmar, opcoes: opcoes, campo: campo, baixar: baixar, lerArquivoTexto: lerArquivoTexto,
-    plurais: plurais, pluraisEm: pluraisEm, escolherArquivo: escolherArquivo, url: url, abrirArquivo: abrirArquivo, vazio: vazio, abas: abas, progresso: progresso, barras: barras
+    plurais: plurais, pluraisEm: pluraisEm, ehMoeda: ehMoeda, formatarMoeda: formatarMoeda, escolherArquivo: escolherArquivo, url: url, abrirArquivo: abrirArquivo, vazio: vazio, abas: abas, progresso: progresso, barras: barras
   };
 })();

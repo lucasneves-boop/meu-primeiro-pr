@@ -9,8 +9,7 @@
   function atualizarResumo() { if (!jan) return; jan.querySelector('.cmf-res').innerHTML = T().resumo(Comissao.calcular(T().entrada()), true) + T().resumoExtra(T().extras(), true); }
   function desenharCampos() {
     const s = T().estado(); const f = jan.querySelector('.cmf-form');
-    f.innerHTML = T().camposBase(s, true) + (s.usarCustos ? '<p class="mini mudo">Margem calculada pelos custos na tela completa.</p>' : '');
-    if (s.usarCustos) f.elements.margem.disabled = true;
+    f.innerHTML = T().camposBase(s, true) + (s.usarCustos ? '<p class="mini mudo">Margem calculada pelos custos na tela completa. Digite outra para substituir.</p>' : '');
     atualizarResumo();
   }
   const J = Janela.criar({ id: 'comissao-flutuante', classe: 'cmf', titulo: '% Seven Comissão', rotulo: 'Seven Comissão', rota: '#/comissao', rotaTitulo: 'Abrir a Seven Comissão completa', chave: CHAVE, botao: 'botao-comissao', tecla: 'KeyM', deslocamento: 316,
@@ -18,7 +17,7 @@
       jan = api.el;
       corpo.innerHTML = '<form class="cmf-form" autocomplete="off"></form><div class="cmf-res" aria-live="polite"></div><a class="btn mini cmf-todos" href="#/comissao">Ver todos os cenários</a>';
       const f = corpo.querySelector('.cmf-form');
-      f.oninput = f.onchange = function () { T().lerForm(f); atualizarResumo(); T().salvarDepois(); T().avisarMudanca('janela'); };
+      f.oninput = f.onchange = function (ev) { if (ev && ev.target && /^(margem|lucroValor)$/.test(ev.target.name) && T().estado().usarCustos) T().estado().usarCustos = false; T().lerForm(f); atualizarResumo(); T().salvarDepois(); T().avisarMudanca('janela'); };
       f.onsubmit = function (ev) { ev.preventDefault(); };
     },
     aoAbrir: function (api, restaurar) { desenharCampos(); if (!restaurar) { const i = jan.querySelector('[name=pct]'); if (i) i.focus(); } } });

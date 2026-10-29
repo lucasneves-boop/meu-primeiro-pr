@@ -59,8 +59,8 @@
     const nomeBase = { venda: 'Sobre o preço de venda', lucro: 'Sobre o lucro líquido' };
     return '<div class="cm-base" role="radiogroup" aria-label="Base da comissão">' + ['venda', 'lucro'].map(function (b) { return '<label class="cm-pilula"><input type="radio" name="base" value="' + b + '"' + (s.base === b ? ' checked' : '') + '><span>' + (compacto ? (b === 'venda' ? 'Sobre a venda' : 'Sobre o lucro') : nomeBase[b]) + '</span></label>'; }).join('') + '</div>' +
       '<div class="linha">' + campo(compacto ? 'Comissão %' : 'Comissão (%)', '<input name="pct" inputmode="decimal" value="' + esc(s.pct) + '" placeholder="5">') + campo(compacto ? 'Venda (R$)' : 'Valor da venda / contrato (R$)', '<input name="venda" inputmode="decimal" value="' + esc(s.venda) + '" placeholder="200.000,00">') + '</div>' +
-      '<div class="linha">' + campo(compacto ? 'Margem líquida %' : 'Margem de lucro líquido (%)', '<input name="margem" inputmode="decimal" value="' + esc(s.margem) + '" placeholder="12"' + (s.usarCustos ? ' disabled' : '') + '>', compacto ? '' : 'Lucro que sobra da venda depois de custos, impostos e despesas, em % da venda.') +
-      campo(compacto ? 'ou Lucro (R$)' : 'ou o lucro líquido em reais (R$)', '<input name="lucroValor" inputmode="decimal" value="' + esc(lucroDe(s)) + '" placeholder="24.000,00"' + (s.usarCustos ? ' disabled' : '') + '>', compacto ? '' : 'Se souber o lucro em reais, digite aqui: a margem é calculada.').replace('<label class="campo"', '<label class="campo cm-so-lucro"' + (s.base === 'lucro' ? '' : ' hidden')) + '</div>' +
+      '<div class="linha">' + campo(compacto ? 'Margem líquida %' : 'Margem de lucro líquido (%)', '<input name="margem" inputmode="decimal" value="' + esc(s.margem) + '" placeholder="12">', compacto ? '' : (s.usarCustos ? 'Calculada pelos custos do contrato. Digite aqui para informar outra margem.' : 'Lucro que sobra da venda depois de custos, impostos e despesas, em % da venda.')) +
+      campo(compacto ? 'ou Lucro (R$)' : 'ou o lucro líquido em reais (R$)', '<input name="lucroValor" inputmode="decimal" value="' + esc(lucroDe(s)) + '" placeholder="24.000,00">', compacto ? '' : 'Se souber o lucro em reais, digite aqui: a margem é calculada.').replace('<label class="campo"', '<label class="campo cm-so-lucro"' + (s.base === 'lucro' ? '' : ' hidden')) + '</div>' +
       '<div class="linha">' + campo(compacto ? 'Meta (R$)' : 'Quanto quero receber (R$)', '<input name="alvo" inputmode="decimal" value="' + esc(s.alvo) + '" placeholder="15.000,00">', compacto ? '' : 'Sua meta de comissão, já líquida.') +
       campo(compacto ? 'Retenção %' : 'Retenções sobre a comissão (%)', '<input name="retencao" inputmode="decimal" value="' + esc(s.retencao) + '" placeholder="0">', compacto ? '' : 'Impostos ou descontos sobre o que você recebe. A meta é líquida.') + campo(compacto ? 'Licitações' : 'Nº de licitações', '<input name="contratos" inputmode="numeric" value="' + esc(s.contratos) + '" placeholder="1">', compacto ? '' : 'Divide a venda necessária entre os contratos.') + '</div>';
   }
@@ -238,10 +238,12 @@
       if (estado().usarCustos) { const m = entrada().margem; form.elements.margem.value = m == null ? '' : String(Math.round(m * 100) / 100).replace('.', ','); if (form.elements.lucroValor) form.elements.lucroValor.value = lucroDe(estado()); }
     };
     const mudou = function (ev) {
+      // digitar a margem (ou o lucro) desliga o cálculo pela planilha de custos
+      if (ev && ev.target && /^(margem|lucroValor)$/.test(ev.target.name) && estado().usarCustos) { estado().usarCustos = false; if (form.elements.usarCustos) form.elements.usarCustos.checked = false; const cc = form.querySelector('.cm-custos'); if (cc) cc.hidden = true; aviso('Margem digitada: o cálculo pelos custos foi desligado.'); }
       lerForm(form); lerForm(listas); lerForm(extra);
       if (ev && ev.target && ev.target.name === 'funilModo') { lerForm(funilF); funilF.innerHTML = formFunil(estado()); } else lerForm(funilF);
       if (ev && ev.target && ev.target.name === 'usarFaixas') { form.querySelector('.cm-faixas').hidden = !estado().usarFaixas; }
-      if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; form.elements.margem.disabled = estado().usarCustos; if (form.elements.lucroValor) form.elements.lucroValor.disabled = estado().usarCustos; }
+      if (ev && ev.target && ev.target.name === 'usarCustos') { form.querySelector('.cm-custos').hidden = !estado().usarCustos; }
       atualizar(); salvarDepois(); avisarMudanca('tela');
     };
     form.oninput = form.onchange = mudou; listas.oninput = mudou; extra.oninput = extra.onchange = mudou; funilF.oninput = funilF.onchange = mudou;
