@@ -239,6 +239,7 @@
   Telas.mercado = {
     titulo: 'Seven Preços',
     coletar: rodar, // usado pelo estudo de mercado da área Comercial
+    historicoPagamentos: historicoPagamentos, // atraso real dos órgãos (Seven Precificação)
     pesquisar: function (termo) { preTermo = termo || ''; atual = null; location.hash = '#/mercado/analise'; App.redesenhar(); aviso('Termo do item preenchido. Confira estados e período e clique em Gerar relatório.'); },
     render: function (el, sub) {
       sub = sub || 'analise';

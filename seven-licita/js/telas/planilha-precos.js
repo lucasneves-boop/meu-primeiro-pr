@@ -6,10 +6,10 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, num, campo, opcoes, modal, aviso, confirmar, cnpj } = UI;
   const P = Precos;
-  const PARAMS = { regime: 'simples', impostos: 6, comissao: 0, comissaoBase: 'preco', taxaBpo: 0, bpoBase: 'preco', despesasFixas: 5, difal: 0, prazoPagamento: 30, taxaMes: 1.5, custoFinanceiro: '', garantia: 0, outrosPct: 0, margem: 10, margemMinima: 3, freteEntregaTotal: '', rateioFrete: 'valor', casas: 2, engenharia: false };
+  const PARAMS = { regime: 'simples', anexo: 'I', rbt12: '', impostos: 6, icmsVenda: 0, icmsCredito: 0, comissao: 0, comissaoBase: 'preco', despesasFixas: 5, custosParticipacao: '', atrasoOrgao: 0, inflacaoAno: 0, mesesCompra: 0, difal: 0, prazoPagamento: 30, taxaMes: 1.5, custoFinanceiro: '', garantia: 0, outrosPct: 0, margem: 10, margemMinima: 3, freteEntregaTotal: '', rateioFrete: 'valor', casas: 2, engenharia: false };
   const MODOS = [{ v: 'margem', t: 'Margem' }, { v: 'preco', t: 'Preço-alvo' }, { v: 'desconto', t: 'Desconto %' }];
   // Campos que o item pode sobrescrever quando é precificado individualmente.
-  const INDIVIDUAIS = [['impostos', 'Impostos sobre a venda', '%'], ['comissao', 'Comissão', '%'], ['taxaBpo', 'Taxa da Seven (BPO)', '%'], ['despesasFixas', 'Rateio de despesas fixas', '%'], ['difal', 'DIFAL / ICMS não recuperável', '%'], ['prazoPagamento', 'Prazo de pagamento', 'dias'], ['taxaMes', 'Custo do dinheiro (ao mês)', '%'], ['custoFinanceiro', 'Custo financeiro (opcional)', '%'], ['garantia', 'Seguro-garantia', '%'], ['outrosPct', 'Outros sobre o preço', '%'], ['margem', 'Margem líquida desejada', '%']];
+  const INDIVIDUAIS = [['impostos', 'Impostos sobre a venda', '%'], ['icmsVenda', 'ICMS na venda', '%'], ['icmsCredito', 'Crédito de ICMS da compra', '%'], ['comissao', 'Comissão da Seven', '%'], ['despesasFixas', 'Rateio de despesas fixas', '%'], ['difal', 'DIFAL / ICMS não recuperável', '%'], ['prazoPagamento', 'Prazo de pagamento', 'dias'], ['taxaMes', 'Custo do dinheiro (ao mês)', '%'], ['custoFinanceiro', 'Custo financeiro (opcional)', '%'], ['garantia', 'Seguro-garantia', '%'], ['outrosPct', 'Outros sobre o preço', '%'], ['margem', 'Margem líquida desejada', '%']];
   let atual = null; let selecionados = {};
 
   function e() { const d = Dados.e; d.planilhasPreco = d.planilhasPreco || []; return d; }
@@ -54,7 +54,8 @@
         '<div class="grupo-botoes"><button class="btn primario" data-a="nova">+ Nova planilha em branco</button><button class="btn" data-a="da-proposta">Importar itens de uma proposta</button><button class="btn" data-a="colar">Colar itens do Excel</button></div></div>';
       el.onclick = acoesInicio(el); return;
     }
-    atual = x.id; x.params = Object.assign({}, PARAMS, x.params);
+    atual = x.id; x.params = Object.assign({}, PARAMS, x.params); unificar(x);
+    const simples = x.params.regime === 'simples'; const sim = simples ? P.simplesEfetiva(x.params.anexo || 'I', n(x.params.rbt12) || 0) : null;
     const ps = Dados.e.propostas;
     el.innerHTML = '<div class="pp-barra"><select id="pp-sel" aria-label="Planilha">' + opcoes(lista.map(function (p) { return { v: p.id, t: p.nome + ' · ' + p.itens.length + ' item(ns)' }; }), x.id) + '</select>' +
       '<div class="grupo-botoes"><button class="btn" data-a="nova">+ Nova</button><button class="btn" data-a="da-proposta">Importar da proposta</button><button class="btn" data-a="colar">Colar do Excel</button><button class="btn fantasma" data-a="duplicar">Duplicar</button><button class="btn fantasma perigo" data-a="excluir-planilha">Excluir</button></div></div>' +
@@ -64,10 +65,13 @@
       campo('Validade da proposta (dias)', '<input name="validade" inputmode="numeric" value="' + esc(x.validade) + '">') + campo('Prazo de entrega', '<input name="prazoEntrega" value="' + esc(x.prazoEntrega) + '" placeholder="conforme edital">') + campo('Objeto', '<input name="objeto" value="' + esc(x.objeto) + '">') + '</form>' +
       '<form class="cartao pp-glob" id="pp-glob"><header><h3>Parâmetros globais</h3><span class="mini mudo">Valem para todos os itens que não estão no modo individual.</span></header><div class="pp-grade">' +
       campo('Regime tributário', '<select name="regime">' + opcoes(Object.keys(P.REGIMES).map(function (k) { return { v: k, t: P.REGIMES[k].t }; }), x.params.regime) + '</select>') +
-      g('impostos', 'Impostos sobre a venda', '%') + gb('comissao', 'comissaoBase', 'Comissão') + gb('taxaBpo', 'bpoBase', 'Taxa da Seven (BPO)') + g('despesasFixas', 'Despesas fixas', '%') + g('difal', 'DIFAL / ICMS', '%') +
-      g('prazoPagamento', 'Prazo de pagamento', 'dias') + g('taxaMes', 'Custo do dinheiro', '% a.m.') + g('custoFinanceiro', 'Custo financeiro', '%', 'Em branco = pelo prazo') + g('garantia', 'Seguro-garantia', '%') + g('outrosPct', 'Outros sobre o preço', '%') +
-      g('margem', 'Margem desejada', '%') + g('margemMinima', 'Margem mínima aceitável', '%') + g('freteEntregaTotal', 'Frete até o órgão (total)', 'R$') +
-      campo('Rateio do frete', '<select name="rateioFrete">' + opcoes([{ v: 'valor', t: 'Pelo valor de cada item' }, { v: 'quantidade', t: 'Pela quantidade' }], x.params.rateioFrete) + '</select>') +
+      (simples ? campo('Anexo do Simples', '<select name="anexo">' + opcoes(Object.keys(P.SIMPLES).map(function (k) { return { v: k, t: P.SIMPLES[k].t }; }), x.params.anexo || 'I') + '</select>') + g('rbt12', 'Receita bruta 12 meses', 'R$', 'Alíquota efetiva: ' + pc(sim.aliquota) + ' (faixa ' + sim.faixa + ')') : '') +
+      g('impostos', simples ? 'DAS (Simples Nacional)' : 'Impostos federais sobre a venda', '%') + (simples && !sim.acimaSublimite ? '' : g('icmsVenda', 'ICMS na venda', '%') + g('icmsCredito', 'Crédito de ICMS da compra', '%')) +
+      gb('comissao', 'comissaoBase', 'Comissão da Seven') + g('despesasFixas', 'Despesas fixas', '%') + g('difal', 'DIFAL / ICMS não recuperável', '%') +
+      g('prazoPagamento', 'Prazo de pagamento', 'dias') + g('atrasoOrgao', 'Atraso médio do órgão', 'dias', orgaoAtraso(x)) + g('taxaMes', 'Custo do dinheiro', '% a.m.') + g('custoFinanceiro', 'Custo financeiro', '%', 'Em branco = pelo prazo') + g('garantia', 'Seguro-garantia', '%') + g('outrosPct', 'Outros sobre o preço', '%') +
+      g('margem', 'Margem desejada', '%') + g('margemMinima', 'Margem mínima aceitável', '%') + g('freteEntregaTotal', 'Frete até o órgão (total)', 'R$') + g('custosParticipacao', 'Custos de participação (total)', 'R$', 'Amostras, garantia de proposta, viagens; rateados') +
+      g('inflacaoAno', 'Inflação do custo (SRP)', '% a.a.') + g('mesesCompra', 'Meses até a compra média', 'meses') +
+      campo('Rateio de frete e custos', '<select name="rateioFrete">' + opcoes([{ v: 'valor', t: 'Pelo valor' }, { v: 'quantidade', t: 'Pela quantidade' }], x.params.rateioFrete) + '</select>') +
       campo('Casas decimais do preço', '<select name="casas">' + opcoes([0, 1, 2, 3, 4].map(function (c) { return { v: String(c), t: c + ' casa(s)' }; }), String(x.params.casas)) + '</select>') +
       '<label class="check-inline pp-eng"><input type="checkbox" name="engenharia"' + (x.params.engenharia ? ' checked' : '') + '> Obra ou serviço de engenharia (inexequível abaixo de 75%)</label>' +
       '</div></form>' +
@@ -75,12 +79,27 @@
       '<div class="tabela-rolagem"><table class="tabela pp-tab"><thead><tr><th class="pp-chk"><input type="checkbox" id="pp-todos" aria-label="Selecionar todos"></th><th>Item / lote</th><th class="pp-desc">Descrição</th><th>Un.</th><th class="n">Qtd</th><th class="n">Custo unit. (R$)</th><th class="n">Ref. unit. (R$)</th><th>Precificar por</th><th class="n">Preço unit. / total</th><th class="n">Mínimo / margem</th><th>Situação</th><th></th></tr></thead><tbody>' +
       x.itens.map(linha).join('') + '</tbody></table></div>' + (x.itens.length ? '' : '<p class="mudo pp-vazio">Nenhum item. Adicione, importe da proposta ou cole do Excel.</p>') + '</section>' +
       '<div id="pp-res"></div>' +
-      '<div class="grupo-botoes pp-final"><button class="btn primario" data-a="proposta">Gerar proposta completa</button><button class="btn" data-a="aplicar">' + (x.propostaId ? 'Atualizar proposta no Seven Proposta' : 'Criar proposta no Seven Proposta') + '</button><button class="btn" data-a="limites">Mínimos como valor limite na disputa</button><button class="btn fantasma" data-a="formacao">Imprimir planilha de formação de preços</button><button class="btn fantasma" data-a="csv">Exportar (CSV)</button></div>';
+      '<div class="grupo-botoes pp-final"><button class="btn primario" data-a="proposta">Gerar proposta completa</button><button class="btn" data-a="aplicar">' + (x.propostaId ? 'Atualizar proposta no Seven Proposta' : 'Criar proposta no Seven Proposta') + '</button><button class="btn" data-a="limites">Mínimos como valor limite na disputa</button><button class="btn fantasma" data-a="formacao">Imprimir planilha de formação de preços</button><button class="btn fantasma" data-a="exequibilidade">📄 Planilha de exequibilidade (PDF)</button><button class="btn fantasma" data-a="csv">Exportar (CSV)</button></div>';
     function gb(k, kb, r) { return campo(r, '<div class="p-campo p-campo-base"><input name="' + k + '" inputmode="decimal" value="' + esc(br(x.params[k])) + '"><select name="' + kb + '" aria-label="Base de ' + esc(r) + '"><option value="preco"' + (x.params[kb] !== 'lucro' ? ' selected' : '') + '>% do preço</option><option value="lucro"' + (x.params[kb] === 'lucro' ? ' selected' : '') + '>% do lucro líquido</option></select></div>'); }
     function g(k, r, suf, dica) { return campo(r, '<div class="p-campo"><input name="' + k + '" inputmode="decimal" value="' + esc(br(x.params[k])) + '"><span>' + suf + '</span></div>', dica); }
     calcular(el, x);
     ligar(el, x);
   }
+
+  // comissão e taxa da Seven são a mesma coisa: planilhas antigas com as duas viram um campo só
+  function unificar(x) {
+    const um = Telas.precificacao && Telas.precificacao.unificarComissao; if (!um) return;
+    um(x.params); x.itens.forEach(function (i) {
+      if (!i.params || !(n(i.params.taxaBpo) > 0)) return;
+      const tmp = { comissao: i.params.comissao !== '' && i.params.comissao != null ? i.params.comissao : x.params.comissao, comissaoBase: x.params.comissaoBase, taxaBpo: i.params.taxaBpo, bpoBase: x.params.bpoBase };
+      um(tmp); i.params.comissao = tmp.comissao; delete i.params.taxaBpo;
+    });
+  }
+  function historicoOrgao(nome) {
+    const alvo = Nucleo.normalizar(nome || ''); if (!alvo) return null;
+    try { return (Telas.mercado.historicoPagamentos() || []).find(function (o) { return o.media != null && Nucleo.normalizar(o.orgao) === alvo; }) || null; } catch (err) { return null; }
+  }
+  function orgaoAtraso(x) { const h = historicoOrgao(x.orgao); return h ? 'Histórico de ' + h.orgao + ': ' + Math.round(h.media) + ' dia(s)' : 'Some ao prazo; vem do histórico do órgão'; }
 
   function linha(i) {
     return '<tr data-id="' + esc(i.id) + '" class="' + (i.individual ? 'pp-ind' : '') + '"><td class="pp-chk"><input type="checkbox" data-sel' + (selecionados[i.id] ? ' checked' : '') + ' aria-label="Selecionar item ' + esc(i.numero) + '"></td>' +
@@ -102,7 +121,9 @@
       else { set('unitario', '<b>' + moeda(it.unitario) + '</b><small>' + moeda(it.total) + '</small>'); set('minimo', moeda(it.minimo) + '<small class="' + (it.margem < 0 ? 'alerta' : '') + '">margem ' + pc(it.margem) + '</small>'); }
       const pior = it.alertas.some(function (a) { return a.nivel === 'erro'; }) ? 'erro' : it.alertas.some(function (a) { return a.nivel === 'aviso'; }) ? 'aviso' : it.ok ? 'ok' : 'info';
       set('status', '<span class="pp-st pp-st-' + pior + '" title="' + esc(it.alertas.map(function (a) { return a.t; }).join(' · ') || 'Dentro dos parâmetros') + '">' + { ok: '✓ Ok', aviso: '⚠ Atenção', erro: '✕ Revisar', info: '… Falta custo' }[pior] + '</span>');
-      set('alerta', esc(it.alertas.map(function (a) { return a.t; }).join(' · ')));
+      const m = P.mercado(Dados.e.analises, it.descricao);
+      const pos = m && m.n && it.ok ? (it.unitario <= m.mediana ? 'ok' : it.unitario <= m.q3 ? 'alerta' : 'ruim') : '';
+      set('alerta', esc(it.alertas.map(function (a) { return a.t; }).join(' · ')) + (m && m.n ? '<span class="pp-merc p-mercado-pos ' + pos + '" title="' + m.n + ' preço(s) homologado(s) nas pesquisas da Seven Preços">PNCP: mediana ' + moeda(m.mediana) + ' · faixa ' + moeda(m.minimo) + ' a ' + moeda(m.maximo) + '</span>' : ''));
       tr.classList.toggle('pp-erro', pior === 'erro');
     });
     const t = r.totais;
@@ -121,13 +142,19 @@
   function ligar(el, x) {
     el.querySelector('#pp-sel').onchange = function () { atual = this.value; selecionados = {}; App.redesenhar(); };
     const cab = el.querySelector('#pp-cab');
-    cab.oninput = cab.onchange = function () { const fd = new FormData(cab); ['nome', 'orgao', 'modalidade', 'numero', 'propostaId', 'prazoEntrega', 'objeto'].forEach(function (k) { x[k] = fd.get(k) || ''; }); x.validade = Number(fd.get('validade')) || 60; salvar(x); };
+    cab.oninput = cab.onchange = function (ev) {
+      const fd = new FormData(cab); ['nome', 'orgao', 'modalidade', 'numero', 'propostaId', 'prazoEntrega', 'objeto'].forEach(function (k) { x[k] = fd.get(k) || ''; }); x.validade = Number(fd.get('validade')) || 60; salvar(x);
+      // órgão com histórico de pagamento na Seven: o atraso médio entra no custo financeiro
+      if (ev.type === 'change' && ev.target.name === 'orgao') { const h = historicoOrgao(x.orgao); if (h && Math.round(h.media) !== n(x.params.atrasoOrgao)) { x.params.atrasoOrgao = Math.max(0, Math.round(h.media)); salvar(x); aviso('Atraso médio de ' + h.orgao + ': ' + x.params.atrasoOrgao + ' dia(s), aplicado ao custo financeiro.'); App.redesenhar(); } }
+    };
     const glob = el.querySelector('#pp-glob');
     glob.oninput = glob.onchange = function (ev) {
-      if (ev.type === 'change' && ev.target.name === 'regime') { const rg = P.REGIMES[ev.target.value].produto; if (rg.impostos != null) glob.impostos.value = br(rg.impostos); }
+      const nm = ev.target.name; const muda = ev.type === 'change' && (nm === 'regime' || nm === 'anexo' || nm === 'rbt12');
+      if (ev.type === 'change' && nm === 'regime') { const rg = P.REGIMES[ev.target.value].produto; if (rg.impostos != null) glob.impostos.value = br(rg.impostos); }
       const fd = new FormData(glob);
-      Object.keys(PARAMS).forEach(function (k) { if (k === 'engenharia') x.params[k] = !!fd.get(k); else if (k === 'regime' || k === 'rateioFrete' || /Base$/.test(k)) x.params[k] = fd.get(k) || 'preco'; else if (k === 'casas') x.params[k] = Number(fd.get(k)); else x.params[k] = n(fd.get(k)); });
-      salvar(x); calcular(el, x);
+      Object.keys(PARAMS).forEach(function (k) { if (k === 'engenharia') x.params[k] = !!fd.get(k); else if (k === 'regime' || k === 'rateioFrete' || k === 'anexo' || /Base$/.test(k)) { if (fd.has(k)) x.params[k] = fd.get(k) || 'preco'; } else if (!fd.has(k)) { /* campo oculto neste regime: mantém */ } else if (k === 'casas') x.params[k] = Number(fd.get(k)); else x.params[k] = n(fd.get(k)); });
+      if (muda && x.params.regime === 'simples') { x.params.impostos = Math.round(P.simplesEfetiva(x.params.anexo || 'I', n(x.params.rbt12) || 0).aliquota * 100) / 100; if (nm === 'regime') { x.params.icmsVenda = 0; x.params.icmsCredito = 0; } }
+      salvar(x); if (muda) App.redesenhar(); else calcular(el, x);
     };
     const tab = el.querySelector('.pp-tab');
     tab.oninput = function (ev) {
@@ -159,6 +186,7 @@
       if (a === 'limites') return limitesDisputa(x);
       if (a === 'proposta') return imprimirProposta(x);
       if (a === 'formacao') return imprimirFormacao(x);
+      if (a === 'exequibilidade') return exequibilidadePlanilha(x);
       if (a === 'csv') return exportarCSV(x);
     };
   }
@@ -195,7 +223,7 @@
       titulo: 'Precificar individualmente: item ' + (it.numero || ''), largo: true, botao: 'Salvar item',
       corpo: '<div class="pp-ind-grade"><div>' +
         '<label class="check-inline"><input type="checkbox" name="individual"' + (it.individual ? ' checked' : '') + '> Usar parâmetros próprios neste item</label><p class="mini mudo">Campos em branco continuam com o valor global.</p>' +
-        '<fieldset><legend>Custos diretos por unidade</legend><div class="pp-grade">' + campo('Custo de compra', '<div class="p-campo"><input name="custo" inputmode="decimal" value="' + esc(br(it.custo)) + '"><span>R$</span></div>') + campo('Frete de compra', '<div class="p-campo"><input name="freteCompra" inputmode="decimal" value="' + esc(br(it.freteCompra)) + '"><span>R$</span></div>') + campo('Embalagem', '<div class="p-campo"><input name="embalagem" inputmode="decimal" value="' + esc(br(it.embalagem)) + '"><span>R$</span></div>') + campo('Outros custos', '<div class="p-campo"><input name="outrosDiretos" inputmode="decimal" value="' + esc(br(it.outrosDiretos)) + '"><span>R$</span></div>') + '</div></fieldset>' +
+        '<fieldset><legend>Custos diretos por unidade</legend><div class="pp-grade">' + campo('Custo de compra', '<div class="p-campo"><input name="custo" inputmode="decimal" value="' + esc(br(it.custo)) + '"><span>R$</span></div>') + campo('Frete de compra', '<div class="p-campo"><input name="freteCompra" inputmode="decimal" value="' + esc(br(it.freteCompra)) + '"><span>R$</span></div>') + campo('Embalagem', '<div class="p-campo"><input name="embalagem" inputmode="decimal" value="' + esc(br(it.embalagem)) + '"><span>R$</span></div>') + campo('Outros custos', '<div class="p-campo"><input name="outrosDiretos" inputmode="decimal" value="' + esc(br(it.outrosDiretos)) + '"><span>R$</span></div>') + campo('ICMS-ST pago na compra', '<div class="p-campo"><input name="icmsST" inputmode="decimal" value="' + esc(br(it.icmsST)) + '"><span>R$</span></div>') + '</div></fieldset>' +
         '<fieldset><legend>Percentuais deste item</legend><div class="pp-grade">' + INDIVIDUAIS.map(function (c) { return linhaCampo(c[0], c[1], c[2]); }).join('') + '</div></fieldset>' +
         '<fieldset><legend>Para a proposta</legend><div class="pp-grade">' + campo('Marca', '<input name="marca" value="' + esc(it.marca) + '">') + campo('Modelo', '<input name="modelo" value="' + esc(it.modelo) + '">') + campo('Fornecedor', '<input name="fornecedor" value="' + esc(it.fornecedor) + '">') + '</div></fieldset>' +
         '</div><aside class="p-res" id="pp-ind-res"></aside></div>',
@@ -203,18 +231,18 @@
         const prever = function () {
           const fd = new FormData(form); const tmp = JSON.parse(JSON.stringify(x));
           const ti = tmp.itens.find(function (i) { return i.id === it.id; });
-          ['custo', 'freteCompra', 'embalagem', 'outrosDiretos'].forEach(function (k) { ti[k] = n(fd.get(k)); });
+          ['custo', 'freteCompra', 'embalagem', 'outrosDiretos', 'icmsST'].forEach(function (k) { ti[k] = n(fd.get(k)); });
           ti.individual = !!fd.get('individual'); ti.params = {}; INDIVIDUAIS.forEach(function (c) { const v = fd.get('p_' + c[0]); if (v !== '') ti.params[c[0]] = n(v); });
           const res = P.planilha(tmp).itens.find(function (i) { return i.id === it.id; });
           const frete = P.rateioFrete(tmp)[it.id] || 0; const g = Object.assign({}, tmp.params); if (ti.individual) Object.assign(g, ti.params);
-          const r = P.produto(Object.assign({}, g, { custo: ti.custo, freteCompra: ti.freteCompra, embalagem: ti.embalagem, outrosDiretos: ti.outrosDiretos, quantidade: ti.quantidade || 1, freteEntregaTotal: frete, referencia: ti.referencia }));
+          const r = P.produto(Object.assign({}, g, { custo: ti.custo, freteCompra: ti.freteCompra, embalagem: ti.embalagem, outrosDiretos: ti.outrosDiretos, icmsST: ti.icmsST, quantidade: ti.quantidade || 1, freteEntregaTotal: frete, custosParticipacao: P.rateioFrete(tmp, 'custosParticipacao')[it.id] || 0, referencia: ti.referencia, nome: ti.descricao }));
           form.querySelector('#pp-ind-res').innerHTML = (res && res.ok ? '<div class="cartao pp-final-item"><span class="mudo">Preço na planilha (arredondado para cima, ' + P.planilha(tmp).casas + ' casas)</span><b>' + moeda(res.unitario) + '</b><small>total ' + moeda(res.total) + ' · margem final ' + pc(res.margem) + '</small></div>' : '') + (res && res.alertas.length ? '<div class="cartao p-alerta"><ul class="pp-alertas">' + res.alertas.map(function (a) { return '<li>' + esc(a.t) + '</li>'; }).join('') + '</ul></div>' : '') + Telas.precificacao.resultadoProduto(r);
         };
         form.addEventListener('input', prever); prever();
       }
     });
     if (!f) return;
-    ['custo', 'freteCompra', 'embalagem', 'outrosDiretos'].forEach(function (k) { it[k] = n(f.get(k)); });
+    ['custo', 'freteCompra', 'embalagem', 'outrosDiretos', 'icmsST'].forEach(function (k) { it[k] = n(f.get(k)); });
     it.individual = !!f.get('individual'); it.params = {}; INDIVIDUAIS.forEach(function (c) { const v = f.get('p_' + c[0]); if (v !== '') it.params[c[0]] = n(v); });
     it.marca = f.get('marca').trim(); it.modelo = f.get('modelo').trim(); it.fornecedor = f.get('fornecedor').trim();
     salvar(x);
@@ -232,6 +260,18 @@
   }
 
   // ---------- saídas ----------
+  // planilha de exequibilidade de todos os itens precificados, no papel timbrado (mesmo modelo da tela de produto)
+  async function exequibilidadePlanilha(x) {
+    const r = P.planilha(x); const g = x.params; const frete = P.rateioFrete(x); const partic = P.rateioFrete(x, 'custosParticipacao');
+    const itens = r.itens.filter(function (i) { return i.ok; }).map(function (ri) {
+      const it = x.itens.find(function (i) { return i.id === ri.id; }); const prm = Object.assign({}, g);
+      if (it.individual && it.params) Object.keys(it.params).forEach(function (k) { if (it.params[k] !== '' && it.params[k] != null) prm[k] = it.params[k]; });
+      const rp = P.produto(Object.assign(prm, { custo: it.custo, freteCompra: it.freteCompra, embalagem: it.embalagem, outrosDiretos: it.outrosDiretos, icmsST: it.icmsST, quantidade: ri.quantidade || 1, freteEntregaTotal: frete[it.id] || 0, custosParticipacao: partic[it.id] || 0, referencia: it.referencia }));
+      return { nome: 'Item ' + (ri.numero || '') + (ri.lote ? ' (lote ' + ri.lote + ')' : '') + ' · ' + (ri.descricao || ''), qtd: ri.quantidade, unidade: ri.unidade, p: prm, r: rp, preco: ri.unitario, margem: ri.margem };
+    });
+    if (!itens.length) return aviso('Nenhum item precificado: informe o custo.', 'erro');
+    await Telas.precificacao.exequibilidade(itens, { licitacao: [x.modalidade, x.numero, x.orgao].filter(Boolean).join(' · ') });
+  }
   async function aplicarProposta(x) {
     const r = P.planilha(x); const ok = r.itens.filter(function (i) { return i.ok; });
     if (!ok.length) { aviso('Nenhum item precificado: informe o custo.', 'erro'); return; }

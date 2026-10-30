@@ -114,3 +114,41 @@ test('comissão e taxa da Seven sobre o lucro líquido', () => {
   const pl = P2.planilha({ params: { impostos: 10, margem: 10, comissao: 20, comissaoBase: 'lucro' }, itens: [{ id: 'a', custo: 100, quantidade: 2 }] });
   assert.ok(Math.abs(pl.itens[0].margem - 10) < 0.05 && Math.abs(pl.itens[0].sugerido - 100 / 0.775) < 1e-6);
 });
+
+test('precificação especialista: Simples por anexo, ICMS, SRP, regimes, reforma e IN 05', () => {
+  const P2 = require('../js/precos.js'); const perto = (a, b, m) => assert.ok(Math.abs(a - b) < 0.01, (m || '') + ' esperado ' + b + ', veio ' + a);
+  perto(P2.simplesEfetiva('I', 100000).aliquota, 4, 'faixa 1');
+  perto(P2.simplesEfetiva('I', 1000000).aliquota, (1000000 * 0.107 - 22500) / 1000000 * 100, 'faixa 4 do anexo I'); // 8,45%
+  assert.equal(P2.simplesEfetiva('III', 4000000).acimaSublimite, true);
+  // ICMS na venda e crédito da compra
+  const r = P2.produto({ custo: 100, impostos: 5.93, icmsVenda: 18, icmsCredito: 12, margem: 10 });
+  perto(r.custoDireto, 88, 'crédito de 12% reduz o custo'); perto(r.preco, 88 / (1 - 0.0593 - 0.18 - 0.10));
+  // participação e reajuste
+  const r2 = P2.produto({ custo: 100, quantidade: 10, custosParticipacao: 200, inflacaoAno: 12, mesesCompra: 6, margem: 0 });
+  perto(r2.diretos.participacao, 20); perto(r2.diretos.reajuste, 100 * (Math.sqrt(1.12) - 1));
+  // prazo real do órgão entra no custo financeiro
+  assert.ok(P2.produto({ custo: 100, prazoPagamento: 30, atrasoOrgao: 30, taxaMes: 2, margem: 0 }).sobrePreco.financeiro > P2.produto({ custo: 100, prazoPagamento: 30, taxaMes: 2, margem: 0 }).sobrePreco.financeiro);
+  // SRP: comprar 30% encarece (frete total dividido por menos unidades)
+  const v = P2.cenariosVolume({ custo: 100, quantidade: 100, freteEntregaTotal: 1000, margem: 10 }, [0.3, 1]);
+  assert.ok(v[0].preco > v[1].preco && v[0].margemNoPrecoCheio < 10 && Math.abs(v[1].margemNoPrecoCheio - 10) < 1e-6);
+  // regimes ordenados do mais barato ao mais caro, todos com preço
+  const g = P2.compararRegimes({ custo: 100, icmsVenda: 18, icmsCredito: 12, margem: 10 }, { anexo: 'I', rbt12: 500000 });
+  assert.equal(g.length, 3); assert.ok(g.every(x => x.preco > 0)); assert.ok(g[0].preco <= g[1].preco && g[1].preco <= g[2].preco);
+  // reforma: 2026 é teste (sem custo), 2033 sem ICMS
+  const ref = P2.simularReforma({ custo: 100, icmsVenda: 18, margem: 10 }, { pisCofins: 3.65, tributosForaIcms: 2.28 });
+  const a26 = ref.find(x => x.ano === 2026), a33 = ref.find(x => x.ano === 2033);
+  perto(a26.cargaSobrePreco, 2.28 + 3.65 + 18); assert.equal(a33.icmsFracao, 0); assert.ok(a33.credito > 0);
+  // IN 05/2017
+  const en = P2.encargosIN05(2000); perto(en.m21, 2000 * 0.1944); perto(en.m22, (2000 + en.m21) * 0.358); assert.ok(en.pct > 60 && en.pct < 90);
+  const sv = P2.servico({ salario: 2000, detalharEncargos: true, postos: 1, meses: 12 }); perto(sv.posto.encargos, en.total);
+  // planilha rateia custos de participação
+  const pl = P2.planilha({ params: { margem: 0, custosParticipacao: 100 }, itens: [{ id: 'a', custo: 10, quantidade: 10 }, { id: 'b', custo: 10, quantidade: 10 }] });
+  perto(pl.itens[0].custoDireto, 15); perto(pl.itens[1].custoDireto, 15);
+});
+
+test('preço de mercado a partir das análises do PNCP', () => {
+  const P2 = require('../js/precos.js');
+  const an = [{ amostras: [{ descricao: 'PAPEL A4 75G RESMA 500 FOLHAS', unitario: 20 }, { descricao: 'Papel sulfite A4 75 g resma', unitario: 24, referencia: 30 }, { descricao: 'Caneta azul', unitario: 1 }, { descricao: 'papel A4 resma 75g', unitario: 22 }] }];
+  const m = P2.mercado(an, 'Papel A4 75 g resma'); assert.equal(m.n, 3); assert.equal(m.minimo, 20); assert.equal(m.mediana, 22); assert.ok(Math.abs(m.descontoMedio - 0.2) < 1e-9);
+  assert.equal(P2.mercado(an, 'Toner HP').n, 0);
+});
