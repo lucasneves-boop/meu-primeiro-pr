@@ -1,4 +1,4 @@
-// Recursos premium: equalizador/velocidade/timer de sono no player e leitura em voz alta no Seven Leitura.
+// Recursos premium: equalizador/velocidade/timer de sono no player e leitura em voz alta no Seven E-Reader.
 const path = require('path');
 const { abrir } = require('./apoio.cjs');
 (async () => {
@@ -23,7 +23,7 @@ const { abrir } = require('./apoio.cjs');
   ok(a.eq === 'graves' && a.ganhos[0] === 6 && a.vel === 1.25, 'predefinição Graves e velocidade 1,25× salvas');
   await pg.click('.pl-aj [data-sono="15"]'); ok(/15 min/.test(await pg.textContent('.pl-aj')), 'timer de sono ligado');
   await foto('player-ajustes');
-  // Seven Leitura: ouvir
+  // Seven E-Reader: ouvir
   await pg.goto(url + '#/leitor'); await pg.waitForTimeout(300);
   const temVoz = await pg.evaluate(() => !!window.speechSynthesis);
   await pg.evaluate(async () => {
@@ -34,7 +34,7 @@ const { abrir } = require('./apoio.cjs');
   });
   await pg.goto(url + '#/leitor/ler/l1'); await pg.waitForSelector('.kd-leitor [data-k=ouvir]', { timeout: 8000 });
   await pg.click('[data-k=ouvir]'); await pg.waitForSelector('#kd-painel:not([hidden]) h3');
-  ok(/Ouvir o livro/.test(await pg.textContent('#kd-painel')), 'painel Ouvir no Seven Leitura');
+  ok(/Ouvir o livro/.test(await pg.textContent('#kd-painel')), 'painel Ouvir no Seven E-Reader');
   if (temVoz) { await pg.click('[data-k=tts-play]'); await pg.waitForTimeout(300); ok(/Lendo agora|Pausar/.test(await pg.textContent('#kd-painel')), 'leitura em voz alta começou'); await pg.click('[data-k=tts-parar]'); }
   await foto('leitor-ouvir');
   await t.fechar();

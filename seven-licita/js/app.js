@@ -44,7 +44,7 @@
     contratos: 'Envie contratos e termos para assinatura eletrônica, acompanhe quem já assinou e baixe o PDF com o registro das assinaturas.',
     quadros: 'Quadros no estilo Trello para gerir cada licitação, da oportunidade ao pagamento, com checklists, prazos e a execução do contrato.',
     financas: 'Controle financeiro pessoal, da empresa e de clientes: contas, cartões, fluxo de caixa, contas a pagar e a receber e conciliação.',
-    nuvem: 'Guarde arquivos e pastas da Seven e dos clientes, e abra direto no Seven Leitura, no Seven Cadernos ou no Seven Music.',
+    nuvem: 'Guarde arquivos e pastas da Seven e dos clientes, e abra direto no Seven E-Reader, no Seven Cadernos ou no Seven Music.',
     mercado: 'Pesquise o mercado no PNCP: valores homologados, órgãos compradores, vencedores, preço por item e desconto sobre a referência.',
     capag: 'Nota de capacidade de pagamento dos municípios (CAPAG do Tesouro Nacional) para saber quem costuma pagar em dia antes de disputar.',
     academy: 'Cursos, mentorias e dicas da Seven para a equipe e os clientes aprenderem licitação na prática.',
