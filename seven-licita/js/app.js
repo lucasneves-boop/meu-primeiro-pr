@@ -21,7 +21,7 @@
   const DESC = {
     painel: 'Visão geral do dia: avisos novos, propostas, disputas, prazos, documentos vencendo e indicadores, em blocos que você escolhe e organiza.',
     ia: 'Assistente de IA para ler editais, tirar dúvidas da Lei 14.133, redigir peças e resumir documentos, com a sua chave da Anthropic.',
-    loja: 'Vitrine dos serviços da Seven com carrinho, cupons e pedidos. O pedido vira negócio no Seven Comercial e você revisa a mensagem antes de enviar.',
+    loja: 'Vitrine dos serviços da Seven com carrinho, cupons e pedidos. O pedido vira negócio no Seven CRM e você revisa a mensagem antes de enviar.',
     relatorios: 'Relatório de performance para enviar ao cliente: o que avançou em relação ao período anterior, evolução mês a mês, funil e licitações, com a base de todos os clientes.',
     comissao: 'Calcule a comissão sobre o preço de venda ou sobre o lucro líquido, quanto vender em licitação para chegar à sua meta, a margem necessária e todos os cenários.',
     comercial: 'CRM da Seven: contas, funil de vendas, cadência de contatos, propostas com ROI e metas para vender o BPO de licitações.',

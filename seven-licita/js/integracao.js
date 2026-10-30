@@ -1,10 +1,10 @@
 /* Integração entre as ferramentas: o que é lançado numa aparece nas outras, sem digitar de novo.
    Regras puras sobre o estado (Dados.e), idempotentes: podem rodar a cada gravação sem duplicar nada.
-   - Seven Proposta ↔ Seven Pregão: itens e preços da proposta seguem para a disputa.
-   - Resultado (ganha/perdida) vale para proposta, disputa, Seven Sessão e cartão do Seven Processo.
-   - Seven Faturamento → Execução do cartão (NF e empenho) → Seven Financeiro (contas a receber), e pagamentos nos dois sentidos.
+   - Seven Proposta ↔ Seven Disputar: itens e preços da proposta seguem para a disputa.
+   - Resultado (ganha/perdida) vale para proposta, disputa, Seven Acompanhar e cartão do Seven Processo.
+   - Seven NFe → Execução do cartão (NF e empenho) → Seven Financeiro (contas a receber), e pagamentos nos dois sentidos.
    - Prazos de todas as ferramentas aparecem na Seven Agenda.
-   - Contatos: lançamentos ganham o nome do cliente/órgão; clientes herdam e-mail e telefone do Seven Comercial. */
+   - Contatos: lançamentos ganham o nome do cliente/órgão; clientes herdam e-mail e telefone do Seven CRM. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica(); else raiz.Integracao = fabrica();
 })(typeof self !== 'undefined' ? self : this, function () {
@@ -28,7 +28,7 @@
   }
   function cartaoDaProposta(e, p) { return cartoes(e).find(function (x) { return !x.c.arquivado && (x.c.propostaId === p.id || (p.avisoId && x.c.avisoId === p.avisoId && (!x.c.empresaId || x.c.empresaId === p.empresaId))); }); }
 
-  // Seven Proposta → Seven Pregão: descrição, quantidade, preço proposto, custo e referência acompanham a proposta.
+  // Seven Proposta → Seven Disputar: descrição, quantidade, preço proposto, custo e referência acompanham a proposta.
   function syncDisputas(e) {
     let n = 0;
     lista(e.disputas).forEach(function (d) {
@@ -76,7 +76,7 @@
     return n;
   }
 
-  // Seven Faturamento → Execução do cartão: a NF autorizada entra na lista de notas, com o empenho informado nela.
+  // Seven NFe → Execução do cartão: a NF autorizada entra na lista de notas, com o empenho informado nela.
   function syncNotas(e) {
     let n = 0;
     lista(e.notas).forEach(function (nf) {
@@ -144,7 +144,7 @@
       if (l.origem.indexOf('loja:') === 0 && e.loja) { const o = lista(e.loja.pedidos).find(function (z) { return 'loja:' + z.id === l.origem; }); if (o && o.cliente) nome = o.cliente.razao; }
       if (nome) { l.contato = nome; n++; }
     });
-    // Cliente ganho no Seven Comercial: e-mail, telefone e representante vão para o cadastro do cliente.
+    // Cliente ganho no Seven CRM: e-mail, telefone e representante vão para o cadastro do cliente.
     const contas = lista(e.comercial && e.comercial.contas);
     lista(e.empresas).forEach(function (emp) {
       const c = contas.find(function (z) { return dig(z.cnpj) && dig(z.cnpj) === dig(emp.cnpj); }); if (!c) return;

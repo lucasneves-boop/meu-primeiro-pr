@@ -23,14 +23,14 @@
   }
   Dados.antesDeSalvar(aoSalvar);
 
-  // ---------- resultado da licitação (Seven Proposta, Seven Pregão e Seven Sessão usam o mesmo botão) ----------
+  // ---------- resultado da licitação (Seven Proposta, Seven Disputar e Seven Acompanhar usam o mesmo botão) ----------
   function proposta(id) { return (Dados.e.propostas || []).find(function (p) { return p.id === id; }); }
   function botoesResultado(propostaId) {
     const p = proposta(propostaId); if (!p) return '';
     const rot = { ganha: '🏆 Ganha', perdida: 'Não vencida', fracassada: 'Fracassada / deserta' };
     return '<div class="int-res">' + (p.resultado ? '<span class="tag ' + (p.resultado === 'ganha' ? 'verde' : 'vermelho') + '">' + rot[p.resultado] + '</span><button type="button" class="btn mini fantasma" data-resultado="corrigir" data-proposta="' + esc(p.id) + '">Corrigir resultado</button>'
       : '<span class="mini mudo">Resultado:</span><button type="button" class="btn mini primario" data-resultado="ganha" data-proposta="' + esc(p.id) + '">🏆 Ganhamos</button><button type="button" class="btn mini" data-resultado="perdida" data-proposta="' + esc(p.id) + '">Não vencemos</button>') +
-      '</div><p class="mini mudo int-res-dica">O resultado vale para Seven Proposta, Seven Pregão, Seven Sessão e Seven Processo. Ganha: o cartão vai para Contrato com a Execução pronta e a tarefa de assinatura entra na Seven Agenda.</p>';
+      '</div><p class="mini mudo int-res-dica">O resultado vale para Seven Proposta, Seven Disputar, Seven Acompanhar e Seven Processo. Ganha: o cartão vai para Contrato com a Execução pronta e a tarefa de assinatura entra na Seven Agenda.</p>';
   }
   async function marcarResultado(propostaId, r) {
     const p = proposta(propostaId); if (!p) return;
@@ -43,10 +43,10 @@
       if (!f) return;
       extra = { valorFinal: Nucleo.lerNumeroBR(f.get('v')), itens: its.length > 1 ? f.getAll('it') : null };
     } else if (r === 'perdida') {
-      const f = await modal({ titulo: 'Licitação não vencida', botao: 'Confirmar', corpo: '<label class="check"><input type="radio" name="r" value="perdida" checked> Outra empresa venceu</label><label class="check"><input type="radio" name="r" value="fracassada"> Fracassada / deserta</label><p class="mini mudo">O cartão no Seven Processo é arquivado e o Seven Sessão é encerrado.</p>' }); if (!f) return; r = f.get('r');
+      const f = await modal({ titulo: 'Licitação não vencida', botao: 'Confirmar', corpo: '<label class="check"><input type="radio" name="r" value="perdida" checked> Outra empresa venceu</label><label class="check"><input type="radio" name="r" value="fracassada"> Fracassada / deserta</label><p class="mini mudo">O cartão no Seven Processo é arquivado e o Seven Acompanhar é encerrado.</p>' }); if (!f) return; r = f.get('r');
     }
     I.registrarResultado(Dados.e, p.id, r, extra); Dados.salvar();
-    aviso(r === 'ganha' ? 'Parabéns! Cartão no Seven Processo (Contrato), Seven Pregão e Seven Sessão atualizados e tarefa criada na Seven Agenda.' : 'Resultado registrado em todas as ferramentas.');
+    aviso(r === 'ganha' ? 'Parabéns! Cartão no Seven Processo (Contrato), Seven Disputar e Seven Acompanhar atualizados e tarefa criada na Seven Agenda.' : 'Resultado registrado em todas as ferramentas.');
     App.redesenhar();
   }
   document.addEventListener('click', function (ev) { const b = ev.target.closest('[data-resultado]'); if (!b) return; ev.preventDefault(); marcarResultado(b.dataset.proposta, b.dataset.resultado); });

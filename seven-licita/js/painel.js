@@ -9,10 +9,10 @@
   const CATALOGO = [
     { id: 'kpis', t: 'Indicadores do dia', g: 'Licitações', tam: 'g', d: 'Avisos novos, propostas, disputas, prazos, documentos e pendências.' },
     { id: 'sessoes', t: 'Próximas sessões', g: 'Licitações', tam: 'm', d: 'Sessões de avisos favoritos e prazos de proposta.' },
-    { id: 'prazos', t: 'Prazos do pregoeiro', g: 'Licitações', tam: 'm', d: 'Prazos abertos no Seven Sessão, do mais urgente.' },
+    { id: 'prazos', t: 'Prazos do pregoeiro', g: 'Licitações', tam: 'm', d: 'Prazos abertos no Seven Acompanhar, do mais urgente.' },
     { id: 'pendencias', t: 'Pendências do Quadro', g: 'Licitações', tam: 'm', d: 'Cartões e checklists atrasados ou vencendo.' },
     { id: 'propostas', t: 'Propostas por situação', g: 'Licitações', tam: 'm', d: 'Rascunho, pronta, enviada, ganha e não vencida.' },
-    { id: 'monitor', t: 'Licitações acompanhadas', g: 'Licitações', tam: 'p', d: 'Processos no Seven Sessão por situação.' },
+    { id: 'monitor', t: 'Licitações acompanhadas', g: 'Licitações', tam: 'p', d: 'Processos no Seven Acompanhar por situação.' },
     { id: 'quadro', t: 'Funil das licitações', g: 'Licitações', tam: 'm', d: 'Cartões em cada lista do quadro de licitações.' },
     { id: 'documentos', t: 'Documentos de habilitação', g: 'Licitações', tam: 'p', d: 'Válidos, vencendo e vencidos.' },
     { id: 'pncp', t: 'Publicadas hoje no PNCP', g: 'Licitações', tam: 'm', d: 'Licitações do dia por faixa de valor (consulta ao PNCP).' },

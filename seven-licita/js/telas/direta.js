@@ -265,7 +265,7 @@
     const p = preparado || {}; const ct = contatos();
     el.innerHTML = '<div class="rn-home"><div class="rn-home-l"><h1>Chamada direta (1 a 1)</h1><p class="mudo">Videochamada com uma pessoa, sem precisar configurar o servidor da equipe. Crie a chamada, envie o convite e atenda quando ela entrar.</p>' +
       '<form id="dr-nova" class="dr-form">' + campo('Seu nome', '<input name="eu" required maxlength="60" value="' + esc(meuNome()) + '">') +
-      campo('Com quem é a chamada', '<input name="c" list="dr-contatos" maxlength="60" value="' + esc(p.nome || '') + '" placeholder="Nome do convidado">' + '<datalist id="dr-contatos">' + ct.map(function (x) { return '<option value="' + esc(x.nome) + '">' + esc(x.org) + '</option>'; }).join('') + '</datalist>', ct.length ? 'Comece a digitar para escolher um cliente ou contato do Seven Comercial.' : '') +
+      campo('Com quem é a chamada', '<input name="c" list="dr-contatos" maxlength="60" value="' + esc(p.nome || '') + '" placeholder="Nome do convidado">' + '<datalist id="dr-contatos">' + ct.map(function (x) { return '<option value="' + esc(x.nome) + '">' + esc(x.org) + '</option>'; }).join('') + '</datalist>', ct.length ? 'Comece a digitar para escolher um cliente ou contato do Seven CRM.' : '') +
       '<button class="btn primario">📞 Criar chamada</button></form>' +
       '<h3>Recebeu um convite?</h3><form id="dr-cod" class="rn-cod"><input name="c" placeholder="Código ou link da chamada" aria-label="Código da chamada"><button class="btn fantasma">Entrar</button></form>' +
       '<p class="mini mudo">Vídeo e áudio vão direto de um computador ao outro. Se a rede de uma das pontas bloquear, configure um servidor TURN em <a href="#/reuniao">Seven Reunião</a> → Configurações de rede.</p>' +

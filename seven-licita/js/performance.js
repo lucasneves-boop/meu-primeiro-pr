@@ -184,7 +184,7 @@
     cs.forEach(function (c) { if (em(c.criadoEm)) n.oportunidades++; lista(c.atividade).forEach(function (a) { if (em(a.em)) n.movimentos++; }); });
     const props = lista(e.propostas).filter(doCli);
     props.forEach(function (p) { if (em(p.criadaEm)) n.propostasCadastradas++; if (em(p.enviadaEm)) n.propostasEnviadas++; });
-    // sessões: Seven Pregão e Seven Sessão, sem contar duas vezes a mesma licitação
+    // sessões: Seven Disputar e Seven Acompanhar, sem contar duas vezes a mesma licitação
     const vistas = {}; const chave = function (x) { const p = x.propostaId && props.find(function (y) { return y.id === x.propostaId; }); return (x.avisoId || (p && p.avisoId)) || x.id; };
     lista(e.disputas).concat(lista(e.monitor)).filter(doCli).forEach(function (x) { const d = dataDe(x.sessao); if (!d || d > hoje || !em(d)) return; const k = chave(x); if (vistas[k]) return; vistas[k] = 1; n.sessoes++; });
     lista(e.pecas).filter(doCli).forEach(function (p) { if (em(p.criadaEm)) n[GRUPO_PECA[p.modelo] || 'outrasPecas']++; });

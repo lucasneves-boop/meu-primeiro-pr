@@ -12,12 +12,12 @@
 
   function adicionar(a, portal) {
     const emp = Dados.e.empresaAtiva;
-    if (e().monitor.some(function (m) { return m.avisoId === a.id && m.empresaId === emp; })) { aviso('Já está no Seven Sessão.'); return; }
+    if (e().monitor.some(function (m) { return m.avisoId === a.id && m.empresaId === emp; })) { aviso('Já está no Seven Acompanhar.'); return; }
     e().monitor.unshift({
       id: Dados.id('mon'), avisoId: a.id, empresaId: emp, titulo: (a.modalidade || '') + ' ' + (a.numero || '') + ' · ' + (a.orgao || ''), objeto: a.objeto, edital: a.edital, linkOrigem: a.linkOrigem,
       portal: portal || Telas.cadastrar.portalDe(a), situacao: 'Agendada', sessao: a.encerramento, responsavel: e().config.responsavel || '', mensagens: [], prazos: [], recursos: [], criadoEm: new Date().toISOString()
     });
-    Dados.salvar(); aviso('Adicionado ao Seven Sessão.');
+    Dados.salvar(); aviso('Adicionado ao Seven Acompanhar.');
   }
 
   function prazosAbertos() {
@@ -39,7 +39,7 @@
           const dest = m.mensagens.filter(function (x) { return !x.lida && Nucleo.destacar(x.texto, e().palavrasChave).length; }).length;
           const prox = (m.prazos || []).filter(function (p) { return !p.feito; }).sort(function (a, b) { return new Date(a.ate) - new Date(b.ate); })[0];
           return '<tr class="clicavel" data-id="' + m.id + '"><td><b>' + esc(m.titulo) + '</b><br><span class="mini mudo">' + esc(String(m.objeto || '').slice(0, 100)) + '</span></td><td>' + esc(m.portal || '') + '</td><td><span class="tag">' + esc(m.situacao) + '</span></td><td>' + esc(m.responsavel || '—') + '</td><td>' + m.mensagens.length + (dest ? ' <span class="tag vermelho">' + dest + ' destaque(s)</span>' : '') + '</td><td>' + (prox ? esc(prox.tipo) + '<br><small>' + dataHora(prox.ate) + '</small>' : '—') + '</td></tr>';
-        }).join('') + '</tbody></table></div>' : UI.vazio('Nada sendo monitorado', 'Adicione licitações a partir do Seven Edital ou de uma proposta.', '<a class="btn" href="#/encontrar">Ir para o Seven Edital</a>'));
+        }).join('') + '</tbody></table></div>' : UI.vazio('Nada sendo monitorado', 'Adicione licitações a partir do Seven Oportunidade ou de uma proposta.', '<a class="btn" href="#/encontrar">Ir para o Seven Oportunidade</a>'));
     el.onclick = function (ev) {
       const c = ev.target.closest('[data-cat]'); if (c) { filtroCat = c.dataset.cat; App.redesenhar(); return; }
       const tr = ev.target.closest('tr[data-id]'); if (tr) location.hash = '#/monitorar/licitacao/' + tr.dataset.id;
@@ -69,7 +69,7 @@
       '<ul class="chat">' + m.mensagens.slice().reverse().map(function (x, k) { const pk = Nucleo.destacar(x.texto, e().palavrasChave); return '<li class="' + (x.autor === 'Nós' ? 'nos' : '') + (pk.length ? ' destaque pk-borda-' + pk[0].cor : '') + '"><span class="mini mudo">' + esc(x.autor) + ' · ' + dataHora(x.em) + '</span><p>' + destacarHTML(x.texto) + '</p><button class="icone" data-a="prazo-msg" data-k="' + (m.mensagens.length - 1 - k) + '" title="Criar prazo a partir desta mensagem">◷</button></li>'; }).join('') + '</ul></section>' +
       '<section class="cartao"><header><h3>Prazos</h3><button class="btn mini" data-a="novo-prazo">+ Prazo</button></header><ul class="lista-prazos">' + (m.prazos || []).slice().sort(function (a, b) { return new Date(a.ate) - new Date(b.ate); }).map(function (p) { const ms = new Date(p.ate) - Date.now(); return '<li class="' + (p.feito ? 'feito' : ms < 0 ? 'atrasado' : ms < 86400000 ? 'logo' : '') + '" data-p="' + p.id + '"><label class="check"><input type="checkbox" data-a="feito"' + (p.feito ? ' checked' : '') + '> <b>' + esc(p.tipo) + '</b></label> até ' + dataHora(p.ate) + (p.feito ? '' : ' (' + emQuanto(p.ate) + ')') + (p.obs ? '<br><span class="mini">' + esc(p.obs) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
       '<h3>Recursos</h3><p class="mini mudo">Registro da intenção e controle das razões/contrarrazões. A intenção é registrada no portal, dentro do prazo aberto pelo pregoeiro.</p><button class="btn mini" data-a="recurso">+ Registrar intenção / recurso</button><ul class="lista-notas">' + (m.recursos || []).map(function (r) { return '<li><b>' + esc(r.tipo) + '</b> · item/lote ' + esc(r.item || '—') + ' · ' + dataHora(r.em) + '<br>' + esc(r.obs || '') + ' <a href="#/pecas/nova/' + encodeURIComponent('mon:' + m.id) + '">gerar peça</a></li>'; }).join('') + '</ul></section></div>' +
-      '<p><button class="btn fantasma perigo" data-a="remover"Remover do Seven Sessão</button></p>';
+      '<p><button class="btn fantasma perigo" data-a="remover"Remover do Seven Acompanhar</button></p>';
     el.insertAdjacentHTML('beforeend', Telas.oport.secao(Telas.oport.chaveMonitor(m), 'monitorar'));
     el.querySelector('#cab').onchange = function () { const fd = new FormData(this); if (m.responsavel !== fd.get('responsavel')) m.historicoResp = (m.historicoResp || []).concat({ de: m.responsavel, para: fd.get('responsavel'), em: new Date().toISOString() }); m.situacao = fd.get('situacao'); m.responsavel = fd.get('responsavel'); m.sessao = fd.get('sessao'); Dados.salvar(); };
     el.querySelector('#nova-msg').onsubmit = function (ev) { ev.preventDefault(); const fd = new FormData(this); m.mensagens.push({ autor: fd.get('autor'), texto: fd.get('texto'), em: new Date().toISOString(), lida: true }); detectarPrazo(m, fd.get('texto')); Dados.salvar(); App.redesenhar(); };
@@ -96,7 +96,7 @@
         m.recursos = (m.recursos || []).concat({ tipo: f.get('tipo'), item: f.get('item'), obs: f.get('obs'), em: new Date().toISOString() });
         if (f.get('prazo')) m.prazos = (m.prazos || []).concat({ id: Dados.id('pz'), tipo: /concorrente/i.test(f.get('tipo')) ? 'Contrarrazões' : 'Razões de recurso', ate: diasUteis(3), obs: 'Confira no portal a data exata aberta pelo pregoeiro.', feito: false });
       }
-      if (a === 'remover' && await confirmar('Remover', 'Remover do Seven Sessão? Mensagens e prazos registrados serão perdidos.', 'Remover')) { e().monitor = e().monitor.filter(function (x) { return x !== m; }); Dados.salvar(); location.hash = '#/monitorar'; return; }
+      if (a === 'remover' && await confirmar('Remover', 'Remover do Seven Acompanhar? Mensagens e prazos registrados serão perdidos.', 'Remover')) { e().monitor = e().monitor.filter(function (x) { return x !== m; }); Dados.salvar(); location.hash = '#/monitorar'; return; }
       Dados.salvar(); App.redesenhar();
     };
   }
@@ -137,7 +137,7 @@
   }
 
   Telas.monitorar = {
-    titulo: 'Seven Sessão',
+    titulo: 'Seven Acompanhar',
     render: function (el, sub, param) {
       el.innerHTML = abas([{ id: 'licitacoes', t: 'Minhas licitações', n: prazosAbertos().filter(function (x) { return new Date(x.p.ate) - Date.now() < 86400000; }).length }, { id: 'palavras', t: 'Palavras-chave' }], sub === 'palavras' ? 'palavras' : 'licitacoes', 'monitorar') + '<div id="aba"></div>';
       const aba = el.querySelector('#aba');

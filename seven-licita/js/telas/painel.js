@@ -96,7 +96,7 @@
     'com-funil': function (tam) {
       const m = Comercial.metricas((Dados.e.comercial || {}).negocios || [], hoje());
       const it = m.porEtapa.filter(function (x) { return x.id !== 'perdido'; }).map(function (x) { return { r: x.nome, v: x.qtd, rotuloValor: x.qtd + ' · ' + reais(x.valor), dica: x.nome + ': ' + x.qtd + ' negócio(s), ' + moeda(x.valor) }; });
-      return { link: '#/comercial/funil', corpo: it.some(function (x) { return x.v; }) ? G.barras(it, { largura: LARG[tam], linha: 26, titulo: 'Negócios por etapa' }) : '<p class="mudo">Cadastre contas no <a href="#/comercial">Seven Comercial</a> para ver o funil.</p>', tabela: G.tabela(['Etapa', 'Negócios', 'Valor'], m.porEtapa.map(function (x) { return [x.nome, x.qtd, moeda(x.valor)]; })) };
+      return { link: '#/comercial/funil', corpo: it.some(function (x) { return x.v; }) ? G.barras(it, { largura: LARG[tam], linha: 26, titulo: 'Negócios por etapa' }) : '<p class="mudo">Cadastre contas no <a href="#/comercial">Seven CRM</a> para ver o funil.</p>', tabela: G.tabela(['Etapa', 'Negócios', 'Valor'], m.porEtapa.map(function (x) { return [x.nome, x.qtd, moeda(x.valor)]; })) };
     },
     'com-ganhos': function (tam) {
       const ns = ((Dados.e.comercial || {}).negocios || []).filter(function (n) { return n.etapa === 'ganho'; });
@@ -151,7 +151,7 @@
       return { link: '#/semanas', corpo: G.linha(sr.map(function (x) { return 'S' + x.n; }), [{ nome: 'Execução', valores: sr.map(function (x) { return x.pct; }) }], { largura: LARG[tam], max: 100, ref: 85, refRotulo: 'meta 85%', fmt: function (v) { return Math.round(v) + '%'; }, fmtEixo: function (v) { return v + '%'; }, vazio: 'Pontue a primeira semana', titulo: 'Execução semanal' }), tabela: G.tabela(['Semana', 'Execução'], sr.map(function (x) { return ['S' + x.n, x.pct == null ? '—' : Math.round(x.pct) + '%']; })) };
     },
     atalhos: function () {
-      const l = [['#/encontrar', '⌕', 'Seven Edital'], ['#/cadastrar', '✎', 'Seven Proposta'], ['#/disputar', '⚡', 'Seven Pregão'], ['#/monitorar', '◉', 'Seven Sessão'], ['#/comercial', '📈', 'Seven Comercial'], ['#/agenda', '☑', 'Seven Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
+      const l = [['#/encontrar', '⌕', 'Seven Oportunidade'], ['#/cadastrar', '✎', 'Seven Proposta'], ['#/disputar', '⚡', 'Seven Disputar'], ['#/monitorar', '◉', 'Seven Acompanhar'], ['#/comercial', '📈', 'Seven CRM'], ['#/agenda', '☑', 'Seven Agenda'], ['#/ia', '✳', 'Seven IA'], ['#/habilitacao', '✓', 'Certidões']];
       return { corpo: '<nav class="pn-atalhos">' + l.map(function (x) { return '<a href="' + x[0] + '"><span aria-hidden="true">' + x[1] + '</span>' + x[2] + '</a>'; }).join('') + '</nav>' };
     }
   };

@@ -1,4 +1,4 @@
-/* Seven Edital: perfis de busca, catálogo de produtos, meus avisos e banco de licitações (PNCP). */
+/* Seven Oportunidade: perfis de busca, catálogo de produtos, meus avisos e banco de licitações (PNCP). */
 (function () {
   'use strict';
   self.Telas = self.Telas || {};
@@ -572,7 +572,7 @@
   }
 
   Telas.encontrar = {
-    titulo: 'Seven Edital',
+    titulo: 'Seven Oportunidade',
     filtrarOrgao: function (nome) { filtros = Object.assign(avisosPadrao('todos'), { orgao: nome, situacao: 'todas' }); painelAvisosAberto = true; location.hash = '#/encontrar/avisos'; App.redesenhar(); },
     render: function (el, sub) {
       sub = sub || 'avisos';

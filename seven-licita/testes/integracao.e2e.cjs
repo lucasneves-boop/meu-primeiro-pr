@@ -15,11 +15,11 @@ const { abrir } = require('./apoio.cjs');
     Dados.salvar();
   }, hoje);
 
-  // Seven Proposta: cartão no Seven Processo e envio ao Seven Pregão a partir da proposta
+  // Seven Proposta: cartão no Seven Processo e envio ao Seven Disputar a partir da proposta
   await pg.goto(url + '#/cadastrar/proposta/p1'); await pg.waitForSelector('[data-a=quadro]');
   await pg.click('[data-a=quadro]'); await pg.check('[data-a=disputar]'); await pg.click('[data-a=monitorar]');
   ok(await E(() => Dados.e.disputas.length === 1 && Dados.e.monitor.length === 1 && Telas.quadros.todosCartoes().some(x => x.cartao.propostaId === 'p1')), 'proposta vira cartão, disputa e acompanhamento');
-  // preço muda no Seven Proposta → Seven Pregão acompanha, sem perder o valor limite
+  // preço muda no Seven Proposta → Seven Disputar acompanha, sem perder o valor limite
   await E(() => { Dados.e.disputas[0].itens[0].limite = 1.5; Dados.salvar(); });
   await pg.fill('tr[data-k="0"] [data-c=unitario]', '1,95'); await pg.locator('tr[data-k="0"] [data-c=unitario]').dispatchEvent('change');
   ok(await E(() => Dados.e.disputas[0].itens[0].proposta === 1.95 && Dados.e.disputas[0].itens[0].limite === 1.5), 'preço da proposta atualizado na disputa');
@@ -29,10 +29,10 @@ const { abrir } = require('./apoio.cjs');
   await pg.waitForFunction(() => Dados.e.propostas[0].resultado === 'ganha');
   const r = await E(() => { const x = Telas.quadros.todosCartoes().find(y => y.cartao.propostaId === 'p1'); const l = x.quadro.listas.find(y => y.id === x.cartao.lista); return { lista: l.nome, ganha: x.cartao.etiquetas.some(id => x.quadro.etiquetas.find(et => et.id === id).nome === 'Ganha'), valor: x.cartao.execucao && x.cartao.execucao.valor, disputa: Dados.e.disputas[0].resultado, mon: Dados.e.monitor[0].situacao, tarefa: (Dados.e.agenda.tarefas || []).some(t => /Assinar contrato/.test(t.titulo)) }; });
   ok(r.lista === 'Contrato' && r.ganha && r.valor === 240, 'cartão do Seven Processo em Contrato, com etiqueta Ganha e valor do contrato');
-  ok(r.disputa === 'ganha' && r.mon === 'Concluída/homologada' && r.tarefa, 'Seven Pregão, Seven Sessão e Seven Agenda atualizados');
+  ok(r.disputa === 'ganha' && r.mon === 'Concluída/homologada' && r.tarefa, 'Seven Disputar, Seven Acompanhar e Seven Agenda atualizados');
   await foto('int-proposta-ganha');
 
-  // Seven Faturamento: NF da proposta já vem com empenho da Execução; autorizada entra na Execução e no Seven Financeiro
+  // Seven NFe: NF da proposta já vem com empenho da Execução; autorizada entra na Execução e no Seven Financeiro
   await E(() => { const x = Telas.quadros.todosCartoes().find(y => y.cartao.propostaId === 'p1').cartao.execucao; x.empenhos.push({ id: 'em1', numero: '2030NE0007', data: '2030-12-01', valor: 240 }); Dados.salvar(); });
   await pg.goto(url + '#/notas/saida'); await pg.waitForSelector('#conteudo');
   await E(() => { const n = { id: 'nf1', operacao: 'saida', tipo: 'produto', modelo: '55', situacao: 'autorizada', empresaId: 'emp1', propostaId: 'p1', numero: 15, serie: 1, emissao: '2030-12-01', totalNota: 240, duplicatas: [{ numero: '001', vencimento: '2030-12-31', valor: 240 }], destinatario: { nome: 'Prefeitura de Catalão' }, contrato: { empenho: '2030NE0007' }, itens: [], historico: [] }; Dados.e.notas = [n]; Dados.salvar(); });
