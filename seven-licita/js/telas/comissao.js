@@ -76,20 +76,34 @@
   }
   function passosHTML(r, compacto) {
     const ps = K.passos(r, { moeda: moeda, pct: function (v) { return pc(v, 2); } }); if (!ps.length) return '';
-    return '<details class="cm-passos"' + (compacto ? '' : ' open') + '><summary>Como a conta foi feita</summary><ol>' + ps.map(function (p) { return '<li class="' + (p.total ? 'total' : '') + (p.alerta ? ' alerta' : '') + (p.meta ? ' meta' : '') + '"><span>' + esc(p.t) + '</span>' + (p.c ? '<b>' + esc(p.c) + '</b>' : '') + '</li>'; }).join('') + '</ol></details>';
+    return '<details class="cm-passos"' + (compacto ? '' : ' open') + '><summary>Como a conta foi feita</summary><ol>' + ps.map(function (p) { if (p.meta) return '</ol><p class="cm-passos-meta">' + esc(p.t) + '</p><ol>'; return '<li class="' + (p.total ? 'total' : '') + (p.alerta ? ' alerta' : '') + '"><span>' + esc(p.t) + '</span>' + (p.c ? '<b>' + esc(p.c) + '</b>' : '') + '</li>'; }).join('') + '</ol></details>';
+  }
+  // a meta em linguagem simples: uma frase e o caminho do dinheiro, do contrato até o seu bolso
+  function blocoMeta(r, compacto) {
+    if (r.alvo == null) return '';
+    if (r.vendaNecessaria == null) return '<div class="cm-meta-bloco"><p class="cm-meta-frase">🎯 Para saber quanto o cliente precisa ganhar, informe ' + (r.base === 'lucro' && r.margem == null ? 'a margem de lucro do cliente (%) ou o lucro em R$' : 'o percentual da sua comissão') + '.</p></div>';
+    const P = function (v) { return pc(v, 2); };
+    const passos = [['O cliente ganha em licitações', moeda(r.vendaNecessaria), 'valor total dos contratos']];
+    if (r.base === 'lucro' && r.margem) passos.push(['Sobra de lucro para ele', moeda(r.vendaNecessaria * r.margem / 100), P(r.margem) + ' do que vendeu']);
+    passos.push(['Sua comissão', moeda(r.alvoBruto), (r.faixas ? 'pelas faixas' : P(r.pct)) + (r.base === 'lucro' ? ' do lucro' : ' da venda')]);
+    if (Math.abs(r.alvoBruto - r.alvoVariavel) > 0.005) passos.push(['Depois de parceiros e impostos', moeda(r.alvoVariavel), 'o que fica com você']);
+    if (r.fixo) passos.push(['Mais o fixo mensal', moeda(r.fixo), 'mensalidade']);
+    passos.push(['Você recebe', moeda(r.alvo), 'sua meta ✓']);
+    const atual = r.venda != null && r.comissaoLiquida != null ? (r.atingiu ? '<p class="cm-meta-hoje ok">✓ Com a venda informada (' + moeda(r.venda) + ') você já recebe ' + moeda(r.totalMes) + ' e alcança a meta.</p>' : '<p class="cm-meta-hoje">Hoje, com a venda informada (' + moeda(r.venda) + '), você recebe ' + moeda(r.totalMes) + '. Faltam ' + moeda(r.falta) + ' para a meta.</p>') : '';
+    return '<div class="cm-meta-bloco"><p class="cm-meta-frase">🎯 Para você receber <b>' + moeda(r.alvo) + '</b>, o seu cliente precisa ganhar <b>' + moeda(r.vendaNecessaria) + '</b> em licitações.</p>' +
+      (r.contratos > 1 && r.vendaPorContrato != null ? '<p class="mini mudo">São ' + r.contratos + ' licitações de ' + moeda(r.vendaPorContrato) + ' cada, por exemplo.</p>' : '') +
+      (compacto ? '' : '<ol class="cm-caminho">' + passos.map(function (x, i) { return '<li class="' + (i === passos.length - 1 ? 'fim' : '') + '"><small>' + esc(x[0]) + '</small><b>' + x[1] + '</b><span>' + esc(x[2]) + '</span></li>'; }).join('') + '</ol>') + atual + '</div>';
   }
   function resumo(r, compacto) {
     const linhas = [];
     const titulo = r.base === 'venda' ? 'sobre o preço de venda' : 'sobre o lucro líquido';
     linhas.push('<div class="cm-destaque"><small>Você recebe (' + esc(titulo) + ')</small><b>' + moeda(r.comissaoLiquida) + '</b>' + (r.retida ? '<span class="mini mudo">Bruto ' + moeda(r.comissaoBruta) + ' · retido ' + moeda(r.retida) + '</span>' : '') + '</div>');
     if (r.base === 'lucro' && r.prejuizo) linhas.push('<p class="alerta mini">Sem lucro líquido neste contrato: não há comissão sobre o lucro.</p>');
-    if (r.atingiu != null) linhas.push(r.atingiu ? '<p class="cm-ok">✓ Alcança a meta de ' + moeda(r.alvo) + '</p>' : '<p class="cm-falta">Faltam ' + moeda(r.falta) + ' para a meta de ' + moeda(r.alvo) + '</p>');
+    linhas.push(blocoMeta(r, compacto));
     const dl = [];
     if (r.alvo != null) {
-      dl.push(['Quanto vender em licitações para receber a meta', r.vendaNecessaria != null ? moeda(r.vendaNecessaria) : (r.base === 'lucro' ? (r.margem == null ? 'informe a margem (%) ou o lucro (R$)' : 'a margem precisa ser maior que zero') : 'informe o percentual'), 1]);
-      if (r.contratos > 1 && r.vendaPorContrato != null) dl.push(['Por licitação (' + r.contratos + ')', moeda(r.vendaPorContrato)]);
-      if (r.base === 'lucro' && r.margemNecessaria != null) dl.push(['Margem líquida necessária', r.margemImpossivel ? pc(r.margemNecessaria, 1) + ' (inviável)' : pc(r.margemNecessaria, 2), 1]);
-      if (r.pctNecessario != null) dl.push(['Comissão necessária nesta venda', pc(r.pctNecessario, 2)]);
+      if (r.base === 'lucro' && r.margemNecessaria != null) dl.push(['Ou: margem que o cliente precisa ter, mantendo a venda de ' + moeda(r.venda), r.margemImpossivel ? pc(r.margemNecessaria, 1) + ' (inviável)' : pc(r.margemNecessaria, 2), 1]);
+      if (r.pctNecessario != null) dl.push(['Ou: % de comissão que você precisaria cobrar nesta venda', pc(r.pctNecessario, 2)]);
     }
     if (r.faixas) dl.push([r.faixaAplicada ? 'Faixa aplicada' : 'Faixas progressivas', (r.faixaAplicada ? pc(r.faixaAplicada.pct) + (r.faixaAplicada.ate ? ' (até ' + moeda(r.faixaAplicada.ate) + ')' : ' (acima da última faixa)') + ' · ' : '') + 'efetivo ' + pc(r.pctEfetivo, 2)]);
     if (r.repasse) { dl.push(['Repasse a parceiros', moeda(r.repasse)]); if (!compacto) r.porParceiro.forEach(function (x) { dl.push(['· ' + (x.nome || 'Parceiro') + ' (' + pc(x.pct) + ')', moeda(x.valor)]); }); }
@@ -97,7 +111,6 @@
     if (r.lucro != null) dl.push(['Lucro líquido do contrato', moeda(r.lucro) + ' (' + pc(r.margem, 2) + ')']);
     if (r.equivalente != null) dl.push([r.base === 'lucro' ? 'Equivale sobre a venda a' : 'Equivale sobre o lucro a', pc(r.equivalente, 2)]);
     if (!compacto && r.comissaoSobreVenda != null && r.comissaoSobreLucro != null) dl.push(['Comparando no mesmo %', 'venda ' + moeda(r.comissaoSobreVenda) + ' · lucro ' + moeda(r.comissaoSobreLucro)]);
-    if (r.alvo != null && r.vendaNecessaria != null) dl.push(['', '<span class="mini mudo cm-explica">É a soma dos contratos que você precisa ganhar (o valor que o órgão paga ao cliente) para a sua comissão chegar a ' + moeda(r.alvo) + '.</span>']);
     if (dl.length) linhas.push('<dl class="cl-res">' + dl.map(function (l) { return '<div' + (l[2] ? ' class="dest"' : '') + '><dt>' + esc(l[0]) + '</dt><dd>' + l[1] + '</dd></div>'; }).join('') + '</dl>');
     if (r.venda == null && r.alvo == null) linhas.push('<p class="mudo mini">Informe a comissão e o valor da venda, ou a meta que quer receber.</p>');
     linhas.push(passosHTML(r, compacto));

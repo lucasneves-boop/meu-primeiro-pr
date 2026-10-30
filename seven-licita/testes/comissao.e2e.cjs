@@ -11,14 +11,14 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     // sobre a venda: 5% de 200 mil, meta 15 mil
     await pg.fill('#cm-form [name=pct]', '5'); await pg.fill('#cm-form [name=venda]', '200.000,00'); await pg.fill('#cm-form [name=alvo]', '15.000');
     let r = await res(); ok(/R\$\s?10\.000,00/.test(r), 'recebe R$ 10.000 sobre a venda');
-    ok(/Faltam R\$\s?5\.000,00/.test(r) && /Quanto vender em licitações para receber a meta\s*R\$\s?300\.000,00/.test(r) && /Comissão necessária nesta venda\s*7,5%/.test(r), 'falta, venda necessária e % necessário');
+    ok(/Faltam R\$\s?5\.000,00/.test(r) && /precisa ganhar R\$\s?300\.000,00 em licitações/.test(r) && /% de comissão que você precisaria cobrar nesta venda\s*7,5%/.test(r), 'falta, venda necessária e % necessário');
     // sobre o lucro: 30% do lucro com 12% de margem
     await pg.click('#cm-form .cm-pilula:has(input[value=lucro])'); await pg.fill('#cm-form [name=pct]', '30'); await pg.fill('#cm-form [name=margem]', '12'); await pg.fill('#cm-form [name=alvo]', '9.000');
-    r = await res(); ok(/R\$\s?7\.200,00/.test(r) && /Quanto vender em licitações para receber a meta\s*R\$\s?250\.000,00/.test(r), 'sobre o lucro: recebe 7.200 e precisa vender 250 mil');
-    ok(/Margem líquida necessária\s*15%/.test(r) && /Equivale sobre a venda a\s*3,6%/.test(r), 'margem necessária e equivalência');
+    r = await res(); ok(/R\$\s?7\.200,00/.test(r) && /precisa ganhar R\$\s?250\.000,00 em licitações/.test(r), 'sobre o lucro: recebe 7.200 e precisa vender 250 mil');
+    ok(/margem que o cliente precisa ter, mantendo a venda de R\$\s?200\.000,00\s*15%/.test(r) && /Equivale sobre a venda a\s*3,6%/.test(r), 'margem necessária e equivalência');
     // várias licitações e retenção
     await pg.fill('#cm-form [name=contratos]', '5'); await pg.fill('#cm-form [name=retencao]', '10');
-    r = await res(); ok(/Por licitação \(5\)\s*R\$\s?55\.555,56/.test(r), 'divide a venda necessária entre as licitações, com retenção');
+    r = await res(); ok(/São 5 licitações de R\$\s?55\.555,56 cada/.test(r), 'divide a venda necessária entre as licitações, com retenção');
     // margem pelos custos
     await pg.check('#cm-form [name=usarCustos]'); await pg.fill('#cm-form [name=custo]', '150.000'); await pg.fill('#cm-form [name=impostos]', '10'); await pg.fill('#cm-form [name=despesas]', '5');
     ok(await pg.inputValue('#cm-form [name=margem]') === '10', 'margem calculada pelos custos: 10%');
