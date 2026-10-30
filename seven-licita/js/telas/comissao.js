@@ -86,7 +86,7 @@
     if (r.atingiu != null) linhas.push(r.atingiu ? '<p class="cm-ok">✓ Alcança a meta de ' + moeda(r.alvo) + '</p>' : '<p class="cm-falta">Faltam ' + moeda(r.falta) + ' para a meta de ' + moeda(r.alvo) + '</p>');
     const dl = [];
     if (r.alvo != null) {
-      dl.push(['Venda necessária para a meta', r.vendaNecessaria != null ? moeda(r.vendaNecessaria) : (r.base === 'lucro' ? (r.margem == null ? 'informe a margem (%) ou o lucro (R$)' : 'a margem precisa ser maior que zero') : 'informe o percentual'), 1]);
+      dl.push(['Quanto vender em licitações para receber a meta', r.vendaNecessaria != null ? moeda(r.vendaNecessaria) : (r.base === 'lucro' ? (r.margem == null ? 'informe a margem (%) ou o lucro (R$)' : 'a margem precisa ser maior que zero') : 'informe o percentual'), 1]);
       if (r.contratos > 1 && r.vendaPorContrato != null) dl.push(['Por licitação (' + r.contratos + ')', moeda(r.vendaPorContrato)]);
       if (r.base === 'lucro' && r.margemNecessaria != null) dl.push(['Margem líquida necessária', r.margemImpossivel ? pc(r.margemNecessaria, 1) + ' (inviável)' : pc(r.margemNecessaria, 2), 1]);
       if (r.pctNecessario != null) dl.push(['Comissão necessária nesta venda', pc(r.pctNecessario, 2)]);
@@ -97,6 +97,7 @@
     if (r.lucro != null) dl.push(['Lucro líquido do contrato', moeda(r.lucro) + ' (' + pc(r.margem, 2) + ')']);
     if (r.equivalente != null) dl.push([r.base === 'lucro' ? 'Equivale sobre a venda a' : 'Equivale sobre o lucro a', pc(r.equivalente, 2)]);
     if (!compacto && r.comissaoSobreVenda != null && r.comissaoSobreLucro != null) dl.push(['Comparando no mesmo %', 'venda ' + moeda(r.comissaoSobreVenda) + ' · lucro ' + moeda(r.comissaoSobreLucro)]);
+    if (r.alvo != null && r.vendaNecessaria != null) dl.push(['', '<span class="mini mudo cm-explica">É a soma dos contratos que você precisa ganhar (o valor que o órgão paga ao cliente) para a sua comissão chegar a ' + moeda(r.alvo) + '.</span>']);
     if (dl.length) linhas.push('<dl class="cl-res">' + dl.map(function (l) { return '<div' + (l[2] ? ' class="dest"' : '') + '><dt>' + esc(l[0]) + '</dt><dd>' + l[1] + '</dd></div>'; }).join('') + '</dl>');
     if (r.venda == null && r.alvo == null) linhas.push('<p class="mudo mini">Informe a comissão e o valor da venda, ou a meta que quer receber.</p>');
     linhas.push(passosHTML(r, compacto));

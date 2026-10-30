@@ -2972,3 +2972,4 @@ html.lateral-recolhida .menu a.no-grupo-fechado { display: flex; } html.lateral-
 .kpagina.escuro .kraias-sel select { background: rgba(255, 255, 255, .16); color: #fff; border-color: rgba(255, 255, 255, .3); }
 .kpagina.escuro .kraias-sel select option { color: #111; background: #fff; }
 .kpagina.escuro .kraias-sel { color: #fff; }
+.cl-res div:has(.cm-explica) { border-bottom: 0; padding-top: 0; } .cl-res div:has(.cm-explica) dt { display: none; } .cl-res .cm-explica { display: block; text-align: left; }

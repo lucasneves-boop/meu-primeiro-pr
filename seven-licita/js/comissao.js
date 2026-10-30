@@ -112,10 +112,10 @@
       if (r.base === 'lucro' && !r.faixas && r.pct) {
         const lucroNec = r.alvoBruto / (r.pct / 100);
         out.push({ t: 'Lucro líquido necessário = comissão bruta ÷ comissão', c: M(r.alvoBruto) + ' ÷ ' + P(r.pct) + ' = ' + M(lucroNec) });
-        if (r.margem > 0) out.push({ t: 'Venda necessária = lucro necessário ÷ margem', c: M(lucroNec) + ' ÷ ' + P(r.margem) + ' = ' + M(r.vendaNecessaria), total: true });
+        if (r.margem > 0) out.push({ t: 'Quanto vender = lucro necessário ÷ margem', c: M(lucroNec) + ' ÷ ' + P(r.margem) + ' = ' + M(r.vendaNecessaria), total: true });
         if (r.venda && r.margemNecessaria != null) out.push({ t: 'Ou, mantendo a venda de ' + M(r.venda) + ', a margem precisa ser lucro necessário ÷ venda', c: M(lucroNec) + ' ÷ ' + M(r.venda) + ' = ' + P(r.margemNecessaria) + (r.margemImpossivel ? ' (inviável: acima de 100%)' : ''), total: true });
-      } else if (r.base === 'venda' && !r.faixas && r.pct) out.push({ t: 'Venda necessária = comissão bruta ÷ comissão', c: M(r.alvoBruto) + ' ÷ ' + P(r.pct) + ' = ' + M(r.vendaNecessaria), total: true });
-      else if (r.vendaNecessaria != null) out.push({ t: 'Venda necessária (pelas faixas)', c: M(r.vendaNecessaria), total: true });
+      } else if (r.base === 'venda' && !r.faixas && r.pct) out.push({ t: 'Quanto vender = comissão necessária ÷ % de comissão', c: M(r.alvoBruto) + ' ÷ ' + P(r.pct) + ' = ' + M(r.vendaNecessaria), total: true });
+      else if (r.vendaNecessaria != null) out.push({ t: 'Quanto vender (pelas faixas)', c: M(r.vendaNecessaria), total: true });
       if (r.contratos > 1 && r.vendaPorContrato != null) out.push({ t: 'Dividida em ' + r.contratos + ' licitações', c: M(r.vendaPorContrato) + ' cada' });
     }
     return out;
