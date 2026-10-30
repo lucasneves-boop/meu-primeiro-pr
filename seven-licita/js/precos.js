@@ -39,7 +39,7 @@
   // CBS e IBS por ano em % do preço (alíquotas de referência ESTIMADAS: confirme as fixadas pelo Senado/TCU),
   // fração do ICMS/ISS que ainda vale e se PIS/COFINS ainda existem. Em 2026 CBS 0,9% e IBS 0,1% são teste (compensáveis).
   const REFORMA = {
-    2026: { cbs: 0.9, ibs: 0.1, icms: 1, pisCofins: 1, teste: true }, 2027: { cbs: 8.8, ibs: 0.1, icms: 1, pisCofins: 0 }, 2028: { cbs: 8.8, ibs: 0.1, icms: 1, pisCofins: 0 },
+    2026: { cbs: 0.9, ibs: 0.1, icms: 1, pisCofins: 1, teste: true }, 2027: { cbs: 8.7, ibs: 0.1, icms: 1, pisCofins: 0 }, 2028: { cbs: 8.7, ibs: 0.1, icms: 1, pisCofins: 0 },
     2029: { cbs: 8.8, ibs: 1.77, icms: 0.9, pisCofins: 0 }, 2030: { cbs: 8.8, ibs: 3.54, icms: 0.8, pisCofins: 0 }, 2031: { cbs: 8.8, ibs: 5.31, icms: 0.7, pisCofins: 0 },
     2032: { cbs: 8.8, ibs: 7.08, icms: 0.6, pisCofins: 0 }, 2033: { cbs: 8.8, ibs: 17.7, icms: 0, pisCofins: 0 }
   };

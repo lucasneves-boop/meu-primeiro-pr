@@ -56,15 +56,65 @@
         if (inter != null && nf.destinatario && !nf.destinatario.contribuinte && interna > inter) out.difal = r2(out.baseIcms * (interna - inter) / 100); // EC 87/2015
       }
     }
-    if (emit.regime === 'presumido') { out.pis = r2(liquido * 0.0065); out.cofins = r2(liquido * 0.03); }
-    if (emit.regime === 'real') { out.pis = r2(liquido * 0.0165); out.cofins = r2(liquido * 0.076); }
+    const a = anoNota(nf);
+    if (a < 2027) {
+      if (emit.regime === 'presumido') { out.pis = r2(liquido * 0.0065); out.cofins = r2(liquido * 0.03); }
+      if (emit.regime === 'real') { out.pis = r2(liquido * 0.0165); out.cofins = r2(liquido * 0.076); }
+    } else if (!servico && out.ipi && !it.ipiZfm) { out.ipiZerado = out.ipi; out.ipi = 0; } // EC 132/2023: IPI zerado a partir de 2027 (exceto Zona Franca de Manaus)
+    out.rtc = ibsCbsItem(it, out, emit, nf);
     return out;
+  }
+
+  // ---------- reforma tributária do consumo (EC 132/2023 e LC 214/2025) ----------
+  // Alíquotas em % do valor por ano de emissão. 2026 é o ano de teste (CBS 0,9% e IBS 0,1%, sem recolhimento para quem cumpre as
+  // obrigações acessórias). De 2027 em diante os números são ESTIMATIVAS das alíquotas de referência até a fixação oficial;
+  // a alíquota de cada estado e município pode ser informada nas configurações fiscais.
+  const RTC = {
+    2026: { cbs: 0.9, ibsUF: 0.1, ibsMun: 0, teste: true, icmsIss: 1 },
+    2027: { cbs: 8.7, ibsUF: 0.05, ibsMun: 0.05, icmsIss: 1 }, 2028: { cbs: 8.7, ibsUF: 0.05, ibsMun: 0.05, icmsIss: 1 },
+    2029: { cbs: 8.8, ibsUF: 1.24, ibsMun: 0.53, icmsIss: 0.9 }, 2030: { cbs: 8.8, ibsUF: 2.48, ibsMun: 1.06, icmsIss: 0.8 },
+    2031: { cbs: 8.8, ibsUF: 3.72, ibsMun: 1.59, icmsIss: 0.7 }, 2032: { cbs: 8.8, ibsUF: 4.96, ibsMun: 2.12, icmsIss: 0.6 },
+    2033: { cbs: 8.8, ibsUF: 12.39, ibsMun: 5.31, icmsIss: 0 }
+  };
+  const TIPOS_ENTE_GOV = [{ v: '1', t: 'União' }, { v: '2', t: 'Estado' }, { v: '3', t: 'Distrito Federal' }, { v: '4', t: 'Município' }, { v: '5', t: 'Consórcio público' }];
+  function anoNota(nf) { return Number(String((nf && nf.emissao) || '').slice(0, 4)) || new Date().getFullYear(); }
+  function rtcAno(a) { return a < 2026 ? null : RTC[Math.min(a, 2033)]; }
+  // Situação do emitente no ano: 'teste' (2026, regime normal), 'regular' (destaca e recolhe), 'simples' (IBS/CBS dentro do DAS, sem destaque)
+  function situacaoRtc(emit, a) {
+    if (a < 2026) return 'antes';
+    if (emit.regime === 'simples') return a >= 2027 && emit.ibsCbsRegular ? 'regular' : 'simples';
+    return a === 2026 ? 'teste' : 'regular';
+  }
+  function ibsCbsItem(it, x, emit, nf) {
+    const a = anoNota(nf); const r = rtcAno(a); if (!r) return null;
+    const sit = situacaoRtc(emit, a); const g = nf.ibsCbs || {}; const cg = nf.compraGov || {};
+    const num = function (v, padrao) { return v === '' || v == null || !isFinite(Number(v)) ? padrao : Number(v); };
+    // base: valor do item sem ICMS, ISS, PIS e COFINS (esses tributos saem da base do IBS/CBS)
+    const base = r2(Math.max(0, x.liquido - x.icms - x.iss - x.pis - x.cofins));
+    const red = Math.min(100, Math.max(0, num(it.pRedAliq != null && it.pRedAliq !== '' ? it.pRedAliq : g.pRedAliq, 0))); // redução de alíquota (ex.: 60% em saúde/educação)
+    const redGov = a >= 2027 && (nf.destinatario || {}).orgaoPublico ? Math.min(100, Math.max(0, num(cg.pRedutor, 0))) : 0; // compras governamentais
+    const fator = (1 - red / 100) * (1 - redGov / 100);
+    const pCBS = r2(num(emit.aliqCbs, r.cbs) * fator * 100) / 100, pIBSUF = r2(num(emit.aliqIbsUF, r.ibsUF) * fator * 100) / 100, pIBSMun = r2(num(emit.aliqIbsMun, r.ibsMun) * fator * 100) / 100;
+    const destaca = sit === 'teste' || sit === 'regular';
+    const v = function (p) { return destaca ? r2(base * p / 100) : 0; };
+    return { ano: a, situacao: sit, teste: !!r.teste, destaca: destaca, cst: String(it.cstIbsCbs || g.cst || '000'), cClassTrib: String(it.cClassTrib || g.cClassTrib || '000001'), base: destaca ? base : 0, pRedAliq: red, pRedutor: redGov,
+      pCBS: pCBS, pIBSUF: pIBSUF, pIBSMun: pIBSMun, cbs: v(pCBS), ibsUF: v(pIBSUF), ibsMun: v(pIBSMun), ibs: r2(v(pIBSUF) + v(pIBSMun)), icmsIssFracao: r.icmsIss };
+  }
+  // Calendário resumido da transição, para a tela de ajuda.
+  function calendarioRtc() {
+    return [
+      { quando: '2026', t: 'Ano de teste', d: 'CBS 0,9% e IBS 0,1% destacados na NF-e e na NFS-e do regime normal (Lucro Presumido e Real), sem recolhimento para quem cumpre as obrigações acessórias. Destaque obrigatório para fatos geradores desde 03/08/2026 (Ato Conjunto RFB/CGIBS nº 4/2026); a rejeição automática da nota sem o grupo IBS/CBS (1115) segue suspensa. Simples Nacional não destaca.' },
+      { quando: 'Set/2026', t: 'Escolha do Simples para 2027', d: 'Optantes do Simples escolheram, de 1º a 30/09/2026, se recolhem IBS/CBS no DAS ou no regime regular (com destaque e crédito integral para o cliente) no 1º semestre de 2027.' },
+      { quando: '2027', t: 'CBS entra de vez', d: 'PIS e COFINS deixam de existir; CBS cheia (alíquota de referência estimada em 8,7% a 8,8%); IBS 0,1%; IPI zerado, exceto produtos da Zona Franca de Manaus; começa o Imposto Seletivo. Compras governamentais: a nota passa a informar o ente comprador e o redutor de alíquota.' },
+      { quando: '2029–2032', t: 'ICMS e ISS diminuem', d: 'ICMS e ISS caem para 90%, 80%, 70% e 60% e o IBS sobe na mesma proporção.' },
+      { quando: '2033', t: 'Fim da transição', d: 'ICMS e ISS extintos; ficam IBS, CBS e Imposto Seletivo.' }
+    ];
   }
   // Retenções na fonte feitas por órgão público federal (IN RFB 1.234/2012). Optante do Simples fica dispensado com declaração.
   const RETENCOES = { bens: { ir: 1.2, csll: 1, cofins: 3, pis: 0.65 }, servicos: { ir: 4.8, csll: 1, cofins: 3, pis: 0.65 }, combustiveis: { ir: 0.24, csll: 1, cofins: 3, pis: 0.65 } };
   function retencoes(total, nf, emit) {
     const o = { ir: 0, csll: 0, cofins: 0, pis: 0, iss: 0, inss: 0, total: 0, dispensa: false };
-    if (nf.retencaoFederal) { if (emit.regime === 'simples') o.dispensa = true; else { const t = RETENCOES[nf.naturezaRetencao || ((nf.tipo === 'servico') ? 'servicos' : 'bens')]; ['ir', 'csll', 'cofins', 'pis'].forEach(function (k) { o[k] = r2(total * t[k] / 100); }); } }
+    if (nf.retencaoFederal) { if (emit.regime === 'simples') o.dispensa = true; else { const t = RETENCOES[nf.naturezaRetencao || ((nf.tipo === 'servico') ? 'servicos' : 'bens')]; (anoNota(nf) >= 2027 ? ['ir', 'csll'] : ['ir', 'csll', 'cofins', 'pis']).forEach(function (k) { o[k] = r2(total * t[k] / 100); }); } } // PIS/COFINS extintos em 2027
     if (nf.tipo === 'servico' && nf.issRetido) o.iss = -1; // marcado; valor somado abaixo
     if (nf.tipo === 'servico' && nf.inssRetido) o.inss = r2(total * 0.11); // cessão de mão de obra (Lei 8.212/91, art. 31)
     return o;
@@ -73,6 +123,10 @@
     const itens = (nf.itens || []).map(function (it) { return calcularItem(it, emit, nf); });
     const soma = function (k) { return r2(itens.reduce(function (s, x) { return s + x[k]; }, 0)); };
     const t = { produtos: soma('bruto'), desconto: soma('desconto'), baseIcms: soma('baseIcms'), icms: soma('icms'), ipi: soma('ipi'), pis: soma('pis'), cofins: soma('cofins'), iss: soma('iss'), difal: soma('difal'), frete: r2(nf.frete), seguro: r2(nf.seguro), outras: r2(nf.outras) };
+    const somaRtc = function (k) { return r2(itens.reduce(function (s, x) { return s + (x.rtc ? x.rtc[k] : 0); }, 0)); };
+    const r0 = itens[0] && itens[0].rtc;
+    t.rtc = r0 ? { ano: r0.ano, situacao: r0.situacao, teste: r0.teste, destaca: r0.destaca, base: somaRtc('base'), cbs: somaRtc('cbs'), ibsUF: somaRtc('ibsUF'), ibsMun: somaRtc('ibsMun'), ibs: somaRtc('ibs'), pCBS: r0.pCBS, pIBS: r2(r0.pIBSUF + r0.pIBSMun) } : null;
+    if (t.rtc) t.rtc.totalComTributos = r2(t.produtos - t.desconto + t.ipi + t.frete + t.seguro + t.outras + (t.rtc.teste ? 0 : t.rtc.cbs + t.rtc.ibs)); // vNFTot: em 2026 o teste não soma ao valor cobrado
     t.total = r2(t.produtos - t.desconto + t.ipi + t.frete + t.seguro + t.outras);
     const ret = retencoes(r2(t.produtos - t.desconto), nf, emit); if (ret.iss === -1) ret.iss = t.iss;
     ret.total = r2(ret.ir + ret.csll + ret.cofins + ret.pis + ret.iss + ret.inss); t.retencoes = ret; t.liquido = r2(t.total - ret.total);
@@ -91,6 +145,7 @@
     const c = nf.contrato || {};
     const ref = [c.empenho && 'Nota de empenho nº ' + c.empenho, c.processo && 'Processo nº ' + c.processo, c.licitacao && c.licitacao, c.contrato && 'Contrato/ATA nº ' + c.contrato].filter(Boolean); if (ref.length) L.push(ref.join(' · ') + '.');
     if (totais && totais.retencoes && totais.retencoes.dispensa) L.push('Optante pelo Simples Nacional: dispensa de retenção de tributos federais (IN RFB 1.234/2012, art. 4º, XI).');
+    if (totais && totais.rtc && totais.rtc.teste && totais.rtc.destaca) L.push('IBS e CBS destacados em caráter de teste (ano de 2026, LC 214/2025), sem recolhimento.');
     if (totais && totais.tributosAprox) L.push('Valor aproximado dos tributos: R$ ' + totais.tributosAprox.toFixed(2).replace('.', ',') + ' (Lei 12.741/2012).');
     if (nf.dadosBancarios) L.push('Dados para pagamento: ' + nf.dadosBancarios);
     return L.join(' ');
@@ -123,6 +178,18 @@
     const tot = calcular(nf, emit || {}).totais;
     const dup = (nf.duplicatas || []).reduce(function (s, x) { return s + Number(x.valor || 0); }, 0);
     if ((nf.duplicatas || []).length && Math.abs(r2(dup) - tot.total) > 0.01) err('Soma das duplicatas (' + r2(dup).toFixed(2) + ') diferente do total da nota (' + tot.total.toFixed(2) + ').');
+    // reforma tributária
+    const a = anoNota(nf); const rt = tot.rtc;
+    if (rt && rt.destaca) {
+      const g = nf.ibsCbs || {}; const cst = String(g.cst || '000'), ct = String(g.cClassTrib || '000001');
+      if (!/^\d{3}$/.test(cst)) err('CST do IBS/CBS deve ter 3 números (ex.: 000 = tributação integral).');
+      if (!/^\d{6}$/.test(ct)) err('cClassTrib deve ter 6 números (ex.: 000001 = tributação integral).');
+      if (a === 2026 && nf.emissao >= '2026-08-03') al('Desde 03/08/2026 o destaque de IBS e CBS é obrigatório no regime normal (valores de teste, sem recolhimento). Confira se o seu emissor envia o grupo IBS/CBS.');
+    }
+    if (rt && rt.situacao === 'simples' && a >= 2027) al('Simples Nacional sem opção pelo regime regular: IBS/CBS vão no DAS e o cliente só aproveita crédito do valor recolhido no Simples.');
+    if (a >= 2027 && d.orgaoPublico && !(nf.compraGov && nf.compraGov.tpEnteGov)) al('Venda a órgão público a partir de 2027: informe o tipo de ente comprador e o redutor de alíquota (compras governamentais).');
+    if (a >= 2027 && (nf.itens || []).some(function (it) { return Number(it.aliqIpi) > 0 && !it.ipiZfm; })) al('A partir de 2027 o IPI fica zerado (exceto produtos da Zona Franca de Manaus): o IPI informado não foi somado.');
+    if (nf.tipo === 'servico' && a >= 2026) al('NFS-e: confira se o município do prestador emite no padrão nacional (Emissor Nacional/ADN); optantes do Simples já devem usar o padrão nacional.');
     if (tot.difal > 0) al('Há DIFAL estimado de R$ ' + tot.difal.toFixed(2) + ' (venda interestadual a não contribuinte). Recolha por GNRE antes da saída ou conforme a UF de destino.');
     return E;
   }
@@ -152,7 +219,9 @@
     const imposto = function (det, grupo) { const g = un(det, 'imposto.' + grupo); if (!g) return null; const k = Object.keys(g).filter(function (x) { return x !== '_'; })[0]; return k ? g[k][0] : null; };
     const itens = (nfe.det || []).map(function (det) {
       const p = un(det, 'prod'); const icms = imposto(det, 'ICMS'); const ipiT = un(det, 'imposto.IPI.IPITrib');
-      return { codigo: txt(p, 'cProd'), descricao: txt(p, 'xProd'), ncm: txt(p, 'NCM'), cfop: txt(p, 'CFOP'), unidade: txt(p, 'uCom'), quantidade: num(p, 'qCom'), valorUnitario: num(p, 'vUnCom'), valorTotal: num(p, 'vProd'), desconto: num(p, 'vDesc'), cst: icms ? (txt(icms, 'CST') || txt(icms, 'CSOSN')) : '', origem: icms ? txt(icms, 'orig') : '', aliqIcms: icms ? num(icms, 'pICMS') : 0, valorIcms: icms ? num(icms, 'vICMS') : 0, aliqIpi: ipiT ? num(ipiT, 'pIPI') : 0, valorIpi: ipiT ? num(ipiT, 'vIPI') : 0 };
+      const ib = un(det, 'imposto.IBSCBS'); const gib = ib && un(ib, 'gIBSCBS');
+      const rtc = ib ? { cstIbsCbs: txt(ib, 'CST'), cClassTrib: txt(ib, 'cClassTrib'), baseIbsCbs: gib ? num(gib, 'vBC') : 0, valorIbs: gib ? num(gib, 'vIBS') : 0, valorCbs: gib ? num(gib, 'gCBS.vCBS') : 0, aliqCbs: gib ? num(gib, 'gCBS.pCBS') : 0, aliqIbsUF: gib ? num(gib, 'gIBSUF.pIBSUF') : 0, aliqIbsMun: gib ? num(gib, 'gIBSMun.pIBSMun') : 0 } : {};
+      return Object.assign(rtc, { codigo: txt(p, 'cProd'), descricao: txt(p, 'xProd'), ncm: txt(p, 'NCM'), cfop: txt(p, 'CFOP'), unidade: txt(p, 'uCom'), quantidade: num(p, 'qCom'), valorUnitario: num(p, 'vUnCom'), valorTotal: num(p, 'vProd'), desconto: num(p, 'vDesc'), cst: icms ? (txt(icms, 'CST') || txt(icms, 'CSOSN')) : '', origem: icms ? txt(icms, 'orig') : '', aliqIcms: icms ? num(icms, 'pICMS') : 0, valorIcms: icms ? num(icms, 'vICMS') : 0, aliqIpi: ipiT ? num(ipiT, 'pIPI') : 0, valorIpi: ipiT ? num(ipiT, 'vIPI') : 0 });
     });
     const chave = (nfe._.Id || '').replace(/^NFe/, '') || (prot ? txt(prot, 'chNFe') : '');
     const dups = (un(nfe, 'cobr') && un(nfe, 'cobr').dup || []).map(function (d) { return { numero: txt(d, 'nDup'), vencimento: txt(d, 'dVenc'), valor: num(d, 'vDup') }; });
@@ -163,7 +232,7 @@
       emitente: { cnpj: txt(emit, 'CNPJ') || txt(emit, 'CPF'), nome: txt(emit, 'xNome'), fantasia: txt(emit, 'xFant'), ie: txt(emit, 'IE'), crt: txt(emit, 'CRT'), logradouro: txt(endE, 'xLgr'), numero: txt(endE, 'nro'), bairro: txt(endE, 'xBairro'), municipio: txt(endE, 'xMun'), uf: txt(endE, 'UF'), cep: txt(endE, 'CEP'), fone: txt(endE, 'fone') },
       destinatario: { documento: txt(dest, 'CNPJ') || txt(dest, 'CPF'), nome: txt(dest, 'xNome'), ie: txt(dest, 'IE'), indIEDest: txt(dest, 'indIEDest'), email: txt(dest, 'email'), logradouro: txt(endD, 'xLgr'), numero: txt(endD, 'nro'), bairro: txt(endD, 'xBairro'), municipio: txt(endD, 'xMun'), uf: txt(endD, 'UF'), cep: txt(endD, 'CEP') },
       itens: itens,
-      totais: { produtos: num(tot, 'vProd'), desconto: num(tot, 'vDesc'), frete: num(tot, 'vFrete'), seguro: num(tot, 'vSeg'), outras: num(tot, 'vOutro'), baseIcms: num(tot, 'vBC'), icms: num(tot, 'vICMS'), ipi: num(tot, 'vIPI'), pis: num(tot, 'vPIS'), cofins: num(tot, 'vCOFINS'), total: num(tot, 'vNF'), tributosAprox: num(tot, 'vTotTrib') },
+      totais: { produtos: num(tot, 'vProd'), desconto: num(tot, 'vDesc'), frete: num(tot, 'vFrete'), seguro: num(tot, 'vSeg'), outras: num(tot, 'vOutro'), baseIcms: num(tot, 'vBC'), icms: num(tot, 'vICMS'), ipi: num(tot, 'vIPI'), pis: num(tot, 'vPIS'), cofins: num(tot, 'vCOFINS'), total: num(tot, 'vNF'), tributosAprox: num(tot, 'vTotTrib'), baseIbsCbs: num(nfe, 'total.IBSCBSTot.vBCIBSCBS'), ibs: num(nfe, 'total.IBSCBSTot.gIBS.vIBS'), cbs: num(nfe, 'total.IBSCBSTot.gCBS.vCBS') },
       transporte: { modalidade: txt(nfe, 'transp.modFrete'), transportadora: txt(nfe, 'transp.transporta.xNome') },
       duplicatas: dups, pagamentos: pag, infCpl: txt(nfe, 'infAdic.infCpl'),
       protocolo: prot ? txt(prot, 'nProt') : '', autorizadaEm: prot ? txt(prot, 'dhRecbto') : '', cStat: cStat, motivo: prot ? txt(prot, 'xMotivo') : '', autorizada: cStat === '100' || cStat === '150'
@@ -195,5 +264,5 @@
   }
   const SITUACOES = { rascunho: 'Rascunho', pronta: 'Pronta para emitir', autorizada: 'Autorizada', cancelada: 'Cancelada', denegada: 'Denegada', rejeitada: 'Rejeitada' };
 
-  return { r2: r2, validarCNPJ: validarCNPJ, validarCPF: validarCPF, UF_COD: UF_COD, dvChave: dvChave, lerChave: lerChave, montarChave: montarChave, formatarChave: formatarChave, aliqInterestadual: aliqInterestadual, cfopSugerido: cfopSugerido, NATUREZAS: NATUREZAS, calcularItem: calcularItem, RETENCOES: RETENCOES, retencoes: retencoes, calcular: calcular, parcelas: parcelas, infoComplementar: infoComplementar, validar: validar, xmlParaObjeto: xmlParaObjeto, lerXML: lerXML, payloadFocus: payloadFocus, faturamento12m: faturamento12m, SITUACOES: SITUACOES };
+  return { r2: r2, validarCNPJ: validarCNPJ, validarCPF: validarCPF, UF_COD: UF_COD, dvChave: dvChave, lerChave: lerChave, montarChave: montarChave, formatarChave: formatarChave, aliqInterestadual: aliqInterestadual, cfopSugerido: cfopSugerido, NATUREZAS: NATUREZAS, calcularItem: calcularItem, RTC: RTC, TIPOS_ENTE_GOV: TIPOS_ENTE_GOV, anoNota: anoNota, situacaoRtc: situacaoRtc, ibsCbsItem: ibsCbsItem, calendarioRtc: calendarioRtc, RETENCOES: RETENCOES, retencoes: retencoes, calcular: calcular, parcelas: parcelas, infoComplementar: infoComplementar, validar: validar, xmlParaObjeto: xmlParaObjeto, lerXML: lerXML, payloadFocus: payloadFocus, faturamento12m: faturamento12m, SITUACOES: SITUACOES };
 });

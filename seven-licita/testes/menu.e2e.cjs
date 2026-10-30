@@ -27,7 +27,7 @@ const saida = process.argv[2] || path.join(__dirname, 'capturas');
     ok((await pg.locator('.menu a[data-rota=cadastrar] .rot').boundingBox()).width > 40, 'no celular o menu abre completo mesmo recolhido no computador');
     // categorias retráteis
     await pg.setViewportSize({ width: 1440, height: 900 }); await pg.goto(url + '#/painel'); await pg.waitForSelector('.menu p.grupo'); await pg.evaluate(() => App.menuRecolhido(false));
-    const grupo = '.menu p.grupo[data-grupo="Seven Preços"]';
+    const grupo = '.menu p.grupo[data-grupo="2 · Precificar"]';
     await pg.click(grupo); await pg.waitForTimeout(150);
     ok(await pg.locator('.menu a[data-rota=precificacao]').isHidden() && await pg.getAttribute(grupo, 'aria-expanded') === 'false' && await pg.locator('.menu a[data-rota=quadros]').isVisible(), 'recolhe só as ferramentas da categoria');
     await pg.reload(); await pg.waitForSelector(grupo); ok(await pg.locator('.menu a[data-rota=precificacao]').isHidden(), 'lembra a categoria recolhida');

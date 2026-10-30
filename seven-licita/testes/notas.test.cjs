@@ -92,3 +92,29 @@ test('payload para a API do emissor e faturamento de 12 meses', () => {
   assert.equal(p.cnpj_destinatario, '11222333000181'); assert.equal(p.indicador_inscricao_estadual_destinatario, 9); assert.equal(p.items[0].icms_situacao_tributaria, '102'); assert.equal(p.items[1].valor_desconto, 50); assert.equal(p.valor_total, 48800); assert.equal(p.duplicatas.length, 1);
   assert.equal(N.faturamento12m([{ emissao: '2026-10-01', situacao: 'autorizada', totalNota: 100 }, { emissao: '2025-11-05', situacao: 'autorizada', totalNota: 50 }, { emissao: '2025-10-30', situacao: 'autorizada', totalNota: 999 }, { emissao: '2026-09-01', situacao: 'cancelada', totalNota: 999 }, { emissao: '2026-09-01', situacao: 'autorizada', operacao: 'entrada', totalNota: 999 }], '2026-10-21'), 150);
 });
+
+test('reforma tributária: IBS/CBS por ano e por regime', () => {
+  const N = require('../js/notas.js');
+  const emp = { regime: 'presumido', uf: 'GO', cnpj: '11222333000181' };
+  const nf = { emissao: '2026-09-10', destinatario: { uf: 'GO', orgaoPublico: true }, itens: [{ quantidade: 10, valorUnitario: 100 }] };
+  let t = N.calcular(nf, emp).totais;
+  // 2026, ano de teste: base sem PIS (6,50) e COFINS (30,00) = 963,50; CBS 0,9% e IBS 0,1%; total da nota não muda
+  assert.equal(t.rtc.situacao, 'teste'); assert.equal(t.rtc.base, 963.5); assert.equal(t.rtc.cbs, 8.67); assert.equal(t.rtc.ibs, 0.96); assert.equal(t.total, 1000);
+  assert.match(N.infoComplementar(nf, emp, t), /caráter de teste/);
+  // Simples em 2026: sem destaque
+  assert.equal(N.calcular(nf, { regime: 'simples', uf: 'GO' }).totais.rtc.destaca, false);
+  // 2027: PIS/COFINS extintos, CBS cheia, IBS 0,1%, redutor de compra governamental, IPI zerado
+  const nf27 = Object.assign({}, nf, { emissao: '2027-02-01', compraGov: { tpEnteGov: '4', pRedutor: 10 }, itens: [{ quantidade: 10, valorUnitario: 100, aliqIpi: 5 }] });
+  t = N.calcular(nf27, emp).totais;
+  assert.equal(t.pis, 0); assert.equal(t.cofins, 0); assert.equal(t.ipi, 0);
+  assert.equal(t.rtc.cbs, 78.3); assert.equal(t.rtc.ibs, 0.9); assert.equal(t.rtc.totalComTributos, 1079.2);
+  assert.ok(N.validar(nf27, emp).some((x) => /IPI fica zerado/.test(x.msg)));
+  // Simples com opção pelo regime regular em 2027 destaca; sem opção, não
+  assert.equal(N.calcular(nf27, { regime: 'simples', uf: 'GO', ibsCbsRegular: true }).totais.rtc.destaca, true);
+  assert.equal(N.calcular(nf27, { regime: 'simples', uf: 'GO' }).totais.rtc.destaca, false);
+  // retenção federal em 2027: só IR e CSLL
+  const r = N.calcular(Object.assign({}, nf27, { retencaoFederal: true }), emp).totais.retencoes;
+  assert.equal(r.pis, 0); assert.equal(r.cofins, 0); assert.ok(r.ir > 0 && r.csll > 0);
+  // códigos inválidos
+  assert.ok(N.validar(Object.assign({}, nf, { ibsCbs: { cst: '0', cClassTrib: '1' } }), emp).filter((x) => x.nivel === 'erro').some((x) => /cClassTrib/.test(x.msg)));
+});

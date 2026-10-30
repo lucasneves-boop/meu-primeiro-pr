@@ -44,12 +44,12 @@ p { margin: 0 0 .7em; }
 /* casca */
 .casca { display: flex; min-height: 100vh; }
 .lateral { width: var(--lateral); flex: none; background: #050505; color: #ececec; border-right: 1px solid #1f1a10; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-.marca { display: flex; gap: 12px; align-items: center; padding: 22px 22px 20px; color: #fff; text-decoration: none; border-bottom: 1px solid #1f1a10; margin-bottom: 6px; }
+.marca { display: flex; gap: 12px; align-items: center; padding: 22px 66px 20px 22px; color: #fff; text-decoration: none; border-bottom: 1px solid #1f1a10; margin-bottom: 6px; }
 .marca img { width: 40px; height: auto; flex: none; }
 .marca .marca-logo { width: 100%; max-width: 168px; height: auto; display: block; }
 .marca .marca-7 { display: none; width: 30px; height: 30px; }
 .lateral { position: sticky; }
-.recolher { position: absolute; top: 15px; right: 8px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #9a9a9a; cursor: pointer; }
+.recolher { position: absolute; top: 11px; right: 12px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #9a9a9a; cursor: pointer; }
 .recolher:hover, .recolher:focus-visible { background: rgba(182, 141, 64, .14); color: var(--ouro); }
 .recolher .rot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .lateral { transition: width .18s ease; }
