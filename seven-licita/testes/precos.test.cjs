@@ -96,3 +96,21 @@ test('planilha de vários itens: global, individual, rateio de frete, modos e al
   assert.equal(P.extenso(2500000), 'dois milhões e quinhentos mil reais');
   assert.equal(P.extenso(1000000), 'um milhão de reais');
 });
+
+test('comissão e taxa da Seven sobre o lucro líquido', () => {
+  const P2 = require('../js/precos.js');
+  // custo 100, impostos 10%, margem final 10%, comissão 20% do lucro
+  const r = P2.produto({ custo: 100, impostos: 10, margem: 10, comissao: 20, comissaoBase: 'lucro' });
+  // lucro antes da comissão = 10 / 0,8 = 12,5% do preço; preço = 100 / (1 − 0,10 − 0,125) = 129,03
+  assert.ok(Math.abs(r.preco - 100 / 0.775) < 1e-6);
+  assert.ok(Math.abs(r.lucroAntes - r.preco * 0.125) < 1e-6 && Math.abs(r.valores.comissao - r.lucroAntes * 0.2) < 1e-6 && Math.abs(r.lucro - r.preco * 0.10) < 1e-6);
+  assert.ok(Math.abs(r.custoDireto + r.valores.impostos + r.valores.comissao + r.lucro - r.preco) < 1e-6, 'a composição fecha no preço');
+  assert.ok(Math.abs(r.precoMinimo - 100 / 0.9) < 1e-6, 'sem lucro não há comissão sobre o lucro');
+  assert.ok(Math.abs(P2.margemEm(r, r.preco) - 10) < 1e-9, 'margem final 10% no preço sugerido');
+  assert.ok(P2.margemEm(r, 105) < 0, 'abaixo do custo a margem é negativa e sem comissão');
+  // sobre o preço continua igual
+  const v = P2.produto({ custo: 100, impostos: 10, margem: 10, comissao: 5 }); assert.ok(Math.abs(v.preco - 100 / 0.75) < 1e-6);
+  // planilha com a mesma configuração global
+  const pl = P2.planilha({ params: { impostos: 10, margem: 10, comissao: 20, comissaoBase: 'lucro' }, itens: [{ id: 'a', custo: 100, quantidade: 2 }] });
+  assert.ok(Math.abs(pl.itens[0].margem - 10) < 0.05 && Math.abs(pl.itens[0].sugerido - 100 / 0.775) < 1e-6);
+});

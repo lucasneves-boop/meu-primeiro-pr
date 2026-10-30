@@ -2994,3 +2994,6 @@ html.lateral-recolhida .menu a.no-grupo-fechado { display: flex; } html.lateral-
 .cm-caminho span { grid-column: 1; grid-row: 2; }
 .cm-caminho b { grid-column: 2; grid-row: 1 / span 2; font-size: 16px !important; white-space: nowrap; overflow-wrap: normal !important; }
 .cm-caminho li:not(:last-child)::after { content: '↓' !important; right: auto !important; left: 18px !important; top: auto !important; bottom: -14px !important; transform: none !important; font-size: 12px; }
+.p-campo-base { display: flex; gap: 6px; align-items: center; } .p-campo-base input { flex: 1 1 60px; min-width: 0; } .p-campo-base select { flex: 0 1 auto; min-width: 0; font-size: 12px; padding: 6px; }
+.p-campo-base { display: grid !important; grid-template-columns: 1fr; gap: 4px; } .p-campo-base input, .p-campo-base select { width: 100%; } .p-campo-base select { font-size: 12px; padding: 5px 6px; }
+.linha > .campo > .p-campo { align-self: start; }

@@ -30,22 +30,29 @@
     };
     const custoDireto = Object.keys(diretos).reduce(function (s, k) { return s + diretos[k]; }, 0);
     const fin = p.custoFinanceiro != null && p.custoFinanceiro !== '' ? n(p.custoFinanceiro) : custoFinanceiro(p.prazoPagamento, p.taxaMes);
-    const sobrePreco = { impostos: n(p.impostos), comissao: n(p.comissao), financeiro: fin, bpo: n(p.taxaBpo), fixas: n(p.despesasFixas), garantia: n(p.garantia), outrosPct: n(p.outrosPct) };
+    // comissão e taxa da Seven podem ser % do preço ou % do lucro líquido (antes delas)
+    const comLucro = p.comissaoBase === 'lucro', bpoLucro = p.bpoBase === 'lucro';
+    const partLucro = Math.min(0.99, (comLucro ? pct(p.comissao) : 0) + (bpoLucro ? pct(p.taxaBpo) : 0)); // fração do lucro que vai para elas
+    const sobrePreco = { impostos: n(p.impostos), comissao: comLucro ? 0 : n(p.comissao), financeiro: fin, bpo: bpoLucro ? 0 : n(p.taxaBpo), fixas: n(p.despesasFixas), garantia: n(p.garantia), outrosPct: n(p.outrosPct) };
     const somaSemMargem = Object.keys(sobrePreco).reduce(function (s, k) { return s + sobrePreco[k]; }, 0);
-    const margem = n(p.margem);
-    const den = 1 - (somaSemMargem + margem) / 100; const denMin = 1 - somaSemMargem / 100;
-    const r = { quantidade: q, diretos: diretos, custoDireto: custoDireto, sobrePreco: sobrePreco, somaSemMargem: somaSemMargem, margem: margem, valido: den > 0 && denMin > 0 };
+    const margem = n(p.margem); // margem que fica para a empresa, depois de tudo
+    const margemAntes = partLucro ? margem / (1 - partLucro) : margem; // lucro antes das comissões sobre o lucro
+    const den = 1 - (somaSemMargem + margemAntes) / 100; const denMin = 1 - somaSemMargem / 100;
+    const r = { quantidade: q, diretos: diretos, custoDireto: custoDireto, sobrePreco: sobrePreco, somaSemMargem: somaSemMargem, margem: margem, margemAntes: margemAntes, partLucro: partLucro, comissaoBase: comLucro ? 'lucro' : 'preco', bpoBase: bpoLucro ? 'lucro' : 'preco', valido: den > 0 && denMin > 0 };
     if (!r.valido) return r;
     r.preco = custoDireto / den; r.markup = r.preco / (custoDireto || 1); r.precoMinimo = custoDireto / denMin;
     r.valores = {}; Object.keys(sobrePreco).forEach(function (k) { r.valores[k] = r.preco * sobrePreco[k] / 100; });
-    r.lucro = r.preco * margem / 100; r.margemContribuicao = r.preco - custoDireto - r.preco * (n(p.impostos) + n(p.comissao) + fin + n(p.taxaBpo) + n(p.garantia) + n(p.outrosPct)) / 100;
+    r.lucroAntes = r.preco * margemAntes / 100;
+    if (comLucro) { r.valores.comissao = r.lucroAntes * pct(p.comissao); r.sobrePreco.comissao = margemAntes * pct(p.comissao); }
+    if (bpoLucro) { r.valores.bpo = r.lucroAntes * pct(p.taxaBpo); r.sobrePreco.bpo = margemAntes * pct(p.taxaBpo); }
+    r.lucro = r.preco * margem / 100; r.margemContribuicao = r.preco - custoDireto - r.preco * (n(p.impostos) + fin + n(p.garantia) + n(p.outrosPct)) / 100 - r.valores.comissao - r.valores.bpo;
     r.total = r.preco * q; r.lucroTotal = r.lucro * q; r.totalMinimo = r.precoMinimo * q;
     if (n(p.referencia)) { r.referencia = n(p.referencia); r.descontoSobreRef = 1 - r.preco / r.referencia; r.margemNaReferencia = margemEm(r, r.referencia); r.cabe = r.precoMinimo <= r.referencia; }
     return r;
   }
 
   // Margem líquida (%) se vender por `preco`, mantendo os demais percentuais.
-  function margemEm(r, preco) { if (!preco) return null; const m = (1 - r.custoDireto / preco - r.somaSemMargem / 100) * 100; return Math.abs(m) < 1e-9 ? 0 : m; }
+  function margemEm(r, preco) { if (!preco) return null; let m = (1 - r.custoDireto / preco - r.somaSemMargem / 100) * 100; if (m > 0 && r.partLucro) m *= 1 - r.partLucro; return Math.abs(m) < 1e-9 ? 0 : m; }
 
   // Lances do valor de referência (ou preço) até o mínimo, com a margem de cada um.
   function tabelaLances(r, passos) {
@@ -87,7 +94,7 @@
   //        itens: [{ id, numero, lote, descricao, unidade, quantidade, custo, freteCompra, embalagem, outrosDiretos, referencia,
   //                  modo: 'margem'|'preco'|'desconto', alvo, individual: bool, params: {…sobrescritas} }] }
   // Itens no modo global usam os parâmetros da planilha; os "individuais" sobrescrevem só o que tiverem.
-  const CAMPOS_GLOBAIS = ['impostos', 'comissao', 'taxaBpo', 'despesasFixas', 'prazoPagamento', 'taxaMes', 'custoFinanceiro', 'garantia', 'outrosPct', 'difal', 'margem'];
+  const CAMPOS_GLOBAIS = ['impostos', 'comissao', 'comissaoBase', 'taxaBpo', 'bpoBase', 'despesasFixas', 'prazoPagamento', 'taxaMes', 'custoFinanceiro', 'garantia', 'outrosPct', 'difal', 'margem'];
   function arredCima(v, casas) { const f = Math.pow(10, casas); return Math.ceil(v * f - 1e-7) / f; }
   function arred(v, casas) { const f = Math.pow(10, casas); return Math.round(v * f) / f; }
 

@@ -6,7 +6,7 @@
   self.Telas = self.Telas || {};
   const { esc, moeda, num, campo, opcoes, modal, aviso, confirmar, cnpj } = UI;
   const P = Precos;
-  const PARAMS = { regime: 'simples', impostos: 6, comissao: 0, taxaBpo: 0, despesasFixas: 5, difal: 0, prazoPagamento: 30, taxaMes: 1.5, custoFinanceiro: '', garantia: 0, outrosPct: 0, margem: 10, margemMinima: 3, freteEntregaTotal: '', rateioFrete: 'valor', casas: 2, engenharia: false };
+  const PARAMS = { regime: 'simples', impostos: 6, comissao: 0, comissaoBase: 'preco', taxaBpo: 0, bpoBase: 'preco', despesasFixas: 5, difal: 0, prazoPagamento: 30, taxaMes: 1.5, custoFinanceiro: '', garantia: 0, outrosPct: 0, margem: 10, margemMinima: 3, freteEntregaTotal: '', rateioFrete: 'valor', casas: 2, engenharia: false };
   const MODOS = [{ v: 'margem', t: 'Margem' }, { v: 'preco', t: 'Preço-alvo' }, { v: 'desconto', t: 'Desconto %' }];
   // Campos que o item pode sobrescrever quando é precificado individualmente.
   const INDIVIDUAIS = [['impostos', 'Impostos sobre a venda', '%'], ['comissao', 'Comissão', '%'], ['taxaBpo', 'Taxa da Seven (BPO)', '%'], ['despesasFixas', 'Rateio de despesas fixas', '%'], ['difal', 'DIFAL / ICMS não recuperável', '%'], ['prazoPagamento', 'Prazo de pagamento', 'dias'], ['taxaMes', 'Custo do dinheiro (ao mês)', '%'], ['custoFinanceiro', 'Custo financeiro (opcional)', '%'], ['garantia', 'Seguro-garantia', '%'], ['outrosPct', 'Outros sobre o preço', '%'], ['margem', 'Margem líquida desejada', '%']];
@@ -64,7 +64,7 @@
       campo('Validade da proposta (dias)', '<input name="validade" inputmode="numeric" value="' + esc(x.validade) + '">') + campo('Prazo de entrega', '<input name="prazoEntrega" value="' + esc(x.prazoEntrega) + '" placeholder="conforme edital">') + campo('Objeto', '<input name="objeto" value="' + esc(x.objeto) + '">') + '</form>' +
       '<form class="cartao pp-glob" id="pp-glob"><header><h3>Parâmetros globais</h3><span class="mini mudo">Valem para todos os itens que não estão no modo individual.</span></header><div class="pp-grade">' +
       campo('Regime tributário', '<select name="regime">' + opcoes(Object.keys(P.REGIMES).map(function (k) { return { v: k, t: P.REGIMES[k].t }; }), x.params.regime) + '</select>') +
-      g('impostos', 'Impostos sobre a venda', '%') + g('comissao', 'Comissão', '%') + g('taxaBpo', 'Taxa da Seven (BPO)', '%') + g('despesasFixas', 'Despesas fixas', '%') + g('difal', 'DIFAL / ICMS', '%') +
+      g('impostos', 'Impostos sobre a venda', '%') + gb('comissao', 'comissaoBase', 'Comissão') + gb('taxaBpo', 'bpoBase', 'Taxa da Seven (BPO)') + g('despesasFixas', 'Despesas fixas', '%') + g('difal', 'DIFAL / ICMS', '%') +
       g('prazoPagamento', 'Prazo de pagamento', 'dias') + g('taxaMes', 'Custo do dinheiro', '% a.m.') + g('custoFinanceiro', 'Custo financeiro', '%', 'Em branco = pelo prazo') + g('garantia', 'Seguro-garantia', '%') + g('outrosPct', 'Outros sobre o preço', '%') +
       g('margem', 'Margem desejada', '%') + g('margemMinima', 'Margem mínima aceitável', '%') + g('freteEntregaTotal', 'Frete até o órgão (total)', 'R$') +
       campo('Rateio do frete', '<select name="rateioFrete">' + opcoes([{ v: 'valor', t: 'Pelo valor de cada item' }, { v: 'quantidade', t: 'Pela quantidade' }], x.params.rateioFrete) + '</select>') +
@@ -76,6 +76,7 @@
       x.itens.map(linha).join('') + '</tbody></table></div>' + (x.itens.length ? '' : '<p class="mudo pp-vazio">Nenhum item. Adicione, importe da proposta ou cole do Excel.</p>') + '</section>' +
       '<div id="pp-res"></div>' +
       '<div class="grupo-botoes pp-final"><button class="btn primario" data-a="proposta">Gerar proposta completa</button><button class="btn" data-a="aplicar">' + (x.propostaId ? 'Atualizar proposta no Seven Proposta' : 'Criar proposta no Seven Proposta') + '</button><button class="btn" data-a="limites">Mínimos como valor limite na disputa</button><button class="btn fantasma" data-a="formacao">Imprimir planilha de formação de preços</button><button class="btn fantasma" data-a="csv">Exportar (CSV)</button></div>';
+    function gb(k, kb, r) { return campo(r, '<div class="p-campo p-campo-base"><input name="' + k + '" inputmode="decimal" value="' + esc(br(x.params[k])) + '"><select name="' + kb + '" aria-label="Base de ' + esc(r) + '"><option value="preco"' + (x.params[kb] !== 'lucro' ? ' selected' : '') + '>% do preço</option><option value="lucro"' + (x.params[kb] === 'lucro' ? ' selected' : '') + '>% do lucro líquido</option></select></div>'); }
     function g(k, r, suf, dica) { return campo(r, '<div class="p-campo"><input name="' + k + '" inputmode="decimal" value="' + esc(br(x.params[k])) + '"><span>' + suf + '</span></div>', dica); }
     calcular(el, x);
     ligar(el, x);
@@ -125,7 +126,7 @@
     glob.oninput = glob.onchange = function (ev) {
       if (ev.type === 'change' && ev.target.name === 'regime') { const rg = P.REGIMES[ev.target.value].produto; if (rg.impostos != null) glob.impostos.value = br(rg.impostos); }
       const fd = new FormData(glob);
-      Object.keys(PARAMS).forEach(function (k) { if (k === 'engenharia') x.params[k] = !!fd.get(k); else if (k === 'regime' || k === 'rateioFrete') x.params[k] = fd.get(k); else if (k === 'casas') x.params[k] = Number(fd.get(k)); else x.params[k] = n(fd.get(k)); });
+      Object.keys(PARAMS).forEach(function (k) { if (k === 'engenharia') x.params[k] = !!fd.get(k); else if (k === 'regime' || k === 'rateioFrete' || /Base$/.test(k)) x.params[k] = fd.get(k) || 'preco'; else if (k === 'casas') x.params[k] = Number(fd.get(k)); else x.params[k] = n(fd.get(k)); });
       salvar(x); calcular(el, x);
     };
     const tab = el.querySelector('.pp-tab');
@@ -293,7 +294,7 @@
   function imprimirFormacao(x) {
     const r = P.planilha(x); const g = x.params;
     janela('Formação de preços ' + x.nome, '<h1>Planilha de formação de preços</h1><div class="mini">' + esc(x.nome) + ' · ' + esc(x.orgao || '') + ' · gerada em ' + new Date().toLocaleString('pt-BR') + '</div>' +
-      '<h2>Parâmetros globais</h2><p class="mini">Impostos ' + pc(g.impostos) + ' · comissão ' + pc(g.comissao) + ' · taxa Seven ' + pc(g.taxaBpo) + ' · despesas fixas ' + pc(g.despesasFixas) + ' · DIFAL ' + pc(g.difal) + ' · prazo ' + esc(g.prazoPagamento) + ' dias a ' + pc(g.taxaMes) + ' a.m. · seguro ' + pc(g.garantia) + ' · margem ' + pc(g.margem) + ' · frete total ' + moeda(n(g.freteEntregaTotal) || 0) + ' (rateio por ' + (g.rateioFrete === 'quantidade' ? 'quantidade' : 'valor') + ')</p>' +
+      '<h2>Parâmetros globais</h2><p class="mini">Impostos ' + pc(g.impostos) + ' · comissão ' + pc(g.comissao) + (g.comissaoBase === 'lucro' ? ' do lucro' : '') + ' · taxa Seven ' + pc(g.taxaBpo) + (g.bpoBase === 'lucro' ? ' do lucro' : '') + ' · despesas fixas ' + pc(g.despesasFixas) + ' · DIFAL ' + pc(g.difal) + ' · prazo ' + esc(g.prazoPagamento) + ' dias a ' + pc(g.taxaMes) + ' a.m. · seguro ' + pc(g.garantia) + ' · margem ' + pc(g.margem) + ' · frete total ' + moeda(n(g.freteEntregaTotal) || 0) + ' (rateio por ' + (g.rateioFrete === 'quantidade' ? 'quantidade' : 'valor') + ')</p>' +
       '<table><thead><tr><th>Item</th><th>Lote</th><th>Descrição</th><th class="n">Qtd</th><th class="n">Custo direto</th><th class="n">Frete rateado</th><th class="n">Preço unit.</th><th class="n">Total</th><th class="n">Mínimo</th><th class="n">Margem</th><th class="n">Ref.</th><th>Observação</th></tr></thead><tbody>' +
       r.itens.map(function (i) { return '<tr><td>' + esc(i.numero) + '</td><td>' + esc(i.lote) + '</td><td>' + esc(i.descricao) + (i.individual ? ' <i>(individual)</i>' : '') + '</td><td class="n">' + num(i.quantidade) + '</td><td class="n">' + (i.ok ? moeda(i.custoDireto) : '—') + '</td><td class="n">' + (i.ok ? moeda(i.freteRateado) : '—') + '</td><td class="n">' + (i.ok ? moeda(i.unitario) : '—') + '</td><td class="n">' + (i.ok ? moeda(i.total) : '—') + '</td><td class="n">' + (i.ok ? moeda(i.minimo) : '—') + '</td><td class="n">' + (i.ok ? pc(i.margem) : '—') + '</td><td class="n">' + (i.referencia ? moeda(i.referencia) : '—') + '</td><td>' + esc(i.alertas.map(function (a) { return a.t; }).join('; ')) + '</td></tr>'; }).join('') +
       '<tr><th colspan="7" style="text-align:right">TOTAIS</th><th class="n">' + moeda(r.totais.total) + '</th><th class="n">' + moeda(r.totais.minimo) + '</th><th class="n">' + pc(r.totais.margem) + '</th><th class="n">' + (r.totais.referencia ? moeda(r.totais.referencia) : '—') + '</th><th></th></tr></tbody></table>' +
