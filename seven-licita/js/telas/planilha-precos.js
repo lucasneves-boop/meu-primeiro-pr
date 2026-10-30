@@ -153,7 +153,7 @@
       if (ev.type === 'change' && nm === 'regime') { const rg = P.REGIMES[ev.target.value].produto; if (rg.impostos != null) glob.impostos.value = br(rg.impostos); }
       const fd = new FormData(glob);
       Object.keys(PARAMS).forEach(function (k) { if (k === 'engenharia') x.params[k] = !!fd.get(k); else if (k === 'regime' || k === 'rateioFrete' || k === 'anexo' || /Base$/.test(k)) { if (fd.has(k)) x.params[k] = fd.get(k) || 'preco'; } else if (!fd.has(k)) { /* campo oculto neste regime: mantém */ } else if (k === 'casas') x.params[k] = Number(fd.get(k)); else x.params[k] = n(fd.get(k)); });
-      if (muda && x.params.regime === 'simples') { x.params.impostos = Math.round(P.simplesEfetiva(x.params.anexo || 'I', n(x.params.rbt12) || 0).aliquota * 100) / 100; if (nm === 'regime') { x.params.icmsVenda = 0; x.params.icmsCredito = 0; } }
+      if (muda && x.params.regime === 'simples') { x.params.impostos = Math.round(P.simplesEfetiva(x.params.anexo || 'I', n(x.params.rbt12) || 0).aliquota * 100) / 100; glob.impostos.value = br(x.params.impostos); if (nm === 'regime') { x.params.icmsVenda = 0; x.params.icmsCredito = 0; } }
       salvar(x); if (muda) App.redesenhar(); else calcular(el, x);
     };
     const tab = el.querySelector('.pp-tab');

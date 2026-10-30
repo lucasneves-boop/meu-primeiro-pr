@@ -55,8 +55,8 @@
     form.oninput = atualizar;
     form.onchange = function (ev) {
       const t = ev.target.name;
-      if (t === 'regime') { const r = P.REGIMES[ev.target.value].produto; est.produto = lerForm(form, est.produto); if (ev.target.value === 'simples') { est.produto.impostos = Math.round(P.simplesEfetiva(est.produto.anexo || 'I', n(est.produto.rbt12)).aliquota * 100) / 100; est.produto.icmsVenda = 0; est.produto.icmsCredito = 0; } else if (r.impostos != null) est.produto.impostos = r.impostos; App.redesenhar(); return; }
-      if (t === 'anexo' || t === 'rbt12') { est.produto = lerForm(form, est.produto); est.produto.impostos = Math.round(P.simplesEfetiva(est.produto.anexo || 'I', n(est.produto.rbt12)).aliquota * 100) / 100; App.redesenhar(); return; }
+      if (t === 'regime') { const r = P.REGIMES[ev.target.value].produto; est.produto = lerForm(form, est.produto); if (ev.target.value === 'simples') { est.produto.impostos = Math.round(P.simplesEfetiva(est.produto.anexo || 'I', n(est.produto.rbt12)).aliquota * 100) / 100; est.produto.icmsVenda = 0; est.produto.icmsCredito = 0; } else if (r.impostos != null) est.produto.impostos = r.impostos; form.impostos.value = mostrar(est.produto.impostos); App.redesenhar(); return; }
+      if (t === 'anexo' || t === 'rbt12') { est.produto = lerForm(form, est.produto); est.produto.impostos = Math.round(P.simplesEfetiva(est.produto.anexo || 'I', n(est.produto.rbt12)).aliquota * 100) / 100; form.impostos.value = mostrar(est.produto.impostos); App.redesenhar(); return; }
       if (t === 'orgao') { const o = orgs.find(function (x) { return x.orgao === ev.target.value; }); if (o) { form.atrasoOrgao.value = String(Math.max(0, Math.round(o.media))); aviso('Atraso médio de ' + o.orgao + ': ' + Math.round(o.media) + ' dia(s) (' + o.pagas + ' nota(s) paga(s)).'); } }
       atualizar();
     };
