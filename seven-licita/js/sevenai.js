@@ -41,11 +41,50 @@
     { ic: '📋', t: 'Checklist de habilitação', p: 'Liste os documentos de habilitação normalmente exigidos (Lei 14.133, arts. 62 a 70) para o objeto abaixo e o que costuma reprovar empresas. Objeto: ' }
   ];
 
+  // Especialistas: o mesmo modelo com um "chapéu" diferente (instrução extra no sistema).
+  const ESPECIALISTAS = [
+    { id: 'geral', ic: '✦', t: 'Seven IA', d: 'Assistente geral de licitações', p: '' },
+    { id: 'edital', ic: '📄', t: 'Analista de edital', d: 'Lê o edital e aponta riscos', p: 'Atue como analista sênior de editais. Estruture sempre: objeto, órgão, modalidade, critério, datas, exigências de habilitação, garantias, amostras, prazos de impugnação e esclarecimento, pontos de risco e recomendação (participar, impugnar ou não participar).' },
+    { id: 'juridico', ic: '⚖️', t: 'Jurídico', d: 'Impugnações, recursos e pareceres', p: 'Atue como advogado especialista em licitações e contratos (Lei 14.133/2021). Fundamente cada argumento no artigo da lei. Só cite acórdão do TCU se tiver certeza do número. Entregue minutas em formato de peça, com endereçamento, fatos, fundamentos e pedidos.' },
+    { id: 'preco', ic: '🧮', t: 'Precificador', d: 'Custo, tributos, margem e lance', p: 'Atue como especialista em formação de preço para licitações. Mostre a conta passo a passo (custo, frete, tributos, despesas, margem), o preço mínimo exequível e a estratégia de lance. Use tabelas.' },
+    { id: 'comercial', ic: '📈', t: 'Comercial', d: 'Prospecção e mensagens', p: 'Atue como consultor comercial B2G da Seven. Escreva mensagens curtas, cordiais e persuasivas, sempre como rascunho para revisão, assinadas "Lucas Neves | Seven".' },
+    { id: 'redator', ic: '✍️', t: 'Redator', d: 'Revisa e melhora textos', p: 'Atue como revisor de textos formais. Corrija ortografia e gramática, deixe o texto claro e objetivo, mantenha o sentido e mostre a versão final pronta para usar.' }
+  ];
+  function especialista(id) { return ESPECIALISTAS.find(function (x) { return x.id === id; }) || ESPECIALISTAS[0]; }
+
+  // Biblioteca de prompts por etapa do trabalho. {texto} marca onde o usuário completa.
+  const PROMPTS = [
+    { cat: 'Edital', ic: '📄', t: 'Resumo do edital', d: 'Objeto, datas, exigências e riscos', esp: 'edital', p: 'Analise o edital anexo e me entregue um resumo em tabela: objeto, órgão, modalidade, critério, data e portal da sessão, exigências de habilitação, garantias, amostras e prazos de impugnação. No fim, liste os 5 maiores riscos.' },
+    { cat: 'Edital', ic: '🚩', t: 'Cláusulas restritivas', d: 'O que pode ser impugnado', esp: 'juridico', p: 'Leia o edital anexo e aponte cláusulas que restringem a competição ou contrariam a Lei 14.133/2021, com o artigo violado e a chance de êxito de uma impugnação.' },
+    { cat: 'Edital', ic: '❓', t: 'Pedido de esclarecimento', d: 'Perguntas objetivas ao pregoeiro', esp: 'edital', p: 'Redija um pedido de esclarecimento ao pregoeiro sobre os pontos abaixo, com perguntas numeradas e objetivas:\n\n' },
+    { cat: 'Habilitação', ic: '📋', t: 'Checklist de documentos', d: 'Arts. 62 a 70 da Lei 14.133', esp: 'edital', p: 'Liste os documentos de habilitação normalmente exigidos (Lei 14.133, arts. 62 a 70) para o objeto abaixo, em formato de checklist, e o que costuma reprovar empresas. Objeto: ' },
+    { cat: 'Habilitação', ic: '🏅', t: 'Atestado de capacidade', d: 'Modelo e conferência', esp: 'juridico', p: 'Monte um modelo de atestado de capacidade técnica para o fornecimento abaixo e diga o que o órgão costuma conferir. Fornecimento: ' },
+    { cat: 'Proposta', ic: '🧮', t: 'Formação de preço', d: 'Do custo ao lance mínimo', esp: 'preco', p: 'Forme o preço de venda para disputa e o lance mínimo exequível. Custo do produto, frete, regime tributário e margem desejada: ' },
+    { cat: 'Proposta', ic: '📝', t: 'Proposta comercial', d: 'Texto pronto para anexar', esp: 'geral', p: 'Redija a proposta comercial para o item abaixo, com validade de 60 dias, prazo de entrega, garantia e declarações usuais. Item, marca, modelo e preço: ' },
+    { cat: 'Proposta', ic: '📉', t: 'Exequibilidade', d: 'Defesa de preço baixo', esp: 'juridico', p: 'O pregoeiro questionou a exequibilidade do nosso preço. Redija a resposta demonstrando custos e margem (art. 59, § 2º, da Lei 14.133). Dados: ' },
+    { cat: 'Recursos', ic: '⚖️', t: 'Impugnação ao edital', d: 'Minuta fundamentada', esp: 'juridico', p: 'Monte uma minuta de impugnação ao edital com base nos fatos abaixo, citando a Lei 14.133/2021.\n\nFatos: ' },
+    { cat: 'Recursos', ic: '🛡️', t: 'Recurso administrativo', d: 'Contra inabilitação ou classificação', esp: 'juridico', p: 'Preciso de uma minuta de recurso administrativo (Lei 14.133, art. 165). Situação: ' },
+    { cat: 'Recursos', ic: '🤝', t: 'Contrarrazões', d: 'Defender a nossa vitória', esp: 'juridico', p: 'Redija contrarrazões ao recurso do concorrente, rebatendo ponto a ponto. Recurso apresentado: ' },
+    { cat: 'Contrato', ic: '📈', t: 'Reequilíbrio', d: 'Pedido de revisão de preço', esp: 'juridico', p: 'Monte um pedido de reequilíbrio econômico-financeiro (art. 124, II, d, da Lei 14.133) com a memória de cálculo. Dados do contrato e aumento de custo: ' },
+    { cat: 'Contrato', ic: '💰', t: 'Cobrança de pagamento', d: 'Atraso do órgão', esp: 'juridico', p: 'Redija um ofício cobrando pagamento em atraso, citando a ordem cronológica (art. 141 da Lei 14.133) e a atualização financeira prevista no contrato. Dados: ' },
+    { cat: 'Comercial', ic: '💬', t: 'WhatsApp para cliente', d: 'Curto e cordial', esp: 'comercial', p: 'Escreva uma mensagem de WhatsApp para o cliente, curta e cordial, sobre: ' },
+    { cat: 'Comercial', ic: '🎯', t: 'Prospecção de lead', d: 'Primeiro contato B2G', esp: 'comercial', p: 'Escreva uma mensagem de primeiro contato para uma empresa que vende para o governo, apresentando o BPO de Licitações da Seven. Empresa e segmento: ' },
+    { cat: 'Comercial', ic: '📊', t: 'Relatório ao cliente', d: 'Resultado do mês', esp: 'comercial', p: 'Monte um relatório curto para o cliente com o resultado do mês (licitações disputadas, ganhas, valores e próximos passos). Dados: ' }
+  ];
+
+  // Uso no mês: conversas criadas e custo estimado.
+  function usoDoMes(conversas, agora) {
+    const d = new Date(agora || Date.now()); const ini = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+    const l = (conversas || []).filter(function (c) { return (c.editadaEm || c.criadaEm || 0) >= ini; });
+    return { conversas: l.length, custo: l.reduce(function (s, c) { return s + (c.custo || 0); }, 0) };
+  }
+
   // ---------- requisição ----------
   function blocosSistema(o) {
     o = o || {};
     const partes = [SISTEMA];
     if (o.data) partes.push('Hoje é ' + o.data + '.');
+    if (o.especialista && especialista(o.especialista).p) partes.push('Modo especialista "' + especialista(o.especialista).t + '": ' + especialista(o.especialista).p);
     if (o.projeto && o.projeto.instrucoes) partes.push('Instruções do projeto "' + o.projeto.nome + '":\n' + o.projeto.instrucoes);
     if (o.fontes && o.fontes.length) partes.push('Documentos de referência do projeto. Use-os como base e diga quando a resposta vier deles:\n\n' + o.fontes.map(function (f) { return '<documento nome="' + String(f.nome).replace(/"/g, "'") + '">\n' + f.texto + '\n</documento>'; }).join('\n\n'));
     if (o.contextoApp) partes.push('Dados atuais da Plataforma 7 (do próprio usuário):\n' + o.contextoApp);
@@ -249,7 +288,7 @@
     return out.join('\n');
   }
 
-  return { SDK_URL: SDK_URL, MODELOS: MODELOS, PADRAO: PADRAO, ESFORCOS: ESFORCOS, modelo: modelo, SISTEMA: SISTEMA, ATALHOS: ATALHOS,
+  return { ESPECIALISTAS: ESPECIALISTAS, especialista: especialista, PROMPTS: PROMPTS, usoDoMes: usoDoMes, SDK_URL: SDK_URL, MODELOS: MODELOS, PADRAO: PADRAO, ESFORCOS: ESFORCOS, modelo: modelo, SISTEMA: SISTEMA, ATALHOS: ATALHOS,
     blocosSistema: blocosSistema, paraEco: paraEco, historicoAPI: historicoAPI, montarRequisicao: montarRequisicao,
     textoDe: textoDe, raciocinioDe: raciocinioDe, buscasDe: buscasDe, fontesDe: fontesDe, erroBusca: erroBusca, somarUso: somarUso, custo: custo, dolar: dolar,
     markdown: markdown, tituloDe: tituloDe, buscar: buscar, agrupar: agrupar, tipoAnexo: tipoAnexo, blocoAnexo: blocoAnexo, mensagemUsuario: mensagemUsuario,

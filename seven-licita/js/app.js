@@ -58,7 +58,7 @@
   function descricao(r, tela) {
     const box = $('#desc-tela'); if (!box) return;
     const chave = r.tela === 'mercado' && r.sub === 'capag' ? 'capag' : r.tela;
-    const sem = r.tela === 'assinar' || (r.tela === 'design' && r.sub === 'editar') || (r.tela === 'cadernos' && r.sub === 'c');
+    const sem = r.tela === 'assinar' || r.tela === 'ia' || (r.tela === 'design' && r.sub === 'editar') || (r.tela === 'cadernos' && r.sub === 'c');
     const d = DESC[chave];
     box.hidden = sem || !d;
     if (!box.hidden) box.innerHTML = '<h1>' + esc(chave === 'capag' ? 'Seven CAPAG' : tela.titulo) + '</h1><p class="mudo">' + esc(d) + '</p>';

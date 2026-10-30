@@ -113,3 +113,13 @@ test('exportar conversa em markdown com fontes e recusa', () => {
   const md = A.exportarMarkdown({ titulo: 'Teste', modelo: 'claude-opus-5-5', criadaEm: Date.now() }, [A.mensagemUsuario('Pergunta'), { role: 'assistant', content: [{ type: 'text', text: 'Resposta', citations: [{ url: 'https://pncp.gov.br', title: 'PNCP' }] }] }, A.mensagemUsuario('outra'), { role: 'assistant', recusa: true, content: [] }]);
   assert.match(md, /^# Teste/); assert.match(md, /## Você\n\nPergunta/); assert.match(md, /- \[PNCP\]\(https:\/\/pncp.gov.br\)/); assert.match(md, /recusado/);
 });
+
+test('especialistas entram no sistema e a biblioteca de prompts é coerente', () => {
+  const S = require('../js/sevenai.js');
+  assert.ok(/Modo especialista "Jurídico"/.test(S.montarRequisicao([], { especialista: 'juridico' }).system));
+  assert.ok(!/Modo especialista/.test(S.montarRequisicao([], { especialista: 'geral' }).system));
+  assert.equal(S.especialista('inexistente').id, 'geral');
+  S.PROMPTS.forEach((p) => { assert.ok(p.t && p.p && p.cat); assert.equal(S.especialista(p.esp).id, p.esp); });
+  const u = S.usoDoMes([{ editadaEm: new Date(2026, 9, 5).getTime(), custo: 0.5 }, { editadaEm: new Date(2026, 8, 30).getTime(), custo: 9 }], new Date(2026, 9, 30).getTime());
+  assert.deepEqual(u, { conversas: 1, custo: 0.5 });
+});

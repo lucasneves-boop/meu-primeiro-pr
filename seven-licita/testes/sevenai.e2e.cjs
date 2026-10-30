@@ -70,14 +70,14 @@ Object.assign(Anthropic, { APIError, AuthenticationError, PermissionDeniedError,
     await pg.goto(url + '#/ia'); await pg.waitForSelector('.ia-boas');
     ok(/Seven IA/.test(await pg.locator('.menu a[data-rota=ia]').innerText()), 'Seven IA no menu');
     ok(await pg.locator('.ia-aviso-chave').count() === 1, 'sem chave: pede para cadastrar');
-    ok(await pg.locator('.ia-atalhos button').count() === 6, 'atalhos de licitação na tela inicial');
+    ok(await pg.locator('.ia-card').count() === 16 && await pg.locator('.ia-esp-op').count() === 6, 'biblioteca de prompts e especialistas na tela inicial');
     await foto('ia-inicio');
     await pg.click('.ia-aviso-chave button'); await pg.fill('.modal [name=chave]', 'abc'); await pg.click('.modal [type=submit]');
     ok(await pg.locator('.modal').count() === 1, 'chave fora do formato sk-ant- é recusada');
     await pg.fill('.modal [name=chave]', 'sk-ant-teste-123'); await pg.click('.modal [type=submit]'); await pg.waitForSelector('.modal', { state: 'detached' });
     ok(await pg.evaluate(() => localStorage.getItem('seven-ia:chave') === 'sk-ant-teste-123' && Dados.exportar().indexOf('sk-ant') < 0), 'chave guardada só no navegador, fora do backup');
 
-    await pg.click('.ia-atalhos button >> nth=0'); ok(/Analise o edital anexo/.test(await pg.inputValue('.ia-comp textarea')), 'atalho preenche a mensagem');
+    await pg.click('.ia-card >> nth=0'); ok(/Analise o edital anexo/.test(await pg.inputValue('.ia-comp textarea')) && /Analista de edital/.test(await pg.innerText('.ia-esp-tag')), 'prompt preenche a mensagem e escolhe o especialista');
     await perguntar('Qual o prazo de impugnação?');
     ok(/#\/ia\/c\/ia-/.test(await pg.evaluate(() => location.hash)), 'conversa criada com rota própria');
     ok(await pg.locator('.ia-md strong:has-text("Resposta 1")').count() === 1 && await pg.locator('.ia-md table td:has-text("3 dias úteis")').count() === 1, 'resposta transmitida e renderizada em markdown (negrito e tabela)');
@@ -160,7 +160,7 @@ Object.assign(Anthropic, { APIError, AuthenticationError, PermissionDeniedError,
     await pg.click('.ia-msg.bot >> nth=-1 >> [data-ia=nota]'); ok(await pg.evaluate(() => Dados.e.anotacoes.notas.length === 1 && /Resposta 1/.test(Dados.e.anotacoes.notas[0].html)), 'resposta salva em Anotações');
     await pg.click('[data-ia=renomear]'); await pg.fill('.modal [name=t]', 'Termo de referência X'); await pg.click('.modal [type=submit]');
     ok(/Termo de referência X/.test(await pg.locator('.ia-titulo').innerText()), 'renomear conversa');
-    await pg.click('[data-ia=fixar]'); ok(/Fixadas/.test(await pg.locator('.ia-lista').innerText()), 'conversa fixada no topo da lateral');
+    await pg.click('[data-ia=fixar]'); ok(/Fixadas/i.test(await pg.locator('.ia-lista').innerText()), 'conversa fixada no topo da lateral');
     const [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('[data-ia=exportar]')]);
     const md = fs.readFileSync(await dl.path(), 'utf8'); ok(dl.suggestedFilename() === 'Termo de referência X.md' && /## Você\n\nresuma os anexos/.test(md) && /_Anexos: termo\.txt, foto\.png_/.test(md), 'exporta em Markdown');
     await pg.fill('[data-ia=buscar]', 'prazo de impugnacao'); ok(await pg.locator('.ia-lista a').count() === 1, 'busca nas conversas (sem acento)'); await pg.fill('[data-ia=buscar]', '');
@@ -190,7 +190,7 @@ Object.assign(Anthropic, { APIError, AuthenticationError, PermissionDeniedError,
     // celular
     await pg.setViewportSize({ width: 390, height: 800 }); await pg.goto(url + '#/ia'); await pg.waitForSelector('.ia-boas');
     ok(await pg.evaluate(() => document.documentElement.scrollWidth <= 390), 'sem rolagem lateral no celular');
-    await pg.click('[data-ia=lateral]'); await pg.waitForTimeout(250); ok(await pg.locator('.ia-lat.aberta').count() === 1, 'lateral abre no celular');
+    await pg.click('.ia-abrir-lat'); await pg.waitForTimeout(250); ok(await pg.locator('.ia-lat.aberta').count() === 1, 'lateral abre no celular');
     await foto('ia-celular');
   } catch (x) { await foto('ia-erro'); throw x; }
   await t.fechar();
